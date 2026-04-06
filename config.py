@@ -14,6 +14,12 @@ PAGE_CONFIG = {
     "initial_sidebar_state": "expanded"
 }
 
+# Configurações do slider de linhas
+SLIDER_MIN = 100
+SLIDER_MAX = 100000
+SLIDER_DEFAULT = 5000
+SLIDER_STEP = 100
+
 # Dicionário de setores disponíveis
 SETORES = {
     "🛒 Varejo": gerar_varejo,
@@ -46,7 +52,6 @@ SETORES_INFO = [
     ("🎬", "Streaming", "Plays, assinantes, conteúdos, artistas")
 ]
 
-# Constantes globais
-DEFAULT_N_LINHAS = 5000
-MIN_N_LINHAS = 100
-MAX_N_LINHAS = 100000
+# Configurações de datas (opcional)
+DATE_DEFAULT_START = "2023-01-01"
+DATE_DEFAULT_END = "2023-12-31"
