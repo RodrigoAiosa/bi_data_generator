@@ -75,17 +75,23 @@ Pronto — a sidebar, os flip-cards e o download são atualizados automaticament
 
 ## Setores disponíveis
 
-| Emoji | Setor       | Tabela Fato      | Principais dimensões                         |
-|-------|-------------|------------------|----------------------------------------------|
-| 🛒    | Varejo      | FatoVendas       | Cliente, Produto, Vendedor, Filial, Geo      |
-| 💰    | Financeiro  | FatoTransacao    | Conta, Agência, Produto                      |
-| 🏥    | Saúde       | FatoAtendimento  | Paciente, Médico, Procedimento, Unidade      |
-| 💻    | Tecnologia  | FatoContrato     | Cliente, Produto, Agente                     |
-| 📚    | Educação    | FatoMatricula    | Aluno, Curso, Instrutor                      |
-| 🚚    | Logística   | FatoEntrega      | Transportadora, Rota, Cliente                |
-| ⚡    | Energia     | FatoConsumo      | Consumidor, Medidor, Subestação              |
-| 📡    | Telecom     | FatoChamada      | Assinante, Plano, Torre                      |
-| 🏭    | Indústria   | FatoProducao     | Máquina, Insumo, Produto, Operador           |
-| 🌾    | Agronegócio | FatoSafra        | Cultura, Propriedade, Insumo                 |
+
+#	Emoji	Setor	Tabela Fato	Principais dimensões
+1	🛒	Varejo	FatoVendas	Cliente, Produto, Vendedor, Filial, Geo
+2	💰	Financeiro	FatoTransacao	Conta, Agência, Produto Financeiro
+3	🏥	Saúde	FatoAtendimento	Paciente, Médico, Procedimento, Unidade
+4	💻	Tecnologia	FatoContrato	Cliente, Produto SaaS, Agente
+5	📚	Educação	FatoMatricula	Aluno, Curso, Instrutor, Turma
+6	🚚	Logística	FatoEntrega	Transportadora, Rota, Cliente, Veículo
+7	⚡	Energia	FatoConsumo	Consumidor, Medidor, Subestação, Tarifa
+8	📡	Telecom	FatoChamada	Assinante, Plano, Torre, Destino
+9	🏭	Indústria	FatoProducao	Máquina, Insumo, Produto, Operador
+10	🌾	Agronegócio	FatoSafra	Cultura, Propriedade, Insumo, Clima
+11	🏨	Hotelaria	FatoReserva	Hóspede, Hotel, Quarto, Canal
+12	🎬	Streaming	FatoStreaming	Assinante, Conteúdo, Artista, Dispositivo
+13	🏪	E-commerce	FatoPedido	Cliente, Produto, Plataforma, Pagamento, Frete
+14	🏢	Recursos Humanos	FatoHorasTrabalhadas	Funcionário, Departamento, Cargo, Projeto
+15	🚗	Mobilidade	FatoViagem	Motorista, Passageiro, Veículo, Rota
+16	🏦	Fintech	FatoTransacao	Usuário, Cartão, Comerciante, Antifraude
 
 Todas as bases incluem **dCalendario** compatível com Power Query.
