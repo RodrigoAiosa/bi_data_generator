@@ -16,7 +16,7 @@ def render_estado_inicial() -> None:
             <span class="step-num">01</span>
             <span class="step-icon">🏭</span>
             <div class="step-title">Escolha o setor</div>
-            <div class="step-text">Selecione entre 10 setores com dados contextualmente corretos</div>
+            <div class="step-text">Selecione entre 20 setores com dados contextualmente corretos</div>
         </div>
         <div class="step-card">
             <span class="step-num">02</span>
