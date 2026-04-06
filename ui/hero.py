@@ -7,7 +7,7 @@ def render_hero() -> None:
     """Renderiza o cabeçalho hero com título, subtítulo e estatísticas."""
     st.markdown("""
 <div class="hero-wrapper">
-    <div class="hero-badge">Star Schema · 10 Setores · dCalendario</div>
+    <div class="hero-badge">Star Schema · 20 Setores · dCalendario</div>
     <h1 class="hero-title">
         Dados reais para seu projeto de<br><span class="accent">Business Intelligence</span>
     </h1>
@@ -17,11 +17,11 @@ def render_hero() -> None:
     </p>
     <div class="hero-stats">
         <div class="hero-stat">
-            <span class="hero-stat-number">10</span>
+            <span class="hero-stat-number">20</span>
             <span class="hero-stat-label">Setores</span>
         </div>
         <div class="hero-stat">
-            <span class="hero-stat-number">10k</span>
+            <span class="hero-stat-number">100k</span>
             <span class="hero-stat-label">Linhas máx.</span>
         </div>
         <div class="hero-stat">
