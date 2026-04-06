@@ -3,7 +3,7 @@
 import streamlit as st
 
 
-def apply_custom_css() -> None:
+def inject_css() -> None:
     """Aplica os estilos CSS personalizados à aplicação."""
     st.markdown("""
 <style>
