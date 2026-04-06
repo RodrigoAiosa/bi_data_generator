@@ -1,9 +1,8 @@
-"""config.py — Configurações globais e mapa de setores do BI Data Generator PRO."""
-
 from generators import (
     gerar_varejo, gerar_financeiro, gerar_saude, gerar_tecnologia,
     gerar_educacao, gerar_logistica, gerar_energia, gerar_telecom,
-    gerar_industria, gerar_agronegocio, gerar_hotelaria, gerar_streaming
+    gerar_industria, gerar_agronegocio, gerar_hotelaria, gerar_streaming,
+    gerar_ecommerce, gerar_rh, gerar_mobilidade, gerar_fintech  # NOVOS
 )
 
 # Configuração da página Streamlit
@@ -20,7 +19,7 @@ SLIDER_MAX = 100000
 SLIDER_DEFAULT = 5000
 SLIDER_STEP = 100
 
-# Dicionário de setores disponíveis
+# Dicionário de setores disponíveis (agora com 16 setores)
 SETORES = {
     "🛒 Varejo": gerar_varejo,
     "💰 Financeiro": gerar_financeiro,
@@ -33,10 +32,14 @@ SETORES = {
     "🏭 Indústria": gerar_industria,
     "🌾 Agronegócio": gerar_agronegocio,
     "🏨 Hotelaria": gerar_hotelaria,
-    "🎬 Streaming": gerar_streaming
+    "🎬 Streaming": gerar_streaming,
+    "🏪 E-commerce": gerar_ecommerce,        # NOVO
+    "🏢 Recursos Humanos": gerar_rh,          # NOVO
+    "🚗 Mobilidade": gerar_mobilidade,        # NOVO
+    "🏦 Fintech": gerar_fintech               # NOVO
 }
 
-# Informações para os flip-cards da tela inicial
+# Informações para os flip-cards da tela inicial (16 setores)
 SETORES_INFO = [
     ("🛒", "Varejo", "Vendas, clientes, produtos e filiais"),
     ("💰", "Financeiro", "Transações bancárias, contas e agências"),
@@ -49,7 +52,11 @@ SETORES_INFO = [
     ("🏭", "Indústria", "Produção, máquinas, insumos e operadores"),
     ("🌾", "Agronegócio", "Safras, culturas, propriedades e insumos"),
     ("🏨", "Hotelaria", "Reservas, hóspedes, hotéis, quartos e canais"),
-    ("🎬", "Streaming", "Plays, assinantes, conteúdos, artistas")
+    ("🎬", "Streaming", "Plays, assinantes, conteúdos, artistas"),
+    ("🏪", "E-commerce", "Pedidos, clientes, produtos, fretes e pagamentos"),      # NOVO
+    ("🏢", "Recursos Humanos", "Horas trabalhadas, funcionários, projetos e cargos"), # NOVO
+    ("🚗", "Mobilidade", "Viagens, motoristas, passageiros, rotas e veículos"),     # NOVO
+    ("🏦", "Fintech", "Transações, cartões, usuários, comerciantes e antifraude")    # NOVO
 ]
 
 # Configurações de datas (opcional)
