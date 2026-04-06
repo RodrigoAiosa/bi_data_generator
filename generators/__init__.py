@@ -8,8 +8,12 @@ from .energia import gerar_energia
 from .telecom import gerar_telecom
 from .industria import gerar_industria
 from .agronegocio import gerar_agronegocio
-from .hotelaria import gerar_hotelaria          # NOVO
-from .streaming import gerar_streaming          # NOVO
+from .hotelaria import gerar_hotelaria
+from .streaming import gerar_streaming
+from .ecommerce import gerar_ecommerce           # NOVO
+from .rh import gerar_rh                         # NOVO
+from .mobilidade import gerar_mobilidade         # NOVO
+from .fintech import gerar_fintech               # NOVO
 
 __all__ = [
     "gerar_varejo",
@@ -22,6 +26,10 @@ __all__ = [
     "gerar_telecom",
     "gerar_industria",
     "gerar_agronegocio",
-    "gerar_hotelaria",                           # NOVO
-    "gerar_streaming"                            # NOVO
+    "gerar_hotelaria",
+    "gerar_streaming",
+    "gerar_ecommerce",      # NOVO
+    "gerar_rh",             # NOVO
+    "gerar_mobilidade",     # NOVO
+    "gerar_fintech"         # NOVO
 ]
