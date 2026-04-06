@@ -82,7 +82,6 @@ def _dash_varejo(tabelas: dict[str, pd.DataFrame]) -> None:
     fato    = tabelas["FatoVendas"]
     produto = tabelas["DimProduto"]
     vendedor= tabelas["DimVendedor"]
-    filial  = tabelas["DimFilial"]
 
     receita      = fato["valor_total"].sum()
     ticket_medio = fato["valor_total"].mean()
@@ -199,7 +198,6 @@ def _dash_saude(tabelas: dict[str, pd.DataFrame]) -> None:
     fato    = tabelas["FatoAtendimento"]
     medico  = tabelas["DimMedico"]
     paciente= tabelas["DimPaciente"]
-    proc    = tabelas["DimProcedimento"]
 
     receita      = fato["valor_cobrado"].sum()
     duracao_med  = fato["duracao_min"].mean()
@@ -242,7 +240,6 @@ def _dash_saude(tabelas: dict[str, pd.DataFrame]) -> None:
     fig_res.update_traces(textfont_color="#e2e8f0")
     _base_layout(fig_res, "Distribuição por Resultado")
 
-    # Por convênio
     merged2 = fato.merge(paciente[["id_paciente","convenio"]], on="id_paciente")
     by_conv = merged2.groupby("convenio")["valor_cobrado"].sum().reset_index().sort_values("valor_cobrado", ascending=False)
     fig_conv = px.bar(by_conv, x="convenio", y="valor_cobrado",
@@ -258,7 +255,6 @@ def _dash_saude(tabelas: dict[str, pd.DataFrame]) -> None:
 def _dash_tecnologia(tabelas: dict[str, pd.DataFrame]) -> None:
     fato    = tabelas["FatoContrato"]
     cliente = tabelas["DimCliente"]
-    produto = tabelas["DimProduto"]
 
     mrr_total = fato["valor_mrr"].sum()
     arr_total = fato["arr"].sum()
@@ -320,7 +316,6 @@ def _dash_tecnologia(tabelas: dict[str, pd.DataFrame]) -> None:
 def _dash_educacao(tabelas: dict[str, pd.DataFrame]) -> None:
     fato  = tabelas["FatoMatricula"]
     curso = tabelas["DimCurso"]
-    aluno = tabelas["DimAluno"]
 
     receita      = fato["valor_pago"].sum()
     tx_conclusao = fato["concluiu"].mean() * 100
@@ -376,7 +371,6 @@ def _dash_educacao(tabelas: dict[str, pd.DataFrame]) -> None:
 # ── 🚚 LOGÍSTICA ──────────────────────────────────────────────────────────────
 def _dash_logistica(tabelas: dict[str, pd.DataFrame]) -> None:
     fato  = tabelas["FatoEntrega"]
-    rota  = tabelas["DimRota"]
     trans = tabelas["DimTransportadora"]
 
     entregues    = (fato["status"] == "Entregue").mean() * 100
@@ -483,198 +477,226 @@ def _dash_energia(tabelas: dict[str, pd.DataFrame]) -> None:
 
     # Faturamento por classe
     by_fat = merged.groupby("classe")["valor_fatura"].sum().reset_index().sort_values("valor_fatura", ascending=False)
-    fig_fat = px.bar(by_fat, x="classe", y="valor_fatura",
-                     labels={"valor_fatura": "Faturamento (R$)", "classe": ""},
-                     color="valor_fatura", color_continuous_scale=["#6d28d9","#a78bfa","#c4b5fd"])
-    fig_fat.update_layout(coloraxis_showscale=False)
-    _base_layout(fig_fat, "Faturamento por Classe de Consumidor")
+    fig_fat = px.pie(by_fat, names="classe", values="valor_fatura",
+                     hole=0.55, color_discrete_sequence=_PALETTE)
+    fig_fat.update_traces(textfont_color="#e2e8f0")
+    _base_layout(fig_fat, "Receita por Classe")
 
-    _chart_row([(fig_tar, 2), (fig_fat, 3)])
+    _chart_row([(fig_tar, 3), (fig_fat, 2)])
 
 
 # ── 📡 TELECOM ────────────────────────────────────────────────────────────────
 def _dash_telecom(tabelas: dict[str, pd.DataFrame]) -> None:
-    fato      = tabelas["FatoChamada"]
-    plano     = tabelas["DimPlano"]
-    torre     = tabelas["DimTorre"]
+    fato = tabelas["FatoChamada"]
+    
+    _section("Visão Geral")
+    _kpi_row([
+        ("Total Chamadas", f"{len(fato):,}", "no período"),
+        ("Duração Média",  f"{fato['duracao_seg'].mean():.1f}s", "por chamada"),
+        ("Custo Total",    f"R$ {fato['custo'].sum():,.2f}", "chamadas tarifadas"),
+        ("Qualidade Média", f"{fato['qualidade_sinal'].mean():.1f}/5", "score de sinal"),
+    ])
 
-    receita_total = fato["valor_cobrado"].sum()
-    dados_total   = fato["dados_mb"].sum() / 1024
-    duracao_media = fato["duracao_seg"].mean() / 60
-    qualidade     = fato["qualidade_dbm"].mean()
+    # Chamadas por dia
+    fato2 = fato.copy()
+    fato2["dia"] = pd.to_datetime(fato2["id_data"]).dt.date
+    by_dia = fato2.groupby("dia").size().reset_index(name="count")
+    fig_dia = px.line(by_dia, x="dia", y="count")
+    _base_layout(fig_dia, "Volume Diário de Chamadas")
+    _chart_row([(fig_dia, 1)])
+
+
+# ── 🏭 INDÚSTRIA ──────────────────────────────────────────────────────────────
+def _dash_industria(tabelas: dict[str, pd.DataFrame]) -> None:
+    fato = tabelas["FatoProducao"]
+    
+    _section("Visão Geral")
+    _kpi_row([
+        ("Produção Total", f"{fato['qtd_produzida'].sum():,.0f}", "unidades"),
+        ("Taxa de Refugo", f"{(fato['qtd_refugo'].sum()/fato['qtd_produzida'].sum()*100):.2f}%", "perda"),
+        ("OEE Médio",      f"{fato['oee_pct'].mean():.1f}%", "eficiência global"),
+        ("Custo Total",    f"R$ {fato['custo_total'].sum():,.0f}", "produção"),
+    ])
+
+    # Produção por máquina
+    by_maq = fato.groupby("id_maquina")["qtd_produzida"].sum().reset_index()
+    fig_maq = px.bar(by_maq, x="id_maquina", y="qtd_produzida")
+    _base_layout(fig_maq, "Produção por Máquina")
+    _chart_row([(fig_maq, 1)])
+
+
+# ── 🌾 AGRONEGÓCIO ────────────────────────────────────────────────────────────
+def _dash_agronegocio(tabelas: dict[str, pd.DataFrame]) -> None:
+    fato = tabelas["FatoSafra"]
+    cultura = tabelas["DimCultura"]
+    prop = tabelas["DimPropriedade"]
+
+    receita = fato["receita"].sum()
+    producao = fato["producao_ton"].sum()
+    n_safras = len(fato)
+    produtividade = producao / fato["area_plantada"].sum() if fato["area_plantada"].sum() > 0 else 0
 
     _section("Visão Geral")
     _kpi_row([
-        ("Receita Total",     f"R$ {receita_total:,.0f}",  f"{len(fato):,} eventos"),
-        ("Dados Consumidos",  f"{dados_total:,.1f} GB",     "total do período"),
-        ("Duração Média",     f"{duracao_media:.1f} min",   "por chamada"),
-        ("Qualidade Média",   f"{qualidade:.0f} dBm",       "sinal das torres"),
+        ("Receita Total", f"R$ {receita:,.0f}", f"{n_safras:,} safras"),
+        ("Produção Total", f"{producao:,.0f} t", "toneladas colhidas"),
+        ("Produtividade", f"{produtividade:.2f} t/ha", "média por hectare"),
+        ("Custo Médio", f"R$ {fato['custo_total'].mean():,.2f}", "por safra"),
     ])
 
     # Receita por mês
     fato2 = fato.copy()
     fato2["mes"] = pd.to_datetime(fato2["id_data"]).dt.to_period("M").astype(str)
-    by_mes = fato2.groupby("mes")["valor_cobrado"].sum().reset_index()
-    fig_mes = px.area(by_mes, x="mes", y="valor_cobrado",
-                      labels={"mes": "", "valor_cobrado": "Receita (R$)"})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
+    by_mes = fato2.groupby("mes")["receita"].sum().reset_index()
+    fig_mes = px.area(by_mes, x="mes", y="receita")
     _base_layout(fig_mes, "Receita Mensal")
 
-    # Por tipo de uso
-    by_tipo = fato.groupby("tipo")["valor_cobrado"].sum().reset_index()
-    fig_tipo = px.pie(by_tipo, names="tipo", values="valor_cobrado",
-                      hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_tipo.update_traces(textfont_color="#e2e8f0")
-    _base_layout(fig_tipo, "Receita por Tipo de Uso")
-
-    _section("Tecnologia & Planos")
-    _chart_row([(fig_mes, 3), (fig_tipo, 2)])
-
-    # Por tecnologia da torre
-    merged = fato.merge(torre[["id_torre","tecnologia"]], on="id_torre")
-    by_tec = merged.groupby("tecnologia")["valor_cobrado"].sum().reset_index().sort_values("valor_cobrado", ascending=False)
-    fig_tec = px.bar(by_tec, x="tecnologia", y="valor_cobrado",
-                     labels={"valor_cobrado": "Receita (R$)", "tecnologia": ""},
-                     color="valor_cobrado", color_continuous_scale=["#6d28d9","#a78bfa","#c4b5fd"])
-    fig_tec.update_layout(coloraxis_showscale=False)
-    _base_layout(fig_tec, "Receita por Tecnologia de Rede")
-
-    # Dados por tecnologia
-    by_tec_dados = merged.groupby("tecnologia")["dados_mb"].sum().reset_index()
-    fig_dados = px.pie(by_tec_dados, names="tecnologia", values="dados_mb",
-                       hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_dados.update_traces(textfont_color="#e2e8f0")
-    _base_layout(fig_dados, "Dados Consumidos por Tecnologia")
-
-    _chart_row([(fig_tec, 3), (fig_dados, 2)])
-
-
-# ── 🏭 INDÚSTRIA ──────────────────────────────────────────────────────────────
-def _dash_industria(tabelas: dict[str, pd.DataFrame]) -> None:
-    fato     = tabelas["FatoProducao"]
-    maquina  = tabelas["DimMaquina"]
-    produto  = tabelas["DimProduto"]
-    operador = tabelas["DimOperador"]
-
-    oee_medio    = fato["oee"].mean() * 100
-    refugo_medio = fato["refugo_pct"].mean() * 100
-    custo_total  = fato["custo_producao"].sum()
-    n_ordens     = len(fato)
-
-    _section("Visão Geral")
-    _kpi_row([
-        ("OEE Médio",        f"{oee_medio:.1f}%",       "eficiência global"),
-        ("Custo Total",      f"R$ {custo_total:,.0f}",  f"{n_ordens:,} ordens"),
-        ("Refugo Médio",     f"{refugo_medio:.2f}%",     "de não-conformidade"),
-        ("Tempo Ciclo Méd.", f"{fato['tempo_ciclo_min'].mean():.1f} min", "por ordem"),
-    ])
-
-    # OEE por mês
-    fato2 = fato.copy()
-    fato2["mes"] = pd.to_datetime(fato2["id_data"]).dt.to_period("M").astype(str)
-    by_mes = fato2.groupby("mes")["oee"].mean().reset_index()
-    by_mes["oee_pct"] = by_mes["oee"] * 100
-    fig_mes = px.line(by_mes, x="mes", y="oee_pct",
-                      labels={"mes": "", "oee_pct": "OEE (%)"},
-                      markers=True)
-    fig_mes.update_traces(line_color=_ACCENT, marker_color=_ACCENT)
-    fig_mes.add_hline(y=85, line_dash="dash", line_color="rgba(74,222,128,0.5)",
-                      annotation_text="Meta 85%", annotation_font_color="#4ade80")
-    _base_layout(fig_mes, "OEE Médio Mensal")
-
-    # OEE por linha de produção
-    merged_m = fato.merge(maquina[["id_maquina","linha"]], on="id_maquina")
-    by_linha = merged_m.groupby("linha")["oee"].mean().reset_index()
-    by_linha["oee_pct"] = by_linha["oee"] * 100
-    fig_linha = px.bar(by_linha, x="linha", y="oee_pct",
-                       labels={"oee_pct": "OEE (%)", "linha": ""},
-                       color="oee_pct",
-                       color_continuous_scale=["#ef4444","#f59e0b","#4ade80"])
-    fig_linha.update_layout(coloraxis_showscale=False)
-    _base_layout(fig_linha, "OEE por Linha de Produção")
-
-    _section("Custo & Turno")
-    _chart_row([(fig_mes, 3), (fig_linha, 2)])
-
-    # Custo por turno
-    by_turno = fato.groupby("turno")["custo_producao"].sum().reset_index()
-    fig_turno = px.pie(by_turno, names="turno", values="custo_producao",
-                       hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_turno.update_traces(textfont_color="#e2e8f0")
-    _base_layout(fig_turno, "Custo por Turno")
-
-    # Refugo por tipo de máquina
-    merged_t = fato.merge(maquina[["id_maquina","tipo"]], on="id_maquina")
-    by_tipo = merged_t.groupby("tipo")["refugo_pct"].mean().reset_index()
-    by_tipo["refugo_pct"] = by_tipo["refugo_pct"] * 100
-    by_tipo = by_tipo.sort_values("refugo_pct", ascending=False)
-    fig_ref = px.bar(by_tipo, x="refugo_pct", y="tipo", orientation="h",
-                     labels={"refugo_pct": "Refugo (%)", "tipo": ""},
-                     color="refugo_pct",
-                     color_continuous_scale=["#4ade80","#f59e0b","#ef4444"])
-    fig_ref.update_layout(coloraxis_showscale=False)
-    _base_layout(fig_ref, "Refugo Médio por Tipo de Máquina")
-
-    _chart_row([(fig_turno, 1), (fig_ref, 2)])
-
-
-# ── 🌾 AGRONEGÓCIO ────────────────────────────────────────────────────────────
-def _dash_agronegocio(tabelas: dict[str, pd.DataFrame]) -> None:
-    fato    = tabelas["FatoSafra"]
-    cultura = tabelas["DimCultura"]
-    prop    = tabelas["DimPropriedade"]
-
-    producao_total  = fato["producao_ton"].sum()
-    receita_total   = fato["receita"].sum()
-    produtividade   = fato["produtividade_tha"].mean()
-    custo_medio     = fato["custo_ha"].mean()
-
-    _section("Visão Geral")
-    _kpi_row([
-        ("Produção Total",    f"{producao_total:,.0f} t",   f"{len(fato):,} safras"),
-        ("Receita Total",     f"R$ {receita_total:,.0f}",   "todas as safras"),
-        ("Produtividade",     f"{produtividade:.2f} t/ha",  "média geral"),
-        ("Custo Médio/ha",    f"R$ {custo_medio:,.2f}",     "por hectare"),
-    ])
-
-    # Produção por mês
-    fato2 = fato.copy()
-    fato2["mes"] = pd.to_datetime(fato2["id_data"]).dt.to_period("M").astype(str)
-    by_mes = fato2.groupby("mes")["producao_ton"].sum().reset_index()
-    fig_mes = px.area(by_mes, x="mes", y="producao_ton",
-                      labels={"mes": "", "producao_ton": "Produção (t)"})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, "Produção Mensal (ton)")
-
-    # Por cultura
+    # Top culturas
     merged = fato.merge(cultura[["id_cultura","nome"]], on="id_cultura")
     by_cult = merged.groupby("nome")["producao_ton"].sum().reset_index().sort_values("producao_ton").tail(10)
-    fig_cult = px.bar(by_cult, x="producao_ton", y="nome", orientation="h",
-                      labels={"producao_ton": "Produção (t)", "nome": ""},
-                      color="producao_ton", color_continuous_scale=["#6d28d9","#a78bfa"])
-    fig_cult.update_layout(coloraxis_showscale=False)
+    fig_cult = px.bar(by_cult, x="producao_ton", y="nome", orientation="h")
     _base_layout(fig_cult, "Top 10 Culturas por Produção")
 
-    _section("Bioma & Status")
     _chart_row([(fig_mes, 3), (fig_cult, 2)])
 
-    # Por bioma
-    merged2 = fato.merge(prop[["id_propriedade","bioma"]], on="id_propriedade")
-    by_bioma = merged2.groupby("bioma")["receita"].sum().reset_index().sort_values("receita", ascending=False)
-    fig_bioma = px.bar(by_bioma, x="bioma", y="receita",
-                       labels={"receita": "Receita (R$)", "bioma": ""},
-                       color="receita", color_continuous_scale=["#6d28d9","#a78bfa","#c4b5fd"])
-    fig_bioma.update_layout(coloraxis_showscale=False)
-    _base_layout(fig_bioma, "Receita por Bioma")
 
-    # Status das safras
-    by_status = fato["status"].value_counts().reset_index()
-    fig_status = px.pie(by_status, names="status", values="count",
-                        hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_status.update_traces(textfont_color="#e2e8f0")
-    _base_layout(fig_status, "Status das Safras")
+# ── ✈️ TURISMO ───────────────────────────────────────────────────────────────
+def _dash_turismo(tabelas: dict[str, pd.DataFrame]) -> None:
+    fato = tabelas["FatoViagens"]
+    pacote = tabelas["DimPacote"]
+    destino = tabelas["DimDestino"]
 
-    _chart_row([(fig_bioma, 3), (fig_status, 2)])
+    receita = fato["valor_pago"].sum()
+    n_viagens = len(fato)
+    ticket_medio = fato["valor_pago"].mean()
+    tx_cancel = (fato["status"] == "Cancelada").mean() * 100
+
+    _section("Visão Geral")
+    _kpi_row([
+        ("Receita Total", f"R$ {receita:,.0f}", f"{n_viagens:,} viagens"),
+        ("Ticket Médio", f"R$ {ticket_medio:,.2f}", "por reserva"),
+        ("Taxa de Cancelamento", f"{tx_cancel:.1f}%", "status cancelado"),
+        ("Total Passageiros", f"{fato['passageiros'].sum():,}", "pessoas"),
+    ])
+
+    # Receita por mês
+    fato2 = fato.copy()
+    fato2["mes"] = pd.to_datetime(fato2["id_data"]).dt.to_period("M").astype(str)
+    by_mes = fato2.groupby("mes")["valor_pago"].sum().reset_index()
+    fig_mes = px.area(by_mes, x="mes", y="valor_pago")
+    _base_layout(fig_mes, "Receita Mensal")
+
+    # Por Destino (Top 10)
+    merged = fato.merge(destino[["id_destino", "pais"]], on="id_destino")
+    by_pais = merged.groupby("pais")["valor_pago"].sum().reset_index().sort_values("valor_pago", ascending=False)
+    fig_pais = px.bar(by_pais, x="pais", y="valor_pago", color="valor_pago", color_continuous_scale=_PALETTE)
+    fig_pais.update_layout(coloraxis_showscale=False)
+    _base_layout(fig_pais, "Receita por País de Destino")
+
+    _chart_row([(fig_mes, 3), (fig_pais, 2)])
+
+
+# ── 🏠 IMOBILIÁRIO ────────────────────────────────────────────────────────────
+def _dash_imobiliario(tabelas: dict[str, pd.DataFrame]) -> None:
+    fato = tabelas["FatoVendas"]
+    imovel = tabelas["DimImovel"]
+
+    vpv = fato["valor_final"].sum()
+    n_trans = len(fato)
+    valor_medio = fato["valor_final"].mean()
+    tx_venda = (fato["tipo_negocio"] == "Venda").mean() * 100
+
+    _section("Visão Geral")
+    _kpi_row([
+        ("Volume de Negócios", f"R$ {vpv:,.0f}", f"{n_trans:,} contratos"),
+        ("Valor Médio", f"R$ {valor_medio:,.2f}", "por contrato"),
+        ("% Vendas", f"{tx_venda:.1f}%", "vs Aluguéis"),
+        ("Área Média", f"{imovel['area_m2'].mean():.1f} m²", "por imóvel"),
+    ])
+
+    # Volume por mês
+    fato2 = fato.copy()
+    fato2["mes"] = pd.to_datetime(fato2["id_data"]).dt.to_period("M").astype(str)
+    by_mes = fato2.groupby("mes")["valor_final"].sum().reset_index()
+    fig_mes = px.area(by_mes, x="mes", y="valor_final")
+    _base_layout(fig_mes, "Volume Mensal de Negócios")
+
+    # Por tipo de imóvel
+    merged = fato.merge(imovel[["id_imovel", "tipo"]], on="id_imovel")
+    by_tipo = merged.groupby("tipo")["valor_final"].sum().reset_index()
+    fig_tipo = px.pie(by_tipo, names="tipo", values="valor_final", hole=0.5)
+    _base_layout(fig_tipo, "Volume por Tipo de Imóvel")
+
+    _chart_row([(fig_mes, 3), (fig_tipo, 2)])
+
+
+# ── 🛡️ SEGUROS ────────────────────────────────────────────────────────────────
+def _dash_seguros(tabelas: dict[str, pd.DataFrame]) -> None:
+    fato = tabelas["FatoApolices"]
+    plano = tabelas["DimPlano"]
+
+    premios = fato["valor_premio"].sum()
+    indenizacoes = fato["valor_indenizacao"].sum()
+    loss_ratio = (indenizacoes / premios * 100) if premios > 0 else 0
+    n_apolices = len(fato)
+
+    _section("Visão Geral")
+    _kpi_row([
+        ("Prêmios Totais", f"R$ {premios:,.0f}", f"{n_apolices:,} apólices"),
+        ("Indenizações Pago", f"R$ {indenizacoes:,.0f}", "sinistros pagos"),
+        ("Loss Ratio", f"{loss_ratio:.1f}%", "S/P"),
+        ("Prêmio Médio", f"R$ {fato['valor_premio'].mean():,.2f}", "por apólice"),
+    ])
+
+    # Prêmios por mês
+    fato2 = fato.copy()
+    fato2["mes"] = pd.to_datetime(fato2["id_data"]).dt.to_period("M").astype(str)
+    by_mes = fato2.groupby("mes")["valor_premio"].sum().reset_index()
+    fig_mes = px.area(by_mes, x="mes", y="valor_premio")
+    _base_layout(fig_mes, "Prêmios Emitidos por Mês")
+
+    # Por Tipo de Seguro
+    merged = fato.merge(plano[["id_plano", "tipo"]], on="id_plano")
+    by_tipo = merged.groupby("tipo")["valor_premio"].sum().reset_index().sort_values("valor_premio")
+    fig_tipo = px.bar(by_tipo, x="valor_premio", y="tipo", orientation="h")
+    _base_layout(fig_tipo, "Prêmios por Tipo de Seguro")
+
+    _chart_row([(fig_mes, 3), (fig_tipo, 2)])
+
+
+# ── 🏗️ CONSTRUÇÃO CIVIL ───────────────────────────────────────────────────────
+def _dash_construcao(tabelas: dict[str, pd.DataFrame]) -> None:
+    fato = tabelas["FatoCustos"]
+    projeto = tabelas["DimProjeto"]
+
+    custo_total = fato["custo_real"].sum()
+    horas_total = fato["horas_trabalhadas"].sum()
+    n_lancamentos = len(fato)
+    custo_hora = custo_total / horas_total if horas_total > 0 else 0
+
+    _section("Visão Geral")
+    _kpi_row([
+        ("Custo Real Total", f"R$ {custo_total:,.0f}", f"{n_lancamentos:,} lançamentos"),
+        ("Total Horas", f"{horas_total:,.0f}h", "mão de obra"),
+        ("Custo Médio/Hora", f"R$ {custo_hora:,.2f}", "eficiência"),
+        ("Qtd. Projetos", f"{len(projeto)}", "obras ativas"),
+    ])
+
+    # Custos por mês
+    fato2 = fato.copy()
+    fato2["mes"] = pd.to_datetime(fato2["id_data"]).dt.to_period("M").astype(str)
+    by_mes = fato2.groupby("mes")["custo_real"].sum().reset_index()
+    fig_mes = px.area(by_mes, x="mes", y="custo_real")
+    _base_layout(fig_mes, "Evolução de Custos Mensais")
+
+    # Custos por Projeto
+    merged = fato.merge(projeto[["id_projeto", "nome"]], on="id_projeto")
+    by_proj = merged.groupby("nome")["custo_real"].sum().reset_index().sort_values("custo_real", ascending=False).head(10)
+    fig_proj = px.bar(by_proj, x="nome", y="custo_real", color="custo_real", color_continuous_scale=_PALETTE)
+    fig_proj.update_layout(coloraxis_showscale=False)
+    _base_layout(fig_proj, "Top 10 Projetos por Custo")
+
+    _chart_row([(fig_mes, 3), (fig_proj, 2)])
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -691,6 +713,10 @@ _DASHBOARDS: dict[str, callable] = {
     "Telecom":     _dash_telecom,
     "Indústria":   _dash_industria,
     "Agronegócio": _dash_agronegocio,
+    "Turismo":     _dash_turismo,
+    "Imobiliário": _dash_imobiliario,
+    "Seguros":     _dash_seguros,
+    "Construção Civil": _dash_construcao,
 }
 
 
