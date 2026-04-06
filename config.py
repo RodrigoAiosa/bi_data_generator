@@ -2,7 +2,8 @@ from generators import (
     gerar_varejo, gerar_financeiro, gerar_saude, gerar_tecnologia,
     gerar_educacao, gerar_logistica, gerar_energia, gerar_telecom,
     gerar_industria, gerar_agronegocio, gerar_hotelaria, gerar_streaming,
-    gerar_ecommerce, gerar_rh, gerar_mobilidade, gerar_fintech  # NOVOS
+    gerar_ecommerce, gerar_rh, gerar_mobilidade, gerar_fintech,
+    gerar_turismo, gerar_imobiliario, gerar_seguros, gerar_construcao  # ADICIONADOS
 )
 
 # Configuração da página Streamlit
@@ -19,7 +20,7 @@ SLIDER_MAX = 100000
 SLIDER_DEFAULT = 5000
 SLIDER_STEP = 100
 
-# Dicionário de setores disponíveis (agora com 16 setores)
+# Dicionário de setores disponíveis (agora com 20 setores)
 SETORES = {
     "🛒 Varejo": gerar_varejo,
     "💰 Financeiro": gerar_financeiro,
@@ -33,13 +34,17 @@ SETORES = {
     "🌾 Agronegócio": gerar_agronegocio,
     "🏨 Hotelaria": gerar_hotelaria,
     "🎬 Streaming": gerar_streaming,
-    "🏪 E-commerce": gerar_ecommerce,        # NOVO
-    "🏢 Recursos Humanos": gerar_rh,          # NOVO
-    "🚗 Mobilidade": gerar_mobilidade,        # NOVO
-    "🏦 Fintech": gerar_fintech               # NOVO
+    "🏪 E-commerce": gerar_ecommerce,
+    "🏢 Recursos Humanos": gerar_rh,
+    "🚗 Mobilidade": gerar_mobilidade,
+    "🏦 Fintech": gerar_fintech,
+    "✈️ Turismo": gerar_turismo,            # ADICIONADO
+    "🏠 Imobiliário": gerar_imobiliario,    # ADICIONADO
+    "🛡️ Seguros": gerar_seguros,            # ADICIONADO
+    "🏗️ Construção Civil": gerar_construcao # ADICIONADO
 }
 
-# Informações para os flip-cards da tela inicial (16 setores)
+# Informações para os flip-cards da tela inicial (20 setores)
 SETORES_INFO = [
     ("🛒", "Varejo", "Vendas, clientes, produtos e filiais"),
     ("💰", "Financeiro", "Transações bancárias, contas e agências"),
@@ -53,10 +58,14 @@ SETORES_INFO = [
     ("🌾", "Agronegócio", "Safras, culturas, propriedades e insumos"),
     ("🏨", "Hotelaria", "Reservas, hóspedes, hotéis, quartos e canais"),
     ("🎬", "Streaming", "Plays, assinantes, conteúdos, artistas"),
-    ("🏪", "E-commerce", "Pedidos, clientes, produtos, fretes e pagamentos"),      # NOVO
-    ("🏢", "Recursos Humanos", "Horas trabalhadas, funcionários, projetos e cargos"), # NOVO
-    ("🚗", "Mobilidade", "Viagens, motoristas, passageiros, rotas e veículos"),     # NOVO
-    ("🏦", "Fintech", "Transações, cartões, usuários, comerciantes e antifraude")    # NOVO
+    ("🏪", "E-commerce", "Pedidos, clientes, produtos, fretes e pagamentos"),
+    ("🏢", "Recursos Humanos", "Horas trabalhadas, funcionários, projetos e cargos"),
+    ("🚗", "Mobilidade", "Viagens, motoristas, passageiros, rotas e veículos"),
+    ("🏦", "Fintech", "Transações, cartões, usuários, comerciantes e antifraude"),
+    ("✈️", "Turismo", "Viagens, pacotes, agências e destinos"),            # ADICIONADO
+    ("🏠", "Imobiliário", "Vendas, aluguéis, imóveis e corretores"),        # ADICIONADO
+    ("🛡️", "Seguros", "Apólices, segurados, corretores e sinistros"),      # ADICIONADO
+    ("🏗️", "Construção Civil", "Obras, custos, materiais e fornecedores")  # ADICIONADO
 ]
 
 # Configurações de datas (opcional)
