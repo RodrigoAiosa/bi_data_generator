@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from .helpers import new_ids, dcalendario, rand_dates
 
-def gerar_fintech(n_linhas: int, start_date: str, end_date: str) -> dict[str, pd.DataFrame]:
+def gerar_fintech(n_linhas: int, start_date, end_date) -> dict[str, pd.DataFrame]:
     """
     Gera dados do setor de Fintech/Pagamentos (Star Schema)
     
@@ -16,8 +16,16 @@ def gerar_fintech(n_linhas: int, start_date: str, end_date: str) -> dict[str, pd
     - DimAntifraude: Níveis de risco e scores
     - dCalendario: Tabela calendário
     """
-    start = datetime.strptime(start_date, "%Y-%m-%d")
-    end = datetime.strptime(end_date, "%Y-%m-%d")
+    # Converte para datetime se necessário
+    if isinstance(start_date, str):
+        start = datetime.strptime(start_date, "%Y-%m-%d")
+    else:
+        start = start_date
+    
+    if isinstance(end_date, str):
+        end = datetime.strptime(end_date, "%Y-%m-%d")
+    else:
+        end = end_date
     
     # ========== DIMENSÕES ==========
     
@@ -139,7 +147,6 @@ def gerar_fintech(n_linhas: int, start_date: str, end_date: str) -> dict[str, pd
                  for d, h, m, s in zip(datas_transacao, horas, minutos, segundos)]
     
     # Selecionar chaves estrangeiras
-    # Usuário pode ter múltiplos cartões
     usuario_keys = np.random.choice(dim_usuario["sk_usuario"], n_linhas)
     
     # Selecionar cartão válido para o usuário (apenas cartões ativos)
@@ -149,7 +156,6 @@ def gerar_fintech(n_linhas: int, start_date: str, end_date: str) -> dict[str, pd
         if cartoes_usuario:
             cartao_keys.append(np.random.choice(cartoes_usuario))
         else:
-            # Se não tiver cartão ativo, seleciona qualquer um (para demonstrar inconsistência)
             cartao_keys.append(np.random.choice(dim_cartao["sk_cartao"]))
     
     comerciante_keys = np.random.choice(dim_comerciante["sk_comerciante"], n_linhas)
@@ -201,7 +207,6 @@ def gerar_fintech(n_linhas: int, start_date: str, end_date: str) -> dict[str, pd
     motivo_recusa = [np.random.choice(motivos_recusa) if s == "Recusada" else None for s in status]
     
     # Latitude/Longitude da transação (para geolocalização)
-    # Coordenadas aproximadas das capitais brasileiras
     capitais_lat = [-23.5505, -22.9068, -19.9167, -15.7801, -12.9714, -8.0476, -30.0346, -25.4284, -3.7319, -27.5945]
     capitais_lon = [-46.6333, -43.1729, -43.9345, -47.9292, -38.5014, -34.8770, -51.2177, -49.2719, -38.5267, -48.5478]
     
@@ -234,8 +239,8 @@ def gerar_fintech(n_linhas: int, start_date: str, end_date: str) -> dict[str, pd
         "status": status,
         "motivo_recusa": motivo_recusa,
         "tempo_processamento_ms": tempo_processamento_ms,
-        "latitude": latitude,
-        "longitude": longitude,
+        "latitude": [round(lat, 6) for lat in latitude],
+        "longitude": [round(lon, 6) for lon in longitude],
         "notificacao_enviada": notificacao_enviada,
         "sk_usuario": usuario_keys,
         "sk_cartao": cartao_keys,
