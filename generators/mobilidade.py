@@ -16,16 +16,36 @@ def gerar_mobilidade(n_linhas: int, start_date, end_date) -> dict[str, pd.DataFr
     - DimPagamento: Métodos de pagamento
     - dCalendario: Tabela calendário
     """
-    # Converte para datetime se necessário
-    if isinstance(start_date, str):
-        start = datetime.strptime(start_date, "%Y-%m-%d")
-    else:
-        start = start_date
     
-    if isinstance(end_date, str):
-        end = datetime.strptime(end_date, "%Y-%m-%d")
-    else:
-        end = end_date
+    # ========== VALIDAÇÃO INICIAL ==========
+    # Validar e converter n_linhas
+    try:
+        if n_linhas is None:
+            n_linhas = 1000  # valor padrão
+        else:
+            n_linhas = int(n_linhas)
+        
+        if n_linhas <= 0:
+            n_linhas = 1000  # valor padrão se for zero ou negativo
+            
+    except (TypeError, ValueError):
+        n_linhas = 1000  # valor padrão em caso de erro
+    
+    # Converte para datetime se necessário
+    try:
+        if isinstance(start_date, str):
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+        else:
+            start = start_date
+        
+        if isinstance(end_date, str):
+            end = datetime.strptime(end_date, "%Y-%m-%d")
+        else:
+            end = end_date
+    except Exception:
+        # Datas padrão em caso de erro
+        start = datetime.now() - timedelta(days=365)
+        end = datetime.now()
     
     # ========== DIMENSÕES ==========
     
@@ -134,29 +154,39 @@ def gerar_mobilidade(n_linhas: int, start_date, end_date) -> dict[str, pd.DataFr
     # ========== TABELA FATO ==========
     # Gerar viagens
     
+    # Validar n_linhas novamente antes de gerar os dados
+    if n_linhas <= 0:
+        n_linhas = 1000
+    
     datas_viagem = rand_dates(start, end, n_linhas)
     
-    # CORREÇÃO: Converter horas e minutos para inteiros e validar
-    horas = np.random.randint(0, 24, n_linhas)
-    minutos = np.random.randint(0, 60, n_linhas)
+    # Garantir que n_linhas é um inteiro válido para o numpy
+    try:
+        horas = np.random.randint(0, 24, size=int(n_linhas))
+        minutos = np.random.randint(0, 60, size=int(n_linhas))
+    except Exception as e:
+        # Fallback: criar arrays com tamanho padrão
+        horas = np.random.randint(0, 24, size=1000)
+        minutos = np.random.randint(0, 60, size=1000)
+        n_linhas = 1000
     
-    # CORREÇÃO: Garantir que horas e minutos são inteiros e dentro do intervalo válido
-    # Esta é a linha que estava causando o erro - agora com validação
+    # Criar data_hora_inicio com validação
     data_hora_inicio = []
-    for d, h, m in zip(datas_viagem, horas, minutos):
-        # Validar e converter para inteiro
+    for i in range(len(datas_viagem)):
         try:
-            h_int = int(h) if h is not None else 0
-            m_int = int(m) if m is not None else 0
+            d = datas_viagem[i]
+            h = int(horas[i]) if i < len(horas) else 0
+            m = int(minutos[i]) if i < len(minutos) else 0
             
-            # Garantir valores dentro do intervalo válido
-            h_int = max(0, min(23, h_int))
-            m_int = max(0, min(59, m_int))
+            # Validar valores
+            h = max(0, min(23, h))
+            m = max(0, min(59, m))
             
-            data_hora_inicio.append(datetime.combine(d, datetime.min.time()) + timedelta(hours=h_int, minutes=m_int))
-        except (TypeError, ValueError) as e:
-            # Fallback em caso de erro: usar meia-noite
-            data_hora_inicio.append(datetime.combine(d, datetime.min.time()))
+            dt = datetime.combine(d, datetime.min.time()) + timedelta(hours=h, minutes=m)
+            data_hora_inicio.append(dt)
+        except Exception:
+            # Fallback: usar meia-noite
+            data_hora_inicio.append(datetime.combine(datas_viagem[i], datetime.min.time()))
     
     # Selecionar chaves estrangeiras
     motorista_keys = np.random.choice(dim_motorista["sk_motorista"], n_linhas)
