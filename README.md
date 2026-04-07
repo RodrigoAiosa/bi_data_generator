@@ -23,43 +23,39 @@ O **BI Data Generator PRO** é uma ferramenta robusta e interativa, desenvolvida
 - **Faker**: Biblioteca para geração de dados sintéticos realistas.
 - **Plotly**: Biblioteca para criação de gráficos interativos e dashboards.
 
-## Estrutura do Projeto
-
-```
 bi_data_generator/
-├── app.py                  ← Ponto de entrada da aplicação Streamlit
-├── config.py               ← Mapeamento de setores, configurações globais e constantes
-├── requirements.txt        ← Dependências do projeto
+├── app.py ← Ponto de entrada da aplicação Streamlit
+├── config.py ← Mapeamento de setores, configurações globais e constantes
+├── requirements.txt ← Dependências do projeto
 ├── styles/
-│   ├── __init__.py
-│   └── css.py              ← Estilos CSS e tema da aplicação
+│ ├── init.py
+│ └── css.py ← Estilos CSS e tema da aplicação
 ├── generators/
-│   ├── __init__.py         ← Exporta as funções geradoras de dados
-│   ├── helpers.py          ← Funções auxiliares (geração de IDs, dCalendario, etc.)
-│   ├── agronegocio.py      ← Gerador de dados para o setor de Agronegócio
-│   ├── ecommerce.py        ← Gerador de dados para o setor de E-commerce
-│   ├── educacao.py         ← Gerador de dados para o setor de Educação
-│   ├── energia.py          ← Gerador de dados para o setor de Energia
-│   ├── financeiro.py       ← Gerador de dados para o setor Financeiro
-│   ├── fintech.py          ← Gerador de dados para o setor de Fintech
-│   ├── hotelaria.py        ← Gerador de dados para o setor de Hotelaria
-│   ├── industria.py        ← Gerador de dados para o setor Industrial
-│   ├── logistica.py        ← Gerador de dados para o setor de Logística
-│   ├── mobilidade.py       ← Gerador de dados para o setor de Mobilidade
-│   ├── rh.py               ← Gerador de dados para o setor de Recursos Humanos
-│   ├── saude.py            ← Gerador de dados para o setor de Saúde
-│   ├── streaming.py        ← Gerador de dados para o setor de Streaming
-│   ├── tecnologia.py       ← Gerador de dados para o setor de Tecnologia
-│   ├── telecom.py          ← Gerador de dados para o setor de Telecomunicações
-│   └── varejo.py           ← Gerador de dados para o setor de Varejo
+│ ├── init.py ← Exporta as funções geradoras de dados
+│ ├── helpers.py ← Funções auxiliares (geração de IDs, dCalendario, etc.)
+│ ├── agronegocio.py ← Gerador para Agronegócio
+│ ├── ecommerce.py ← Gerador para E-commerce
+│ ├── educacao.py ← Gerador para Educação
+│ ├── energia.py ← Gerador para Energia
+│ ├── financeiro.py ← Gerador para Financeiro
+│ ├── fintech.py ← Gerador para Fintech
+│ ├── hotelaria.py ← Gerador para Hotelaria
+│ ├── industria.py ← Gerador para Indústria
+│ ├── logistica.py ← Gerador para Logística
+│ ├── mobilidade.py ← Gerador para Mobilidade
+│ ├── rh.py ← Gerador para Recursos Humanos
+│ ├── saude.py ← Gerador para Saúde
+│ ├── streaming.py ← Gerador para Streaming
+│ ├── tecnologia.py ← Gerador para Tecnologia
+│ ├── telecom.py ← Gerador para Telecomunicações
+│ └── varejo.py ← Gerador para Varejo
 └── ui/
-    ├── __init__.py
-    ├── dashboard.py        ← Funções para renderização dos dashboards interativos
-    ├── estado_inicial.py   ← Componentes da tela inicial e flip-cards
-    ├── hero.py             ← Componente de cabeçalho visual (Hero Section)
-    ├── resultado.py        ← Componentes para exibição dos resultados e download
-    └── sidebar.py          ← Componentes da barra lateral (inputs do usuário)
-```
+├── init.py
+├── dashboard.py ← Renderização dos dashboards interativos
+├── estado_inicial.py ← Tela inicial e flip-cards
+├── hero.py ← Cabeçalho visual (Hero Section)
+├── resultado.py ← Exibição dos resultados e download
+└── sidebar.py ← Barra lateral (inputs do usuário)
 
 ## Instalação e Execução
 
