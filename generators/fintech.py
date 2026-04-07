@@ -16,16 +16,36 @@ def gerar_fintech(n_linhas: int, start_date, end_date) -> dict[str, pd.DataFrame
     - DimAntifraude: Níveis de risco e scores
     - dCalendario: Tabela calendário
     """
-    # Converte para datetime se necessário
-    if isinstance(start_date, str):
-        start = datetime.strptime(start_date, "%Y-%m-%d")
-    else:
-        start = start_date
     
-    if isinstance(end_date, str):
-        end = datetime.strptime(end_date, "%Y-%m-%d")
-    else:
-        end = end_date
+    # ========== VALIDAÇÃO INICIAL ==========
+    # Validar e converter n_linhas
+    try:
+        if n_linhas is None:
+            n_linhas = 1000  # valor padrão
+        else:
+            n_linhas = int(n_linhas)
+        
+        if n_linhas <= 0:
+            n_linhas = 1000  # valor padrão se for zero ou negativo
+            
+    except (TypeError, ValueError):
+        n_linhas = 1000  # valor padrão em caso de erro
+    
+    # Converte para datetime se necessário
+    try:
+        if isinstance(start_date, str):
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+        else:
+            start = start_date
+        
+        if isinstance(end_date, str):
+            end = datetime.strptime(end_date, "%Y-%m-%d")
+        else:
+            end = end_date
+    except Exception:
+        # Datas padrão em caso de erro
+        start = datetime.now() - timedelta(days=365)
+        end = datetime.now()
     
     # ========== DIMENSÕES ==========
     
@@ -139,12 +159,43 @@ def gerar_fintech(n_linhas: int, start_date, end_date) -> dict[str, pd.DataFrame
     # ========== TABELA FATO ==========
     # Gerar transações
     
+    # Validar n_linhas novamente antes de gerar os dados
+    if n_linhas <= 0:
+        n_linhas = 1000
+    
     datas_transacao = rand_dates(start, end, n_linhas)
-    horas = np.random.randint(0, 24, n_linhas)
-    minutos = np.random.randint(0, 60, n_linhas)
-    segundos = np.random.randint(0, 60, n_linhas)
-    data_hora = [datetime.combine(d, datetime.min.time()) + timedelta(hours=h, minutes=m, seconds=s) 
-                 for d, h, m, s in zip(datas_transacao, horas, minutos, segundos)]
+    
+    # CORREÇÃO: Gerar horas, minutos e segundos com validação
+    try:
+        horas = np.random.randint(0, 24, size=int(n_linhas))
+        minutos = np.random.randint(0, 60, size=int(n_linhas))
+        segundos = np.random.randint(0, 60, size=int(n_linhas))
+    except Exception as e:
+        # Fallback: criar arrays com tamanho padrão
+        horas = np.random.randint(0, 24, size=1000)
+        minutos = np.random.randint(0, 60, size=1000)
+        segundos = np.random.randint(0, 60, size=1000)
+        n_linhas = 1000
+    
+    # CORREÇÃO: Criar data_hora com validação individual
+    data_hora = []
+    for i in range(len(datas_transacao)):
+        try:
+            d = datas_transacao[i]
+            h = int(horas[i]) if i < len(horas) else 0
+            m = int(minutos[i]) if i < len(minutos) else 0
+            s = int(segundos[i]) if i < len(segundos) else 0
+            
+            # Validar valores
+            h = max(0, min(23, h))
+            m = max(0, min(59, m))
+            s = max(0, min(59, s))
+            
+            dt = datetime.combine(d, datetime.min.time()) + timedelta(hours=h, minutes=m, seconds=s)
+            data_hora.append(dt)
+        except Exception:
+            # Fallback: usar meia-noite
+            data_hora.append(datetime.combine(datas_transacao[i], datetime.min.time()))
     
     # Selecionar chaves estrangeiras
     usuario_keys = np.random.choice(dim_usuario["sk_usuario"], n_linhas)
