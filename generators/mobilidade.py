@@ -135,10 +135,28 @@ def gerar_mobilidade(n_linhas: int, start_date, end_date) -> dict[str, pd.DataFr
     # Gerar viagens
     
     datas_viagem = rand_dates(start, end, n_linhas)
+    
+    # CORREÇÃO: Converter horas e minutos para inteiros e validar
     horas = np.random.randint(0, 24, n_linhas)
     minutos = np.random.randint(0, 60, n_linhas)
-    data_hora_inicio = [datetime.combine(d, datetime.min.time()) + timedelta(hours=h, minutes=m) 
-                        for d, h, m in zip(datas_viagem, horas, minutos)]
+    
+    # CORREÇÃO: Garantir que horas e minutos são inteiros e dentro do intervalo válido
+    # Esta é a linha que estava causando o erro - agora com validação
+    data_hora_inicio = []
+    for d, h, m in zip(datas_viagem, horas, minutos):
+        # Validar e converter para inteiro
+        try:
+            h_int = int(h) if h is not None else 0
+            m_int = int(m) if m is not None else 0
+            
+            # Garantir valores dentro do intervalo válido
+            h_int = max(0, min(23, h_int))
+            m_int = max(0, min(59, m_int))
+            
+            data_hora_inicio.append(datetime.combine(d, datetime.min.time()) + timedelta(hours=h_int, minutes=m_int))
+        except (TypeError, ValueError) as e:
+            # Fallback em caso de erro: usar meia-noite
+            data_hora_inicio.append(datetime.combine(d, datetime.min.time()))
     
     # Selecionar chaves estrangeiras
     motorista_keys = np.random.choice(dim_motorista["sk_motorista"], n_linhas)
