@@ -534,7 +534,7 @@ def _dash_agronegocio(tabelas: dict[str, pd.DataFrame]) -> None:
     receita = fato["receita"].sum()
     producao = fato["producao_ton"].sum()
     n_safras = len(fato)
-    produtividade = producao / fato["area_plantada"].sum() if fato["area_plantada"].sum() > 0 else 0
+    produtividade = producao / fato["area_plantada_ha"].sum() if fato["area_plantada_ha"].sum() > 0 else 0
 
     _section("Visão Geral")
     _kpi_row([
