@@ -58,10 +58,11 @@ def gerar_agronegocio(n: int, start: date, end: date) -> dict[str, pd.DataFrame]
         "id_propriedade":    random.choices(dim_propriedade["id_propriedade"].tolist(), k=n),
         "id_cultura":        random.choices(dim_cultura["id_cultura"].tolist(), k=n),
         "id_insumo":         random.choices(dim_insumo["id_insumo"].tolist(), k=n),
-        "area_plantada":  area_plantada,
+        "area_plantada_ha":  area_plantada,      # ← NOME CORRETO COM _ha
         "produtividade_tha": prod_por_ha,
         "producao_ton":      (area_plantada * prod_por_ha).round(2),
         "custo_ha":          rng.uniform(500, 8000, n).round(2),
+        "custo_total":       (area_plantada * rng.uniform(500, 8000, n)).round(2),  # ← NOVA COLUNA
         "receita":           rng.uniform(1000, 500000, n).round(2),
         "indice_chuva_mm":   rng.uniform(0, 300, n).round(1),
         "temperatura_media": rng.uniform(15, 35, n).round(1),
