@@ -3,7 +3,7 @@ from generators import (
     gerar_educacao, gerar_logistica, gerar_energia, gerar_telecom,
     gerar_industria, gerar_agronegocio, gerar_hotelaria, gerar_streaming,
     gerar_ecommerce, gerar_rh, gerar_mobilidade, gerar_fintech,
-    gerar_turismo, gerar_imobiliario, gerar_seguros, gerar_construcao  # ADICIONADOS
+    gerar_turismo, gerar_imobiliario, gerar_seguros, gerar_construcao
 )
 
 # Configuração da página Streamlit
@@ -38,10 +38,10 @@ SETORES = {
     "🏢 Recursos Humanos": gerar_rh,
     "🚗 Mobilidade": gerar_mobilidade,
     "🏦 Fintech": gerar_fintech,
-    "✈️ Turismo": gerar_turismo,            # ADICIONADO
-    "🏠 Imobiliário": gerar_imobiliario,    # ADICIONADO
-    "🛡️ Seguros": gerar_seguros,            # ADICIONADO
-    "🏗️ Construção Civil": gerar_construcao # ADICIONADO
+    "✈️ Turismo": gerar_turismo,            
+    "🏠 Imobiliário": gerar_imobiliario,    
+    "🛡️ Seguros": gerar_seguros,           
+    "🏗️ Construção Civil": gerar_construcao
 }
 
 # Informações para os flip-cards da tela inicial (20 setores)
@@ -62,10 +62,10 @@ SETORES_INFO = [
     ("🏢", "Recursos Humanos", "Horas trabalhadas, funcionários, projetos e cargos"),
     ("🚗", "Mobilidade", "Viagens, motoristas, passageiros, rotas e veículos"),
     ("🏦", "Fintech", "Transações, cartões, usuários, comerciantes e antifraude"),
-    ("✈️", "Turismo", "Viagens, pacotes, agências e destinos"),            # ADICIONADO
-    ("🏠", "Imobiliário", "Vendas, aluguéis, imóveis e corretores"),        # ADICIONADO
-    ("🛡️", "Seguros", "Apólices, segurados, corretores e sinistros"),      # ADICIONADO
-    ("🏗️", "Construção Civil", "Obras, custos, materiais e fornecedores")  # ADICIONADO
+    ("✈️", "Turismo", "Viagens, pacotes, agências e destinos"),            
+    ("🏠", "Imobiliário", "Vendas, aluguéis, imóveis e corretores"),       
+    ("🛡️", "Seguros", "Apólices, segurados, corretores e sinistros"),      
+    ("🏗️", "Construção Civil", "Obras, custos, materiais e fornecedores")  
 ]
 
 # Configurações de datas (opcional)
