@@ -4,6 +4,25 @@ Uma ferramenta robusta e interativa para gerar bases de dados sintéticas no mod
 
 ---
 
+## 📑 Índice de Conteúdos
+
+1. [📋 Visão Geral do Projeto](#-visão-geral-do-projeto)
+2. [✨ Funcionalidades Principais](#-funcionalidades-principais)
+3. [🛠 Tecnologias Utilizadas](#-tecnologias-utilizadas)
+4. [📁 Estrutura do Projeto](#-estrutura-do-projeto)
+5. [🚀 Instalação e Execução](#-instalação-e-execução)
+6. [📖 Como Usar](#-como-usar)
+7. [📊 Setores Disponíveis e Estrutura de Dados](#-setores-disponíveis-e-estrutura-de-dados)
+8. [🔧 Como Adicionar um Novo Setor](#-como-adicionar-um-novo-setor)
+9. [📝 Detalhes Técnicos](#-detalhes-técnicos)
+10. [🎯 Casos de Uso](#-casos-de-uso)
+11. [🤝 Contribuindo](#-contribuindo)
+12. [📄 Licença](#-licença)
+13. [📧 Contato](#-contato)
+14. [🎓 Recursos Adicionais](#-recursos-adicionais)
+
+---
+
 ## 📋 Visão Geral do Projeto
 
 O **BI Data Generator PRO** é uma solução completa para criar conjuntos de dados realistas e contextualizados para **20 setores de negócio distintos**. Perfeito para:
@@ -83,6 +102,8 @@ Suporte para **20 setores de negócio especializados**, cada um com estrutura de
 
 ## 🛠 Tecnologias Utilizadas
 
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
+
 | Tecnologia | Versão | Função |
 |-----------|--------|--------|
 | **Python** | 3.8+ | Linguagem principal |
@@ -143,6 +164,8 @@ bi_data_generator/
 ---
 
 ## 🚀 Instalação e Execução
+
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
 
 ### Pré-requisitos
 - Python 3.8 ou superior
@@ -210,6 +233,8 @@ A aplicação abrirá automaticamente no seu navegador padrão (geralmente em `h
 
 ## 📊 Setores Disponíveis e Estrutura de Dados
 
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
+
 Abaixo está a tabela detalhada de todos os 20 setores suportados, suas tabelas e principais dimensões:
 
 | Emoji | Setor | Tabela Fato | Principais Dimensões |
@@ -240,6 +265,8 @@ Abaixo está a tabela detalhada de todos os 20 setores suportados, suas tabelas 
 ---
 
 ## 🔧 Como Adicionar um Novo Setor
+
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
 
 O projeto foi estruturado para facilitar a adição de novos setores de negócio. Siga o passo a passo:
 
@@ -346,6 +373,8 @@ Para adicionar visualizações customizadas, edite `ui/dashboard.py` e adicione 
 
 ## 📝 Detalhes Técnicos
 
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
+
 ### Funções Auxiliares (`generators/helpers.py`)
 
 - **`new_ids(n)`**: Gera n IDs sequenciais e únicos
@@ -372,6 +401,8 @@ Cada gerador segue um padrão consistente:
 
 ## 🎯 Casos de Uso
 
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
+
 ### Desenvolvimento de BI
 Gere dados realistas para desenvolver e testar dashboards antes de trabalhar com dados reais.
 
@@ -391,6 +422,8 @@ Crie rapidamente MVPs de soluções de BI sem aguardar dados reais.
 
 ## 🤝 Contribuindo
 
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
+
 Contribuições são bem-vindas! Para adicionar novos setores ou melhorias:
 
 1. Fork o repositório
@@ -403,11 +436,15 @@ Contribuições são bem-vindas! Para adicionar novos setores ou melhorias:
 
 ## 📄 Licença
 
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
+
 Este projeto é de código aberto. Consulte o arquivo LICENSE para detalhes.
 
 ---
 
 ## 📧 Contato
+
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
 
 **Desenvolvedor:** Rodrigo Aiosa  
 **GitHub:** [RodrigoAiosa](https://github.com/RodrigoAiosa)  
@@ -416,6 +453,8 @@ Este projeto é de código aberto. Consulte o arquivo LICENSE para detalhes.
 ---
 
 ## 🎓 Recursos Adicionais
+
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
 
 ### Power BI Integration
 Os dados gerados são totalmente compatíveis com Power BI:
@@ -437,5 +476,7 @@ Igualmente compatíveis com outras ferramentas:
 - Considere agregações para volumes maiores que 50.000 linhas
 
 ---
+
+[⬆️ Voltar ao Índice](#-índice-de-conteúdos)
 
 **Desenvolvido com ❤️ para a comunidade de BI e Data Analytics**
