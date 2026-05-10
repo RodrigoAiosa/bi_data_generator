@@ -10,18 +10,24 @@ from .industria import gerar_industria
 from .agronegocio import gerar_agronegocio
 from .hotelaria import gerar_hotelaria
 from .streaming import gerar_streaming
-from .ecommerce import gerar_ecommerce           
-from .rh import gerar_rh                         
-from .mobilidade import gerar_mobilidade         
-from .fintech import gerar_fintech               
-from .turismo import gerar_turismo               
-from .imobiliario import gerar_imobiliario       
-from .seguros import gerar_seguros               
-from .construcao import gerar_construcao        
+from .ecommerce import gerar_ecommerce
+from .rh import gerar_rh
+from .mobilidade import gerar_mobilidade
+from .fintech import gerar_fintech
+from .turismo import gerar_turismo
+from .imobiliario import gerar_imobiliario
+from .seguros import gerar_seguros
+from .construcao import gerar_construcao
+from .mineracao import gerar_mineracao
+from .alimenticio import gerar_alimenticio
+from .juridico import gerar_juridico
+from .esportes import gerar_esportes
+from .saas_b2b import gerar_saas_b2b
 
 __all__ = [
+    # — Originais —
     "gerar_varejo",
-    "gerar_financeiro", 
+    "gerar_financeiro",
     "gerar_saude",
     "gerar_tecnologia",
     "gerar_educacao",
@@ -32,12 +38,18 @@ __all__ = [
     "gerar_agronegocio",
     "gerar_hotelaria",
     "gerar_streaming",
-    "gerar_ecommerce",     
-    "gerar_rh",             
-    "gerar_mobilidade",     
-    "gerar_fintech",        
-    "gerar_turismo",        
-    "gerar_imobiliario",    
-    "gerar_seguros",        
-    "gerar_construcao"      
+    "gerar_ecommerce",
+    "gerar_rh",
+    "gerar_mobilidade",
+    "gerar_fintech",
+    "gerar_turismo",
+    "gerar_imobiliario",
+    "gerar_seguros",
+    "gerar_construcao",
+    # — Novos —
+    "gerar_mineracao",
+    "gerar_alimenticio",
+    "gerar_juridico",
+    "gerar_esportes",
+    "gerar_saas_b2b",
 ]
