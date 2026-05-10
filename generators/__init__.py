@@ -10,14 +10,14 @@ from .industria import gerar_industria
 from .agronegocio import gerar_agronegocio
 from .hotelaria import gerar_hotelaria
 from .streaming import gerar_streaming
-from .ecommerce import gerar_ecommerce           # NOVO
-from .rh import gerar_rh                         # NOVO
-from .mobilidade import gerar_mobilidade         # NOVO
-from .fintech import gerar_fintech               # NOVO
-from .turismo import gerar_turismo               # ADICIONADO
-from .imobiliario import gerar_imobiliario       # ADICIONADO
-from .seguros import gerar_seguros               # ADICIONADO
-from .construcao import gerar_construcao         # ADICIONADO
+from .ecommerce import gerar_ecommerce           
+from .rh import gerar_rh                         
+from .mobilidade import gerar_mobilidade         
+from .fintech import gerar_fintech               
+from .turismo import gerar_turismo               
+from .imobiliario import gerar_imobiliario       
+from .seguros import gerar_seguros               
+from .construcao import gerar_construcao        
 
 __all__ = [
     "gerar_varejo",
@@ -32,12 +32,12 @@ __all__ = [
     "gerar_agronegocio",
     "gerar_hotelaria",
     "gerar_streaming",
-    "gerar_ecommerce",      # NOVO
-    "gerar_rh",             # NOVO
-    "gerar_mobilidade",     # NOVO
-    "gerar_fintech",        # NOVO
-    "gerar_turismo",        # ADICIONADO
-    "gerar_imobiliario",    # ADICIONADO
-    "gerar_seguros",        # ADICIONADO
-    "gerar_construcao"      # ADICIONADO
+    "gerar_ecommerce",     
+    "gerar_rh",             
+    "gerar_mobilidade",     
+    "gerar_fintech",        
+    "gerar_turismo",        
+    "gerar_imobiliario",    
+    "gerar_seguros",        
+    "gerar_construcao"      
 ]
