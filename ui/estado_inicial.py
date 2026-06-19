@@ -2,21 +2,23 @@
 
 import streamlit as st
 
-from config import SETORES_INFO
+from config import SETORES, SETORES_INFO
 
 
 def render_estado_inicial() -> None:
     """Renderiza instruções de uso, flip-cards de setores e explicação do Star Schema."""
 
+    n_setores = len(SETORES)
+
     # ── Como usar ──────────────────────────────────────────────────────────
     st.markdown('<h3 class="section-header">Como usar</h3>', unsafe_allow_html=True)
-    st.markdown("""
+    st.markdown(f"""
     <div class="steps-grid">
         <div class="step-card">
             <span class="step-num">01</span>
             <span class="step-icon">🏭</span>
             <div class="step-title">Escolha o setor</div>
-            <div class="step-text">Selecione entre 20 setores com dados contextualmente corretos</div>
+            <div class="step-text">Selecione entre {n_setores} setores com dados contextualmente corretos</div>
         </div>
         <div class="step-card">
             <span class="step-num">02</span>
