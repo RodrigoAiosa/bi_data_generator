@@ -23,9 +23,11 @@ from .alimenticio import gerar_alimenticio
 from .juridico import gerar_juridico
 from .esportes import gerar_esportes
 from .saas_b2b import gerar_saas_b2b
+from .crm import gerar_crm
 
 __all__ = [
     # — Originais —
+    "gerar_crm",
     "gerar_varejo",
     "gerar_financeiro",
     "gerar_saude",
