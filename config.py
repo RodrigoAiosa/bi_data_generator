@@ -5,7 +5,7 @@ from generators import (
     gerar_ecommerce, gerar_rh, gerar_mobilidade, gerar_fintech,
     gerar_turismo, gerar_imobiliario, gerar_seguros, gerar_construcao,
     gerar_mineracao, gerar_alimenticio, gerar_juridico, gerar_esportes,
-    gerar_saas_b2b
+    gerar_saas_b2b, gerar_crm
 )
 
 # Configuração da página Streamlit
@@ -22,7 +22,7 @@ SLIDER_MAX = 100000
 SLIDER_DEFAULT = 5000
 SLIDER_STEP = 100
 
-# Dicionário de setores disponíveis (25 setores)
+# Dicionário de setores disponíveis (26 setores)
 SETORES = {
     # — Originais —
     "🛒 Varejo":              gerar_varejo,
@@ -51,13 +51,15 @@ SETORES = {
     "⚖️ Jurídico":           gerar_juridico,
     "🏟️ Esportes":           gerar_esportes,
     "☁️ SaaS B2B":           gerar_saas_b2b,
+    "🤝 CRM":                 gerar_crm,
 }
 
-# Informações para os flip-cards da tela inicial (25 setores)
+# Informações para os flip-cards da tela inicial (26 setores)
 SETORES_INFO = [
     ("🌾", "Agronegócio",        "Safras, culturas, propriedades e insumos"),
     ("🍔", "Alimentos & Bebidas","Produção, plantas, produtos e fornecedores"),
     ("🏗️", "Construção Civil",  "Obras, custos, materiais e fornecedores"),
+    ("🤝", "CRM",                "Oportunidades, contas, contatos e atividades comerciais"),
     ("🏪", "E-commerce",         "Pedidos, clientes, produtos, fretes e pagamentos"),
     ("📚", "Educação",           "Matrículas, alunos, cursos e instrutores"),
     ("⚡", "Energia",            "Consumo, medidores, subestações e tarifas"),
