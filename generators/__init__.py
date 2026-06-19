@@ -24,10 +24,12 @@ from .juridico import gerar_juridico
 from .esportes import gerar_esportes
 from .saas_b2b import gerar_saas_b2b
 from .crm import gerar_crm
+from .farmaceutico import gerar_farmaceutico
+from .marketing import gerar_marketing
+from .petroleo import gerar_petroleo
+from .governo import gerar_governo
 
 __all__ = [
-    # — Originais —
-    "gerar_crm",
     "gerar_varejo",
     "gerar_financeiro",
     "gerar_saude",
@@ -48,10 +50,14 @@ __all__ = [
     "gerar_imobiliario",
     "gerar_seguros",
     "gerar_construcao",
-    # — Novos —
     "gerar_mineracao",
     "gerar_alimenticio",
     "gerar_juridico",
     "gerar_esportes",
     "gerar_saas_b2b",
+    "gerar_crm",
+    "gerar_farmaceutico",
+    "gerar_marketing",
+    "gerar_petroleo",
+    "gerar_governo",
 ]
