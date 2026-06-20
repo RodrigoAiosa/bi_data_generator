@@ -1,48 +1,40 @@
-"""ui/estado_inicial.py — Tela de boas-vindas (antes de gerar dados)."""
+"""ui/estado_inicial.py — Tela de boas-vindas com i18n."""
 
 import streamlit as st
-
 from config import SETORES, SETORES_INFO
+from i18n import t
 
 
 def render_estado_inicial() -> None:
-    """Renderiza instruções de uso, flip-cards de setores e explicação do Star Schema."""
+    n = len(SETORES)
 
-    n_setores = len(SETORES)
-
-    # ── Como usar ──────────────────────────────────────────────────────────
-    st.markdown('<h3 class="section-header">Como usar</h3>', unsafe_allow_html=True)
+    st.markdown(f'<h3 class="section-header">{t("how_to_use")}</h3>', unsafe_allow_html=True)
     st.markdown(f"""
     <div class="steps-grid">
         <div class="step-card">
-            <span class="step-num">01</span>
-            <span class="step-icon">🏭</span>
-            <div class="step-title">Escolha o setor</div>
-            <div class="step-text">Selecione entre {n_setores} setores com dados contextualmente corretos</div>
+            <span class="step-num">01</span><span class="step-icon">🏭</span>
+            <div class="step-title">{t("step1_title")}</div>
+            <div class="step-text">{t("step1_text", n=n)}</div>
         </div>
         <div class="step-card">
-            <span class="step-num">02</span>
-            <span class="step-icon">📅</span>
-            <div class="step-title">Defina o período</div>
-            <div class="step-text">Configure as datas — a dCalendario é gerada automaticamente</div>
+            <span class="step-num">02</span><span class="step-icon">📅</span>
+            <div class="step-title">{t("step2_title")}</div>
+            <div class="step-text">{t("step2_text")}</div>
         </div>
         <div class="step-card">
-            <span class="step-num">03</span>
-            <span class="step-icon">🚀</span>
-            <div class="step-title">Clique em Gerar</div>
-            <div class="step-text">A base completa é gerada em segundos com relações íntegras</div>
+            <span class="step-num">03</span><span class="step-icon">🚀</span>
+            <div class="step-title">{t("step3_title")}</div>
+            <div class="step-text">{t("step3_text")}</div>
         </div>
         <div class="step-card">
-            <span class="step-num">04</span>
-            <span class="step-icon">📦</span>
-            <div class="step-title">Baixe o .zip</div>
-            <div class="step-text">CSVs prontos para importar no Power BI, Tableau ou Python</div>
+            <span class="step-num">04</span><span class="step-icon">📦</span>
+            <div class="step-title">{t("step4_title")}</div>
+            <div class="step-text">{t("step4_text")}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Flip-cards de setores ──────────────────────────────────────────────
-    st.markdown('<h3 class="section-header">Setores disponíveis</h3>', unsafe_allow_html=True)
+    st.markdown(f'<h3 class="section-header">{t("sectors_available")}</h3>', unsafe_allow_html=True)
 
     cards_html = '<div class="sector-grid">'
     for ico, nome, desc in SETORES_INFO:
@@ -62,13 +54,7 @@ def render_estado_inicial() -> None:
     cards_html += '</div>'
     st.markdown(cards_html, unsafe_allow_html=True)
 
-    # ── Star Schema info ───────────────────────────────────────────────────
-    st.markdown('<h3 class="section-header">Estrutura Star Schema</h3>', unsafe_allow_html=True)
-    st.markdown("""
-    <div class="info-box">
-        Cada base inclui <strong>Tabela Fato</strong> com chaves estrangeiras (<code>id_*</code>) e métricas,
-        <strong>Tabelas Dimensão</strong> com chaves primárias e atributos descritivos, e
-        <strong>dCalendario</strong> com Data, Ano, Mês, MesAno e IdMesAno — compatível com Power Query.
-        Tudo exportado em CSVs compactados em um único <code>.zip</code>.
-    </div>
+    st.markdown(f'<h3 class="section-header">{t("star_schema_title")}</h3>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="info-box">{t("star_schema_text")}</div>
     """, unsafe_allow_html=True)
