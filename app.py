@@ -9,6 +9,7 @@ import streamlit as st
 
 from config import PAGE_CONFIG, SETORES
 from styles.css import inject_css
+from i18n import t
 from ui import (
     render_dashboard,
     render_estado_inicial,
@@ -19,20 +20,18 @@ from ui import (
 
 st.set_page_config(**PAGE_CONFIG)
 
-_SAMPLE_SIZE = 2_000   # linhas usadas no preview automático do dashboard
+_SAMPLE_SIZE = 2_000
 
 
 @st.cache_data(show_spinner=False)
 def _gerar_amostra(setor: str) -> dict:
-    """Gera amostra pequena para o preview do dashboard (cacheada por setor)."""
     from datetime import date
     fn = SETORES[setor]
     return fn(_SAMPLE_SIZE, date(2023, 1, 1), date(2023, 12, 31))
 
 
 def render_dashboard_preview(nome: str, setor: str) -> None:
-    """Preview do dashboard com amostra automática de 2.000 linhas."""
-    st.markdown("""
+    st.markdown(f"""
     <div style="
         background: linear-gradient(145deg, rgba(167,139,250,0.07) 0%, rgba(124,58,237,0.04) 100%);
         border: 1px solid rgba(167,139,250,0.2);
@@ -46,16 +45,11 @@ def render_dashboard_preview(nome: str, setor: str) -> None:
         color: #c4b5fd;
     ">
         <span style="font-size:1.2rem;">⚡</span>
-        <span>
-            <strong style="color:#a78bfa;">Preview automático</strong> —
-            amostra de 2.000 linhas gerada para o setor selecionado.
-            Para usar os dados reais configure os parâmetros e clique em
-            <strong style="color:#a78bfa;">Gerar base agora</strong>.
-        </span>
+        <span>{t("preview_banner")}</span>
     </div>
     """, unsafe_allow_html=True)
 
-    with st.spinner(f"Carregando preview de {nome}..."):
+    with st.spinner(t("spinner_preview", nome=nome)):
         tabelas = _gerar_amostra(setor)
 
     render_dashboard(nome, tabelas)
@@ -66,19 +60,18 @@ def main() -> None:
     render_hero()
 
     setor, data_inicio, data_fim, n_linhas, gerar = render_sidebar()
-    nome = setor.split(" ", 1)[1]   # remove o emoji do label
+    nome = setor.split(" ", 1)[1]
 
     if gerar:
-        # ── Geração real com parâmetros do usuário ────────────────────────
         if data_fim <= data_inicio:
-            st.error("Corrija as datas antes de gerar.")
+            st.error(t("date_error_stop"))
             st.stop()
 
-        with st.spinner("Gerando base de dados..."):
+        with st.spinner(t("spinner_gerar")):
             fn      = SETORES[setor]
             tabelas = fn(n_linhas, data_inicio, data_fim)
 
-        tab_base, tab_dash = st.tabs(["📦 Base de Dados", "📊 Dashboard"])
+        tab_base, tab_dash = st.tabs([t("tab_data"), t("tab_dashboard")])
 
         with tab_base:
             render_resultado(nome, tabelas)
@@ -87,10 +80,9 @@ def main() -> None:
             render_dashboard(nome, tabelas)
 
     else:
-        # ── Tela inicial: Início + preview do setor selecionado ───────────
         tab_inicio, tab_preview = st.tabs([
-            "🏠 Início",
-            f"📊 Dashboard — {nome}",
+            t("tab_home"),
+            t("tab_preview", nome=nome),
         ])
 
         with tab_inicio:
