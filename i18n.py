@@ -103,3 +103,45 @@ def t(key: str, **kwargs) -> str:
     if kwargs:
         text = text.format(**kwargs)
     return text
+
+
+# ── Tradução dos setores (nome + descrição) ───────────────────────────────────
+
+SETORES_INFO_EN = [
+    ("🌾", "Agribusiness",          "Harvests, crops, properties and inputs"),
+    ("🍔", "Food & Beverage",        "Production, plants, products and suppliers"),
+    ("🏗️", "Construction",          "Projects, costs, materials and suppliers"),
+    ("🤝", "CRM",                    "Opportunities, accounts, contacts and sales activities"),
+    ("🏪", "E-commerce",             "Orders, customers, products, shipping and payments"),
+    ("📚", "Education",              "Enrollments, students, courses and instructors"),
+    ("⚡", "Energy",                 "Consumption, meters, substations and tariffs"),
+    ("🏟️", "Sports",                "Matches, athletes, clubs and competitions"),
+    ("💊", "Pharmaceutical",         "Products, reps, sales and inventory"),
+    ("💰", "Financial",              "Banking transactions, accounts and branches"),
+    ("🏦", "Fintech",                "Transactions, cards, users, merchants and fraud"),
+    ("🏛️", "Government & Public Sector", "Expenditures, revenues, tenders and contracts"),
+    ("🏨", "Hospitality",            "Reservations, guests, hotels, rooms and channels"),
+    ("🏠", "Real Estate",            "Sales, rentals, properties and agents"),
+    ("🏭", "Manufacturing",          "Production, machines, inputs and operators"),
+    ("⚖️", "Legal",                  "Cases, lawyers, clients and courts"),
+    ("🚚", "Logistics",              "Deliveries, carriers, routes and customers"),
+    ("📣", "Digital Marketing",      "Campaigns, channels, performance and conversions"),
+    ("⛏️", "Mining",                 "Extractions, mines, minerals and equipment"),
+    ("🚗", "Mobility",               "Rides, drivers, passengers, routes and vehicles"),
+    ("🛢️", "Oil & Gas",             "Production, wells, platforms and operating costs"),
+    ("🏢", "Human Resources",        "Hours worked, employees, projects and roles"),
+    ("☁️", "SaaS B2B",              "Subscriptions, MRR, churn, NPS and plans"),
+    ("🏥", "Healthcare",             "Visits, patients, physicians and procedures"),
+    ("🛡️", "Insurance",             "Policies, insureds, brokers and claims"),
+    ("🎬", "Streaming",              "Plays, subscribers, content, artists"),
+    ("💻", "Technology",             "SaaS contracts, customers and plans"),
+    ("📡", "Telecom",                "Calls, subscribers, plans and towers"),
+    ("✈️", "Tourism",                "Trips, packages, agencies and destinations"),
+    ("🛒", "Retail",                 "Sales, customers, products and branches"),
+]
+
+
+def get_setores_info():
+    """Retorna SETORES_INFO no idioma atual."""
+    from config import SETORES_INFO
+    return SETORES_INFO_EN if get_lang() == "en" else SETORES_INFO
