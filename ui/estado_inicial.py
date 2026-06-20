@@ -1,8 +1,8 @@
 """ui/estado_inicial.py — Tela de boas-vindas com i18n."""
 
 import streamlit as st
-from config import SETORES, SETORES_INFO
-from i18n import t
+from config import SETORES
+from i18n import t, get_setores_info
 
 
 def render_estado_inicial() -> None:
@@ -37,7 +37,7 @@ def render_estado_inicial() -> None:
     st.markdown(f'<h3 class="section-header">{t("sectors_available")}</h3>', unsafe_allow_html=True)
 
     cards_html = '<div class="sector-grid">'
-    for ico, nome, desc in SETORES_INFO:
+    for ico, nome, desc in get_setores_info():
         cards_html += f"""
         <div class="flip-wrapper">
           <div class="flip-inner">
