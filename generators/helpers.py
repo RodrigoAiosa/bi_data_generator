@@ -18,22 +18,37 @@ def new_ids(n: int, prefix: str = "") -> list[int]:
     return list(range(1, n + 1))
 
 
-# ── dCalendario ──────────────────────────────────────────────────────────────
+# ── dCalendario (idioma dinâmico) ────────────────────────────────────────────
 def dcalendario(start: date, end: date) -> pd.DataFrame:
-    """Gera dCalendario compatível com o padrão Power Query."""
-    meses_pt = {
-        1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
-        5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
-        9: "Set", 10: "Out", 11: "Nov", 12: "Dez",
-    }
+    """Gera dCalendario compatível com Power Query, no idioma atual."""
+    try:
+        from i18n import get_lang, MESES
+        lang = get_lang()
+        meses = MESES[lang]
+    except Exception:
+        meses = {1:"Jan",2:"Fev",3:"Mar",4:"Abr",5:"Mai",6:"Jun",
+                 7:"Jul",8:"Ago",9:"Set",10:"Out",11:"Nov",12:"Dez"}
+
     days = pd.date_range(start=start, end=end, freq="D")
     df = pd.DataFrame({"Data": days})
-    df["Ano"]    = df["Data"].dt.year
-    df["Mes"]    = df["Data"].dt.month
-    df["MesAno"] = df["Mes"].map(meses_pt) + "/" + df["Ano"].astype(str).str[-2:]
+    df["Ano"]     = df["Data"].dt.year
+    df["Mes"]     = df["Data"].dt.month
+    df["MesAno"]  = df["Mes"].map(meses) + "/" + df["Ano"].astype(str).str[-2:]
     df["IdMesAno"] = df["Ano"] * 100 + df["Mes"]
-    df["Data"]   = df["Data"].dt.date
+    df["Data"]    = df["Data"].dt.date
     return df
+
+
+# ── Faker locale dinâmico ────────────────────────────────────────────────────
+def get_faker():
+    """Retorna instância do Faker no locale do idioma atual."""
+    from faker import Faker
+    try:
+        from i18n import get_lang, FAKER_LOCALE
+        locale = FAKER_LOCALE.get(get_lang(), "pt_BR")
+    except Exception:
+        locale = "pt_BR"
+    return Faker(locale)
 
 
 # ── Datas aleatórias ─────────────────────────────────────────────────────────
