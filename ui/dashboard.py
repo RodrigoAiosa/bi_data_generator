@@ -576,56 +576,6 @@ def _dash_construcao(tabelas):
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  DISPATCHER
-# ════════════════════════════════════════════════════════════════════════════
-_DASHBOARDS = {
-    # Originais
-    "Varejo":                    _dash_varejo,
-    "Financeiro":                _dash_financeiro,
-    "Saúde":                     _dash_saude,
-    "Tecnologia":                _dash_tecnologia,
-    "Educação":                  _dash_educacao,
-    "Logística":                 _dash_logistica,
-    "Energia":                   _dash_energia,
-    "Telecom":                   _dash_telecom,
-    "Indústria":                 _dash_industria,
-    "Agronegócio":               _dash_agronegocio,
-    "Turismo":                   _dash_turismo,
-    "Imobiliário":               _dash_imobiliario,
-    "Seguros":                   _dash_seguros,
-    "Construção Civil":          _dash_construcao,
-    # Novos
-    "Hotelaria":                 _dash_hotelaria,
-    "Streaming":                 _dash_streaming,
-    "E-commerce":                _dash_ecommerce,
-    "Recursos Humanos":          _dash_rh,
-    "Mobilidade":                _dash_mobilidade,
-    "Fintech":                   _dash_fintech,
-    "Mineração":                 _dash_mineracao,
-    "Jurídico":                  _dash_juridico,
-    "Esportes":                  _dash_esportes,
-    "SaaS B2B":                  _dash_saas_b2b,
-    "CRM":                       _dash_crm,
-    "Farmacêutico":              _dash_farmaceutico,
-    "Marketing Digital":         _dash_marketing,
-    "Petróleo & Gás":            _dash_petroleo,
-    "Governo & Setor Público":   _dash_governo,
-    "Alimentos & Bebidas":       _dash_alimenticio,
-}
-
-
-def render_dashboard(nome: str, tabelas: dict) -> None:
-    pt_name = resolve_sector_name(nome)
-    fn = _DASHBOARDS.get(pt_name)
-    if fn is None:
-        lang = __import__('i18n').get_lang()
-        msg = f"Dashboard not available for '{nome}'." if lang=="en" else f"Dashboard não disponível para '{nome}'."
-        st.warning(msg)
-        return
-    fn(tabelas)
-
-
-# ════════════════════════════════════════════════════════════════════════════
 #  NOVOS DASHBOARDS
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -1075,3 +1025,53 @@ def _dash_alimenticio(tabelas):
     fig_conf = px.pie(by_conf, names="conformidade", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
     _base_layout(fig_conf, "Conformidade ANVISA")
     st.plotly_chart(fig_conf, use_container_width=True, config={"displayModeBar": False})
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  DISPATCHER — deve ficar APÓS todas as funções _dash_*
+# ════════════════════════════════════════════════════════════════════════════
+_DASHBOARDS = {
+    # Originais
+    "Varejo":                    _dash_varejo,
+    "Financeiro":                _dash_financeiro,
+    "Saúde":                     _dash_saude,
+    "Tecnologia":                _dash_tecnologia,
+    "Educação":                  _dash_educacao,
+    "Logística":                 _dash_logistica,
+    "Energia":                   _dash_energia,
+    "Telecom":                   _dash_telecom,
+    "Indústria":                 _dash_industria,
+    "Agronegócio":               _dash_agronegocio,
+    "Turismo":                   _dash_turismo,
+    "Imobiliário":               _dash_imobiliario,
+    "Seguros":                   _dash_seguros,
+    "Construção Civil":          _dash_construcao,
+    # Novos
+    "Hotelaria":                 _dash_hotelaria,
+    "Streaming":                 _dash_streaming,
+    "E-commerce":                _dash_ecommerce,
+    "Recursos Humanos":          _dash_rh,
+    "Mobilidade":                _dash_mobilidade,
+    "Fintech":                   _dash_fintech,
+    "Mineração":                 _dash_mineracao,
+    "Jurídico":                  _dash_juridico,
+    "Esportes":                  _dash_esportes,
+    "SaaS B2B":                  _dash_saas_b2b,
+    "CRM":                       _dash_crm,
+    "Farmacêutico":              _dash_farmaceutico,
+    "Marketing Digital":         _dash_marketing,
+    "Petróleo & Gás":            _dash_petroleo,
+    "Governo & Setor Público":   _dash_governo,
+    "Alimentos & Bebidas":       _dash_alimenticio,
+}
+
+
+def render_dashboard(nome: str, tabelas: dict) -> None:
+    pt_name = resolve_sector_name(nome)
+    fn = _DASHBOARDS.get(pt_name)
+    if fn is None:
+        lang = __import__("i18n").get_lang()
+        msg = f"Dashboard not available for '{nome}'." if lang == "en" else f"Dashboard não disponível para '{nome}'."
+        st.warning(msg)
+        return
+    fn(tabelas)
