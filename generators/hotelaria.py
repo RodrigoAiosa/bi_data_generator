@@ -7,8 +7,9 @@ def gerar_hotelaria(n_linhas: int, start_date: str, end_date: str) -> dict[str, 
     """
     Gera dados do setor de Hotelaria (Star Schema)
     """
-    start = datetime.strptime(start_date, "%Y-%m-%d")
-    end = datetime.strptime(end_date, "%Y-%m-%d")
+    from datetime import date as date_type
+    start = datetime.strptime(str(start_date), "%Y-%m-%d") if not isinstance(start_date, date_type) else datetime.combine(start_date, datetime.min.time())
+    end   = datetime.strptime(str(end_date),   "%Y-%m-%d") if not isinstance(end_date,   date_type) else datetime.combine(end_date,   datetime.min.time())
     
     # ========== DIMENSÕES ==========
     
@@ -82,7 +83,7 @@ def gerar_hotelaria(n_linhas: int, start_date: str, end_date: str) -> dict[str, 
     # Gerar reservas
     datas = rand_dates(start, end, n_linhas)
     dias_estadia = np.random.randint(1, 15, n_linhas)
-    data_checkout = [d + timedelta(days=de) for d, de in zip(datas, dias_estadia)]
+    data_checkout = [d + timedelta(days=int(de)) for d, de in zip(datas, dias_estadia)]
     
     # Selecionar chaves estrangeiras
     hospede_keys = np.random.choice(dim_hospede["sk_hospede"], n_linhas)
