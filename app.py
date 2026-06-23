@@ -198,13 +198,13 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool) -> None
     st.markdown(f"**{label}** — {hint}")
 
     dict_bytes    = gerar_dicionario(nome, tabelas)
-    dict_filename = f"Dicionario_{nome.replace(' ', '_')}.xlsx"
+    dict_filename = f"Dicionario_{nome.replace(' ', '_')}.zip"
 
     st.download_button(
         label=f"📥 {dict_filename}",
         data=dict_bytes,
         file_name=dict_filename,
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        mime="application/zip",
         use_container_width=True,
     )
 
