@@ -95,36 +95,41 @@ def _inferir_desc(col: str) -> str:
 
 def gerar_dicionario(nome_setor: str, tabelas: dict[str, pd.DataFrame]) -> bytes:
     """
-    Gera um arquivo Excel com o dicionário de dados de todas as tabelas.
+    Gera um ZIP com o dicionário de dados em CSV (sem dependências extras).
 
-    Retorna bytes prontos para download.
+    Contém:
+      - 00_resumo.csv        : visão geral de todas as tabelas
+      - <NomeTabela>.csv     : dicionário coluna a coluna de cada tabela
     """
-    output = io.BytesIO()
+    import zipfile
 
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        # ── Aba Resumo ────────────────────────────────────────────────────
+    buf = io.BytesIO()
+
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+
+        # ── Resumo geral ─────────────────────────────────────────────────
         resumo_rows = []
         for tname, tdf in tabelas.items():
-            fato_flag = "✅ Fato" if tname.startswith("Fato") else (
-                "📅 Calendário" if tname.startswith("dCal") else "📋 Dimensão"
-            )
+            tipo = ("Fato" if tname.startswith("Fato")
+                    else "Calendário" if tname.startswith("dCal")
+                    else "Dimensão")
             resumo_rows.append({
                 "Tabela":     tname,
-                "Tipo":       fato_flag,
+                "Tipo":       tipo,
                 "Linhas":     len(tdf),
                 "Colunas":    len(tdf.columns),
                 "Descrição":  _TABELA_DESC.get(tname, f"Tabela do setor {nome_setor}"),
             })
 
-        df_resumo = pd.DataFrame(resumo_rows)
-        df_resumo.to_excel(writer, sheet_name="Resumo", index=False)
-        _format_sheet(writer, "Resumo", df_resumo)
+        csv_resumo = io.StringIO()
+        pd.DataFrame(resumo_rows).to_csv(csv_resumo, index=False)
+        zf.writestr("00_resumo.csv", csv_resumo.getvalue())
 
-        # ── Aba por tabela ────────────────────────────────────────────────
+        # ── Dicionário por tabela ─────────────────────────────────────────
         for tname, tdf in tabelas.items():
             rows = []
             for col in tdf.columns:
-                dtype = str(tdf[col].dtype)
+                dtype  = str(tdf[col].dtype)
                 sample = tdf[col].dropna().iloc[0] if len(tdf[col].dropna()) > 0 else "—"
                 rows.append({
                     "Coluna":     col,
@@ -135,31 +140,8 @@ def gerar_dicionario(nome_setor: str, tabelas: dict[str, pd.DataFrame]) -> bytes
                     "Únicos":     int(tdf[col].nunique()),
                 })
 
-            df_dict = pd.DataFrame(rows)
-            sheet = tname[:31]  # Excel max 31 chars
-            df_dict.to_excel(writer, sheet_name=sheet, index=False)
-            _format_sheet(writer, sheet, df_dict)
+            csv_tbl = io.StringIO()
+            pd.DataFrame(rows).to_csv(csv_tbl, index=False)
+            zf.writestr(f"{tname}.csv", csv_tbl.getvalue())
 
-    return output.getvalue()
-
-
-def _format_sheet(writer, sheet_name: str, df: pd.DataFrame) -> None:
-    """Aplica formatação básica: largura de colunas e header bold."""
-    try:
-        from openpyxl.styles import Font, PatternFill, Alignment
-        ws = writer.sheets[sheet_name]
-
-        # Header
-        header_fill = PatternFill("solid", fgColor="1E1B4B")
-        header_font = Font(bold=True, color="FFFFFF", name="Calibri")
-        for cell in ws[1]:
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal="center")
-
-        # Largura automática
-        for col_cells in ws.columns:
-            max_len = max((len(str(c.value or "")) for c in col_cells), default=10)
-            ws.column_dimensions[col_cells[0].column_letter].width = min(max_len + 4, 50)
-    except Exception:
-        pass  # Formatação é opcional
+    return buf.getvalue()
