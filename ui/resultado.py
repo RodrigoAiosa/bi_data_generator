@@ -90,7 +90,7 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame]) -> None:
     # ── Download ───────────────────────────────────────────────────────────
     st.markdown('<h3 class="section-header-plain">Download</h3>', unsafe_allow_html=True)
 
-    zip_bytes    = to_zip(tabelas, nome_setor=nome)
+    zip_bytes    = to_zip(tabelas)
     nome_arquivo = f"Base_BI_{nome.replace(' ', '_')}.zip"
 
     st.download_button(
@@ -104,11 +104,9 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame]) -> None:
 
     st.markdown("""
     <div class="info-box">
-        <strong>💡 Dica Power BI:</strong> O ZIP já inclui um <code>model.tmdl</code> com o
-        esquema das tabelas, relacionamentos e as medidas DAX prontas — use-o como referência
-        (ou importe via TMDL Editor / .pbip) para montar o modelo mais rápido.
-        Caso prefira montar manualmente, conecte as colunas <code>sk_*</code>/<code>id_*</code> (FK)
-        da tabela Fato às respectivas dimensões e <code>dCalendario[Data]</code> ao campo de data da Fato.
+        <strong>💡 Dica Power BI:</strong> Importe os CSVs e crie relações usando as colunas
+        <code>sk_*</code> (FK) da tabela Fato para as respectivas dimensões.
+        Conecte <code>dCalendario[Data]</code> ao campo de data da tabela Fato.
     </div>
     """, unsafe_allow_html=True)
 
