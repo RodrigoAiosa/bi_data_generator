@@ -58,11 +58,20 @@ def rand_dates(start: date, end: date, n: int) -> list[date]:
 
 
 # ── Exportação ZIP ───────────────────────────────────────────────────────────
-def to_zip(tables: dict[str, "pd.DataFrame"]) -> bytes:
+def to_zip(tables: dict[str, "pd.DataFrame"], nome_setor: str = "") -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for name, df in tables.items():
             csv_buf = io.StringIO()
             df.to_csv(csv_buf, index=False)
             zf.writestr(f"{name}.csv", csv_buf.getvalue())
+
+        # Modelo TMDL (schema + relacionamentos + medidas DAX)
+        try:
+            from generators.tmdl_generator import gerar_tmdl
+            tmdl_texto = gerar_tmdl(nome_setor, tables)
+            zf.writestr("model.tmdl", tmdl_texto)
+        except Exception as e:
+            # Nunca deixa a geração do TMDL quebrar o download do ZIP
+            zf.writestr("model.tmdl.erro.txt", f"Falha ao gerar model.tmdl: {e}")
     return buf.getvalue()
