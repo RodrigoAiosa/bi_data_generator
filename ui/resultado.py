@@ -67,10 +67,19 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame]) -> None:
                 st.divider()
 
     # ── Medidas DAX (geradas automaticamente) ──────────────────────────────
-    st.markdown('<h3 class="section-header">🧮 Medidas DAX sugeridas</h3>', unsafe_allow_html=True)
-
     from generators.medidas import gerar_bateria_medidas
     medidas_por_fato = gerar_bateria_medidas(tabelas)
+
+    total_medidas = sum(
+        len(lista)
+        for categorias in medidas_por_fato.values()
+        for lista in categorias.values()
+    )
+
+    st.markdown(
+        f'<h3 class="section-header">🧮 Medidas DAX sugeridas ({total_medidas})</h3>',
+        unsafe_allow_html=True,
+    )
 
     if medidas_por_fato:
         for fato_key, categorias in medidas_por_fato.items():
