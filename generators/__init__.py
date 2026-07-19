@@ -53,6 +53,11 @@ from .pet import gerar_pet
 from .games import gerar_games
 from .saneamento import gerar_saneamento
 from .transporte import gerar_transporte
+from .odontologia import gerar_odontologia
+from .academia import gerar_academia
+from .ciberseguranca import gerar_ciberseguranca
+from .locadora import gerar_locadora
+from .restaurante import gerar_restaurante
 from .medidas import gerar_bateria_medidas
 
 from .moda import gerar_moda
@@ -128,5 +133,10 @@ __all__ = [
     "gerar_agtech",
     "gerar_economia_circular",
     "gerar_biotecnologia",
+    "gerar_odontologia",
+    "gerar_academia",
+    "gerar_ciberseguranca",
+    "gerar_locadora",
+    "gerar_restaurante",
     "gerar_bateria_medidas",
 ]
