@@ -16,7 +16,7 @@ Em poucos segundos você escolhe um setor de negócio, define um período e um v
 - [Qual versão usar?](#-qual-versão-usar)
 - [Instalação e execução local](#-instalação-e-execução-local)
 - [Como usar o app](#-como-usar-o-app)
-- [Setores de negócio disponíveis](#-setores-de-negócio-disponíveis-55)
+- [Setores de negócio disponíveis](#-setores-de-negócio-disponíveis-60)
 - [Modelo de dados gerado (Star Schema)](#-modelo-de-dados-gerado-star-schema)
 - [Recursos principais](#-recursos-principais)
 - [Exportação SQL (DDL / INSERT)](#-exportação-sql-ddl--insert)
@@ -52,13 +52,13 @@ O repositório evoluiu ao longo do tempo e hoje contém a versão principal na r
 ```
 bi_data_generator/
 ├── app.py                      # ⭐ App principal (BI Data Generator PRO) — versão mais completa
-├── config.py                   # Configuração da página, slider de volume e dicionário de 55 setores
+├── config.py                   # Configuração da página, slider de volume e dicionário de 60 setores
 ├── i18n.py                     # Sistema de internacionalização (PT-BR / EN)
 ├── helpers.py                  # Funções utilitárias no nível raiz
 ├── requirements.txt            # Dependências do app principal
 ├── LICENSE
 │
-├── generators/                 # 🏭 Um módulo por setor de negócio (60 arquivos)
+├── generators/                 # 🏭 Um módulo por setor de negócio (66 arquivos)
 │   ├── __init__.py             # Exporta todas as funções gerar_<setor>
 │   ├── helpers.py              # dcalendario(), new_ids(), get_faker(), rand_dates(), to_zip()...
 │   ├── dicionario.py           # Gera o dicionário de dados (CSV zipado) com descrições PT/EN
@@ -78,7 +78,7 @@ bi_data_generator/
 │   ├── css.py                   # CSS customizado injetado no Streamlit (tema escuro/roxo)
 │   └── seo.py                   # (opcional) meta tags de SEO
 │
-├── bi_data_generator/            # 📦 Versão completa "standalone" (55 setores) — código-fonte espelhado
+├── bi_data_generator/            # 📦 Versão completa "standalone" (55 setores*) — código-fonte espelhado
 │   ├── app.py
 │   ├── config.py
 │   └── generators/
@@ -101,8 +101,8 @@ bi_data_generator/
 
 | Versão | Pasta | Setores | Indicado para |
 |---|---|---|---|
-| **BI Data Generator PRO** (recomendada) | raiz do repositório (`app.py`) | 55 setores | Uso geral, estudo avançado, portfólio, prática de Power BI/DAX/SQL completa |
-| **BI Data Generator (completo)** | `bi_data_generator/` | 55 setores | Espelho da versão principal, útil se você quiser hospedar separadamente |
+| **BI Data Generator PRO** (recomendada) | raiz do repositório (`app.py`) | 60 setores | Uso geral, estudo avançado, portfólio, prática de Power BI/DAX/SQL completa |
+| **BI Data Generator (completo)** | `bi_data_generator/` | 55 setores* | Espelho da versão principal, útil se você quiser hospedar separadamente |
 | **EscolaDAX Simples** | `escoladax_simples/` | 8 setores (Varejo, Financeiro, Saúde, E-commerce, Logística, Educação, Imobiliário, SaaS B2B) | Quem está começando e quer uma interface mais enxuta, com menos opções |
 
 ---
@@ -146,7 +146,7 @@ streamlit run app.py
 
 ## 🖱 Como usar o app
 
-1. **Escolha o setor** — use a caixa de busca na barra lateral para filtrar entre os 55 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
+1. **Escolha o setor** — use a caixa de busca na barra lateral para filtrar entre os 60 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
 2. **Defina o período** — datas de início e fim; a tabela `dCalendario` é gerada automaticamente cobrindo esse intervalo.
 3. **Defina o volume de dados** — slider de 100 a 100.000 linhas na tabela fato (o volume das dimensões é ajustado proporcionalmente).
 4. *(Opcional)* **Ative "Injetar anomalias"** para adicionar problemas propositais nos dados (veja [Modo anomalias](#-modo-anomalias)).
@@ -161,10 +161,11 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 
 ---
 
-## 🏭 Setores de negócio disponíveis (55)
+## 🏭 Setores de negócio disponíveis (60)
 
 | Setor | Conteúdo típico |
 |---|---|
+| 🏋️ Academia & Fitness | Check-ins, alunos, instrutores, pagamentos e avaliações físicas |
 | 🌱 AgTech | Sensores IoT, drones, monitoramento e agricultura de precisão |
 | 🌾 Agronegócio | Safras, culturas, propriedades e insumos |
 | 🍔 Alimentos & Bebidas | Produção, plantas, produtos e fornecedores |
@@ -173,6 +174,7 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 | ✈️ Aviação Civil | Voos, passageiros, aeronaves e aeroportos |
 | 💄 Beleza & Estética | Vendas, serviços, agenda e salões parceiros |
 | 🧬 Biotecnologia | Genômica, CRISPR, pesquisa e experimentos laboratoriais |
+| 🔐 Cibersegurança | Incidentes, vulnerabilidades, ativos e SLA de resposta (SOC) |
 | 🏢 Condomínio & Facilities | Cotas, despesas, ocorrências e manutenção |
 | 🏗️ Construção Civil | Obras, custos, materiais e fornecedores |
 | 🤝 CRM | Oportunidades, contas, contatos e atividades comerciais |
@@ -195,6 +197,7 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 | 🏭 Indústria | Produção, máquinas, insumos e operadores |
 | ⚖️ Jurídico | Processos, advogados, clientes e tribunais |
 | 🔬 Laboratório & Diagnóstico | Exames, pacientes, laudos e convênios |
+| 🚗 Locadora de Veículos | Reservas, frota, clientes, multas e diárias |
 | 🚚 Logística | Entregas, transportadoras, rotas e clientes |
 | 🚴 Logística Urbana | Entregas last mile, entregadores e SLA |
 | 📣 Marketing Digital | Campanhas, canais, performance e conversões |
@@ -202,10 +205,12 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 | ⛏️ Mineração | Extrações, minas, minerais e equipamentos |
 | 🚗 Mobilidade | Viagens, motoristas, passageiros, rotas e veículos |
 | 👗 Moda & Vestuário | Coleções, vendas, estoque e devoluções |
+| 🦷 Odontologia | Consultas, dentistas, pacientes, procedimentos e convênios |
 | 🐟 Pesca & Aquicultura | Espécies, produção, qualidade e biomassa |
 | 🐾 Pet & Veterinária | Atendimentos, pets, tutores e serviços veterinários |
 | 🛢️ Petróleo & Gás | Produção, poços, plataformas e custos operacionais |
 | 🏢 Recursos Humanos | Horas trabalhadas, funcionários, projetos e cargos |
+| 🍽️ Restaurantes & Food Service | Pedidos, cardápio, unidades, reservas e delivery |
 | ☁️ SaaS B2B | Assinaturas, MRR, churn, NPS e planos |
 | 💧 Saneamento & Água | Consumo, faturas, estações de tratamento e ligações |
 | 🏥 Saúde | Atendimentos, pacientes, médicos e procedimentos |
@@ -222,6 +227,8 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 | ✈️ Viagens Corporativas | Viajantes, custos, política de viagem e SLA |
 
 A versão **EscolaDAX Simples** disponibiliza 8 destes setores (Varejo, Financeiro, Saúde, E-commerce, Logística, Educação, Imobiliário e SaaS B2B).
+
+> \* A pasta `bi_data_generator/` (versão espelhada standalone) ainda não recebeu os 5 setores novos — replique os arquivos de `generators/` (Academia, Cibersegurança, Locadora, Odontologia, Restaurante) e as entradas de `config.py` nela caso queira mantê-la em paridade com a raiz.
 
 ---
 
@@ -240,7 +247,7 @@ Cada base gerada segue o padrão de modelagem dimensional (esquema estrela):
 
 ## ✨ Recursos principais
 
-- **55 setores de negócio** com dados contextualmente coerentes (nomes, categorias, faixas de valores e distribuições plausíveis para cada indústria).
+- **60 setores de negócio** com dados contextualmente coerentes (nomes, categorias, faixas de valores e distribuições plausíveis para cada indústria).
 - **Volume configurável**: de 100 a 100.000 linhas na tabela fato via slider.
 - **Período configurável**: qualquer intervalo de datas, com geração automática da `dCalendario`.
 - **Busca de setor** na barra lateral, com índice construído a partir do nome e da descrição de cada setor.
