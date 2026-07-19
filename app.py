@@ -195,7 +195,7 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool) -> None
     # ── Dicionário de dados ────────────────────────────────────────────────
     st.markdown("---")
     lang = _get_lang()
-    label = "📖 Dicionário de Dados" if lang == "pt" else "📖 Data Dictionary"
+    label = "📖 Baixar Dicionário de Dados" if lang == "pt" else "📖 Data Dictionary"
     hint  = ("Baixe o dicionário Excel com descrição de cada tabela e coluna."
              if lang == "pt" else
              "Download the Excel dictionary with descriptions for each table and column.")
