@@ -13,7 +13,9 @@ from generators import (
     gerar_textil, gerar_arquitetura, gerar_viagem_corp, gerar_espacial, gerar_beleza,
     gerar_logistica_urbana,
     # ═══════ NOVOS SETORES ═══════
-    gerar_agtech, gerar_economia_circular, gerar_biotecnologia
+    gerar_agtech, gerar_economia_circular, gerar_biotecnologia,
+    gerar_odontologia, gerar_academia, gerar_ciberseguranca,
+    gerar_locadora, gerar_restaurante
 )
 
 # Configuração da página Streamlit
@@ -34,6 +36,7 @@ SLIDER_STEP = 100
 # Dicionário de setores disponíveis (55 setores) — ordem alfabética
 # ═══════════════════════════════════════════════════════════════
 SETORES = {
+    "🏋️ Academia & Fitness":          gerar_academia,
     "🌱 AgTech":                      gerar_agtech,
     "🌾 Agronegócio":                 gerar_agronegocio,
     "🍔 Alimentos & Bebidas":         gerar_alimenticio,
@@ -42,6 +45,7 @@ SETORES = {
     "✈️ Aviação Civil":               gerar_aviacao,
     "💄 Beleza & Estética":           gerar_beleza,
     "🧬 Biotecnologia":               gerar_biotecnologia,
+    "🔐 Cibersegurança":              gerar_ciberseguranca,
     "🏢 Condomínio & Facilities":     gerar_condominio,
     "🏗️ Construção Civil":            gerar_construcao,
     "🤝 CRM":                         gerar_crm,
@@ -64,6 +68,7 @@ SETORES = {
     "🏭 Indústria":                   gerar_industria,
     "⚖️ Jurídico":                   gerar_juridico,
     "🔬 Laboratório & Diagnóstico":   gerar_laboratorio,
+    "🚗 Locadora de Veículos":        gerar_locadora,
     "🚚 Logística":                   gerar_logistica,
     "🚴 Logística Urbana":            gerar_logistica_urbana,
     "📣 Marketing Digital":           gerar_marketing,
@@ -71,10 +76,12 @@ SETORES = {
     "⛏️ Mineração":                  gerar_mineracao,
     "🚗 Mobilidade":                  gerar_mobilidade,
     "👗 Moda & Vestuário":            gerar_moda,
+    "🦷 Odontologia":                 gerar_odontologia,
     "🐟 Pesca & Aquicultura":         gerar_pesca,
     "🐾 Pet & Veterinária":           gerar_pet,
     "🛢️ Petróleo & Gás":             gerar_petroleo,
     "🏢 Recursos Humanos":            gerar_rh,
+    "🍽️ Restaurantes & Food Service": gerar_restaurante,
     "☁️ SaaS B2B":                   gerar_saas_b2b,
     "💧 Saneamento & Água":           gerar_saneamento,
     "🏥 Saúde":                       gerar_saude,
@@ -95,6 +102,7 @@ SETORES = {
 # Informações para os flip-cards da tela inicial (55 setores) — ordem alfabética
 # ═══════════════════════════════════════════════════════════════
 SETORES_INFO = [
+    ("🏋️", "Academia & Fitness",         "Check-ins, alunos, instrutores, pagamentos e avaliações físicas"),
     ("🌱", "AgTech",                      "Sensores IoT, drones, monitoramento e agricultura de precisão"),
     ("🌾", "Agronegócio",                 "Safras, culturas, propriedades e insumos"),
     ("🍔", "Alimentos & Bebidas",         "Produção, plantas, produtos e fornecedores"),
@@ -103,6 +111,7 @@ SETORES_INFO = [
     ("✈️", "Aviação Civil",               "Voos, passageiros, aeronaves e aeroportos"),
     ("💄", "Beleza & Estética",           "Vendas, serviços, agenda e salões parceiros"),
     ("🧬", "Biotecnologia",               "Genômica, CRISPR, pesquisa e experimentos laboratoriais"),
+    ("🔐", "Cibersegurança",              "Incidentes, vulnerabilidades, ativos e SLA de resposta (SOC)"),
     ("🏢", "Condomínio & Facilities",     "Cotas, despesas, ocorrências e manutenção"),
     ("🏗️", "Construção Civil",           "Obras, custos, materiais e fornecedores"),
     ("🤝", "CRM",                         "Oportunidades, contas, contatos e atividades comerciais"),
@@ -125,6 +134,7 @@ SETORES_INFO = [
     ("🏭", "Indústria",                   "Produção, máquinas, insumos e operadores"),
     ("⚖️", "Jurídico",                   "Processos, advogados, clientes e tribunais"),
     ("🔬", "Laboratório & Diagnóstico",   "Exames, pacientes, laudos e convênios"),
+    ("🚗", "Locadora de Veículos",        "Reservas, frota, clientes, multas e diárias"),
     ("🚚", "Logística",                   "Entregas, transportadoras, rotas e clientes"),
     ("🚴", "Logística Urbana",            "Entregas last mile, entregadores e SLA"),
     ("📣", "Marketing Digital",           "Campanhas, canais, performance e conversões"),
@@ -132,10 +142,12 @@ SETORES_INFO = [
     ("⛏️", "Mineração",                  "Extrações, minas, minerais e equipamentos"),
     ("🚗", "Mobilidade",                  "Viagens, motoristas, passageiros, rotas e veículos"),
     ("👗", "Moda & Vestuário",            "Coleções, vendas, estoque e devoluções"),
+    ("🦷", "Odontologia",                 "Consultas, dentistas, pacientes, procedimentos e convênios"),
     ("🐟", "Pesca & Aquicultura",         "Espécies, produção, qualidade e biomassa"),
     ("🐾", "Pet & Veterinária",           "Atendimentos, pets, tutores e serviços veterinários"),
     ("🛢️", "Petróleo & Gás",             "Produção, poços, plataformas e custos operacionais"),
     ("🏢", "Recursos Humanos",            "Horas trabalhadas, funcionários, projetos e cargos"),
+    ("🍽️", "Restaurantes & Food Service", "Pedidos, cardápio, unidades, reservas e delivery"),
     ("☁️", "SaaS B2B",                   "Assinaturas, MRR, churn, NPS e planos"),
     ("💧", "Saneamento & Água",           "Consumo, faturas, estações de tratamento e ligações"),
     ("🏥", "Saúde",                       "Atendimentos, pacientes, médicos e procedimentos"),
