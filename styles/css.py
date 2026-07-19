@@ -188,6 +188,13 @@ html, body, .main, [data-testid="stAppViewContainer"] {
     position: relative;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 190px;
+    box-sizing: border-box;
 }
 .stat-card:hover {
     transform: translateY(-4px);
@@ -212,7 +219,14 @@ html, body, .main, [data-testid="stAppViewContainer"] {
     color: #e2e8f0;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    display: block;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    width: 100%;
+    min-height: 2.4em;
+    align-items: center;
+    justify-content: center;
 }
 .stat-sublabel {
     font-size: 0.78rem;
@@ -220,6 +234,19 @@ html, body, .main, [data-testid="stAppViewContainer"] {
     margin-top: 6px;
     font-weight: 300;
     display: block;
+}
+
+/* Garante que as colunas do Streamlit fiquem com a mesma altura na linha do resumo */
+div[data-testid="column"]:has(.stat-card) {
+    display: flex;
+}
+div[data-testid="column"]:has(.stat-card) > div {
+    display: flex;
+    width: 100%;
+}
+div[data-testid="column"]:has(.stat-card) [data-testid="stMarkdownContainer"] {
+    display: flex;
+    width: 100%;
 }
 
 /* ── SECTOR CARDS (flip 3D) ── */
