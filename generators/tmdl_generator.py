@@ -1,22 +1,11 @@
 """
-generators/tmdl_generator.py — Gera um arquivo .tmdl (Tabular Model Definition
-Language) completo a partir das tabelas de um setor, pronto para colar em
-Tabular Editor 3 (janela TMDL) ou Power BI Desktop (modo TMDL).
-
-O arquivo gerado contém:
-  - Parâmetro "CaminhoPasta" (o usuário ajusta o caminho antes de importar)
-  - Todas as tabelas (Dim*, Fato*, Bridge*, dCalendario) com colunas tipadas
-  - Partições Power Query (M) que leem os CSVs exportados no ZIP
-  - Relacionamentos entre Fato/Dimensões (incluindo dCalendario)
-  - Uma tabela "Medidas" com toda a bateria de DAX gerada por
-    generators/medidas.py (mesmas medidas exibidas na aba de preview)
-
-Funciona para qualquer um dos setores deste projeto, sem configuração manual,
-reaproveitando as mesmas convenções de nomenclatura (id_*/sk_*) usadas em
-generators/medidas.py e generators/sql_generator.py.
+generators/tmdl_generator.py
+Gera um arquivo TMDL (model.tmdl) completo — tabelas, colunas, partitions
+(Power Query apontando para os CSVs), relacionamentos e todas as medidas DAX
+da bateria gerada em generators/medidas.py — para QUALQUER setor do projeto.
 """
 
-import re
+from __future__ import annotations
 
 import pandas as pd
 
@@ -25,213 +14,208 @@ from generators.medidas import gerar_bateria_medidas
 _PREFIXOS_CHAVE = ("id_", "sk_")
 
 
-# ── Helpers de tipo ──────────────────────────────────────────────────────────
-def _is_key_col(col: str) -> bool:
-    return col.lower().startswith(_PREFIXOS_CHAVE)
-
-
-def _looks_like_date(series: pd.Series, col_name: str) -> bool:
-    """Heurística: coluna é de data pelo dtype ou pelo nome/valores."""
-    if pd.api.types.is_datetime64_any_dtype(series):
-        return True
-    if "data" in col_name.lower() or "date" in col_name.lower():
-        return True
-    non_null = series.dropna()
-    if len(non_null) and hasattr(non_null.iloc[0], "year") and hasattr(non_null.iloc[0], "month"):
-        return True
-    return False
-
-
-def _tmdl_dtype(col: str, series: pd.Series) -> tuple[str, str]:
-    """Retorna (dataType TMDL, tipo M) para uma coluna."""
-    if pd.api.types.is_bool_dtype(series):
-        return "boolean", "type logical"
-    if _looks_like_date(series, col):
+def _tmdl_dtype(dtype) -> tuple[str, str]:
+    """Mapeia dtype pandas -> (dataType TMDL, tipo M para TransformColumnTypes)."""
+    if pd.api.types.is_datetime64_any_dtype(dtype):
         return "dateTime", "type date"
-    if pd.api.types.is_integer_dtype(series):
+    if pd.api.types.is_bool_dtype(dtype):
+        return "boolean", "type logical"
+    if pd.api.types.is_integer_dtype(dtype):
         return "int64", "Int64.Type"
-    if pd.api.types.is_float_dtype(series):
+    if pd.api.types.is_float_dtype(dtype):
         return "double", "type number"
     return "string", "type text"
 
 
-def _quote_ident(nome: str) -> str:
-    """Aplica aspas simples em identificadores com espaço/caractere especial."""
-    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", nome):
-        return nome
-    return f"'{nome}'"
+def _coluna_e_data(col: str, serie: pd.Series) -> bool:
+    if pd.api.types.is_datetime64_any_dtype(serie):
+        return True
+    name = col.lower()
+    return name == "data" or name.startswith(("id_data", "sk_data")) or name.endswith("_data")
 
 
-def _emoji_free(txt: str) -> str:
-    """Remove emojis/ícones do nome da categoria, mantendo texto e pontuação."""
-    return re.sub(r"[^\w\sÀ-ÿ%()/-]", "", txt).strip()
+def _m_query(nome_tabela: str, df: pd.DataFrame) -> str:
+    """Gera o bloco 'source =' em linguagem M, lendo o CSV correspondente."""
+    n_cols = len(df.columns)
+    tipos = []
+    for c in df.columns:
+        serie = df[c]
+        if _coluna_e_data(c, serie):
+            tipos.append(f'{{"{c}", type date}}')
+            continue
+        _, m_type = _tmdl_dtype(serie.dtype)
+        tipos.append(f'{{"{c}", {m_type}}}')
+    tipos_str = ", ".join(tipos)
 
-
-# ── Tabelas + colunas + partições M ──────────────────────────────────────────
-def _gerar_partition(tname: str, tdf: pd.DataFrame) -> list[str]:
-    n_cols = len(tdf.columns)
-    tipos = ", ".join(
-        f'{{"{col}", {_tmdl_dtype(col, tdf[col])[1]}}}' for col in tdf.columns
+    return (
+        "\t\t\tsource =\n"
+        "\t\t\t\tlet\n"
+        f'\t\t\t\t    Origem = Csv.Document(File.Contents(CaminhoPasta & "\\{nome_tabela}.csv"),'
+        f'[Delimiter=",", Columns={n_cols}, Encoding=65001, QuoteStyle=QuoteStyle.None]),\n'
+        '\t\t\t\t    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars=true]),\n'
+        f'\t\t\t\t    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{{tipos_str}}})\n'
+        "\t\t\t\tin\n"
+        '\t\t\t\t    #"Tipo Alterado"\n'
     )
-    return [
-        f"\t\tpartition {tname} = m",
-        "\t\t\tmode: import",
-        "\t\t\tsource =",
-        "\t\t\t\tlet",
-        f'\t\t\t\t    Origem = Csv.Document(File.Contents(CaminhoPasta & "\\{tname}.csv"),'
-        f'[Delimiter=",", Columns={n_cols}, Encoding=65001, QuoteStyle=QuoteStyle.None]),',
-        '\t\t\t\t    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars=true]),',
-        f'\t\t\t\t    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{{tipos}}})',
-        "\t\t\tin",
-        '\t\t\t    #"Tipo Alterado"',
-    ]
 
 
-def _gerar_tabela(tname: str, tdf: pd.DataFrame) -> list[str]:
-    linhas = [f"\ttable {tname}", ""]
-    for col in tdf.columns:
-        dtype, _ = _tmdl_dtype(col, tdf[col])
-        linhas.append(f"\t\tcolumn {col}")
-        linhas.append(f"\t\t\tdataType: {dtype}")
-        linhas.append("\t\t\tsummarizeBy: none")
-        linhas.append(f"\t\t\tsourceColumn: {col}")
-        linhas.append("")
-        linhas.append("\t\t\tannotation SummarizationSetBy = Automatic")
-        linhas.append("")
-    linhas.extend(_gerar_partition(tname, tdf))
-    return linhas
+def _tabela_tmdl(nome_tabela: str, df: pd.DataFrame) -> str:
+    linhas = [f"\ttable {nome_tabela}\n\n"]
+    for c in df.columns:
+        serie = df[c]
+        if _coluna_e_data(c, serie):
+            tmdl_type = "dateTime"
+        else:
+            tmdl_type, _ = _tmdl_dtype(serie.dtype)
+        linhas.append(f"\t\tcolumn {c}\n")
+        linhas.append(f"\t\t\tdataType: {tmdl_type}\n")
+        linhas.append("\t\t\tsummarizeBy: none\n")
+        linhas.append(f"\t\t\tsourceColumn: {c}\n\n")
+        linhas.append("\t\t\tannotation SummarizationSetBy = Automatic\n\n")
+
+    linhas.append(f"\t\tpartition {nome_tabela} = m\n")
+    linhas.append("\t\t\tmode: import\n")
+    linhas.append(_m_query(nome_tabela, df))
+    linhas.append("\n")
+    return "".join(linhas)
 
 
-# ── Relacionamentos ──────────────────────────────────────────────────────────
-def _detectar_relacionamentos(tabelas: dict[str, pd.DataFrame]) -> list[tuple[str, str, str, str]]:
+def _e_chave(col: str) -> bool:
+    return col.lower().startswith(_PREFIXOS_CHAVE)
+
+
+def _relacionamentos(tabelas: dict[str, pd.DataFrame]) -> list[str]:
     """
-    Detecta (fromTable, fromColumn, toTable, toColumn) usando a convenção de
-    chaves do projeto: colunas id_*/sk_* que casam com a 1ª coluna (PK) de
-    outra tabela, além da ligação Fato/Bridge -> dCalendario pela data.
+    Detecta relacionamentos FK -> PK entre as tabelas geradas: para cada
+    coluna id_*/sk_* de cada tabela (que não seja a PK própria, 1ª coluna),
+    procura outra tabela onde essa coluna é a PK (1ª coluna).
     """
-    relacionamentos: list[tuple[str, str, str, str]] = []
-    usados: set[tuple[str, str]] = set()
+    pk_por_tabela = {nome: df.columns[0] for nome, df in tabelas.items() if len(df.columns)}
+    dono_da_pk: dict[str, str] = {}
+    for nome, pk in pk_por_tabela.items():
+        dono_da_pk.setdefault(pk, nome)  # primeira tabela que "possui" essa PK
 
-    pks = {df.columns[0]: nome for nome, df in tabelas.items() if len(df.columns)}
+    blocos = []
+    contador = 1
+    vistos = set()
 
-    for nome, df in tabelas.items():
+    for nome_from, df in tabelas.items():
         pk_propria = df.columns[0] if len(df.columns) else None
         for col in df.columns:
-            if col == pk_propria or not _is_key_col(col):
+            if not _e_chave(col):
                 continue
-            destino = pks.get(col)
-            if destino is None or destino == nome:
+            if col == pk_propria and nome_from == dono_da_pk.get(col):
                 continue
-            relacionamentos.append((nome, col, destino, col))
-            usados.add((nome, col))
+            nome_to = dono_da_pk.get(col)
+            if not nome_to or nome_to == nome_from:
+                continue
+            chave = (nome_from, col, nome_to)
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            blocos.append(
+                f"\trelationship rel_{contador}\n"
+                f"\t\tfromColumn: {nome_from}.{col}\n"
+                f"\t\ttoColumn: {nome_to}.{col}\n\n"
+            )
+            contador += 1
 
-    if "dCalendario" in tabelas and len(tabelas["dCalendario"].columns):
-        col_calendario = tabelas["dCalendario"].columns[0]
-        for nome, df in tabelas.items():
-            if nome == "dCalendario" or not nome.startswith(("Fato", "Bridge")):
+    # dCalendario: liga pela coluna de data da(s) fato(s)
+    if "dCalendario" in tabelas:
+        for nome_from, df in tabelas.items():
+            if not nome_from.startswith("Fato"):
                 continue
-            candidatas = [c for c in df.columns if "data" in c.lower() or "date" in c.lower()]
+            candidatas = [c for c in df.columns if _coluna_e_data(c, df[c])]
             if not candidatas:
                 continue
-            col_data = next(
-                (c for c in candidatas if c.lower().startswith(("id_data", "sk_data"))),
-                candidatas[0],
-            )
-            if (nome, col_data) in usados:
+            col_data = candidatas[0]
+            chave = (nome_from, col_data, "dCalendario")
+            if chave in vistos:
                 continue
-            relacionamentos.append((nome, col_data, "dCalendario", col_calendario))
-            usados.add((nome, col_data))
+            vistos.add(chave)
+            blocos.append(
+                f"\trelationship rel_{contador}\n"
+                f"\t\tfromColumn: {nome_from}.{col_data}\n"
+                f"\t\ttoColumn: dCalendario.Data\n\n"
+            )
+            contador += 1
 
-    return relacionamentos
-
-
-def _gerar_relacionamentos(tabelas: dict[str, pd.DataFrame]) -> list[str]:
-    linhas = []
-    for i, (de_tabela, de_coluna, para_tabela, para_coluna) in enumerate(
-        _detectar_relacionamentos(tabelas), 1
-    ):
-        linhas.append(f"\trelationship rel_{i}")
-        linhas.append(f"\t\tfromColumn: {de_tabela}.{de_coluna}")
-        linhas.append(f"\t\ttoColumn: {para_tabela}.{para_coluna}")
-        linhas.append("")
-    return linhas
+    return blocos
 
 
-# ── Tabela de Medidas (reaproveita generators/medidas.py) ───────────────────
-def _gerar_tabela_medidas(tabelas: dict[str, pd.DataFrame]) -> list[str]:
+def _medidas_tmdl(tabelas: dict[str, pd.DataFrame]) -> str:
+    """Monta a tabela 'Medidas' com todas as medidas DAX organizadas por displayFolder."""
     medidas_por_fato = gerar_bateria_medidas(tabelas)
-    linhas = ["\ttable Medidas", ""]
+    if not medidas_por_fato:
+        return ""
 
-    multi_fato = len(medidas_por_fato) > 1
-
+    linhas = ["\ttable Medidas\n\n"]
     for fato_key, categorias in medidas_por_fato.items():
         for categoria, lista in categorias.items():
             if not lista:
                 continue
-            categoria_limpa = _emoji_free(categoria)
+            pasta_categoria = categoria.split(" ", 1)[1] if " " in categoria else categoria
             for m in lista:
-                nome_medida = _quote_ident(m["nome"].replace("'", "''"))
-                _, expr_part = m["formula"].split("=", 1)
-                expr = expr_part.strip()
+                nome = m["nome"]
+                formula = m["formula"]
+                titulo = m.get("titulo")
+                display_folder = f"{pasta_categoria}\\{titulo}" if titulo else pasta_categoria
 
-                if "\n" in expr:
-                    linhas.append(f"\t\tmeasure {nome_medida} = ```")
-                    for linha_formula in expr.split("\n"):
-                        linhas.append(f"\t\t\t{linha_formula}")
-                    linhas.append("\t\t\t```")
+                if "\n" in formula:
+                    corpo = formula.split("=", 1)[1].strip() if "=" in formula else formula
+                    linhas.append(f"\t\tmeasure '{nome}' = ```\n")
+                    for l in corpo.split("\n"):
+                        linhas.append(f"\t\t\t{l}\n")
+                    linhas.append("\t\t\t```\n")
                 else:
-                    linhas.append(f"\t\tmeasure {nome_medida} = {expr}")
+                    expressao = formula.split("=", 1)[1].strip() if "=" in formula else formula
+                    linhas.append(f"\t\tmeasure '{nome}' = {expressao}\n")
 
-                pasta = categoria_limpa if not m.get("titulo") else f"{categoria_limpa}\\{m['titulo']}"
-                if multi_fato:
-                    pasta = f"{fato_key}\\{pasta}"
-                linhas.append(f"\t\t\tdisplayFolder: {pasta}")
-                linhas.append("")
+                linhas.append(f"\t\t\tdisplayFolder: {display_folder}\n\n")
 
-    # Tabela "vazia" para hospedar as medidas (mesmo padrão gerado pelo Power BI
-    # ao criar uma tabela via "Inserir Dados" sem nenhuma linha).
-    linhas.extend([
-        "\t\tpartition Medidas = m",
-        "\t\t\tmode: import",
-        "\t\t\tsource =",
-        "\t\t\t\tlet",
-        '\t\t\t\t    Origem = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", '
-        'BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta '
-        '[Serialized.Text = true]) in type table [#"Coluna 1" = _t]),',
-        '\t\t\t\t    #"Colunas Removidas" = Table.RemoveColumns(Origem,{"Coluna 1"})',
-        "\t\t\tin",
-        '\t\t\t    #"Colunas Removidas"',
-    ])
-    return linhas
+    linhas.append("\t\tpartition Medidas = m\n")
+    linhas.append("\t\t\tmode: import\n")
+    linhas.append("\t\t\tsource =\n")
+    linhas.append("\t\t\t\tlet\n")
+    linhas.append(
+        '\t\t\t\t    Origem = Table.FromRows(Json.Document(Binary.Decompress('
+        'Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), '
+        'let _t = ((type nullable text) meta [Serialized.Text = true]) in type table '
+        '[#"Coluna 1" = _t]),\n'
+    )
+    linhas.append('\t\t\t\t    #"Colunas Removidas" = Table.RemoveColumns(Origem,{"Coluna 1"})\n')
+    linhas.append("\t\t\t\tin\n")
+    linhas.append('\t\t\t\t    #"Colunas Removidas"\n')
+    return "".join(linhas)
 
 
-# ── Função principal ─────────────────────────────────────────────────────────
 def gerar_tmdl(nome_setor: str, tabelas: dict[str, pd.DataFrame]) -> str:
     """
-    Gera o script TMDL completo do modelo semântico: parâmetro de pasta,
-    tabelas com colunas tipadas e partições Power Query, relacionamentos e
-    a tabela de Medidas DAX. Pronto para colar em Tabular Editor 3 (janela
-    TMDL) ou Power BI Desktop (modo de edição TMDL).
+    Gera o conteúdo completo do arquivo model.tmdl para o setor, incluindo:
+      - parâmetro CaminhoPasta (Power Query)
+      - todas as tabelas (Dim*, Fato*, Bridge*, dCalendario) com colunas,
+        tipos e partition M apontando para os CSVs de mesmo nome
+      - relacionamentos detectados entre FK/PK
+      - tabela "Medidas" com toda a bateria de medidas DAX do setor
     """
-    caminho_base = f"C:\\Dados\\{nome_setor.replace(' ', '_')}"
+    partes = []
 
-    linhas = [
-        "createOrReplace",
-        "",
-        "\texpression CaminhoPasta =",
-        f'\t\t\t"{caminho_base}" meta [IsParameterQuery=true, List={{"{caminho_base}"}}, '
-        f'DefaultValue="{caminho_base}", Type="Text", IsParameterQueryRequired=true]',
-        "\t\tannotation PBI_ResultType = Text",
-        "",
-    ]
+    partes.append(
+        "createOrReplace\n\n"
+        '\texpression CaminhoPasta = \n'
+        '\t\t\t"C:\\Dados\\" meta [IsParameterQuery=true, List={"C:\\Dados\\"}, '
+        'DefaultValue="C:\\Dados\\", Type="Text", IsParameterQueryRequired=true]\n'
+        "\t\tannotation PBI_ResultType = Text\n\n"
+    )
 
-    for tname, tdf in tabelas.items():
-        linhas.extend(_gerar_tabela(tname, tdf))
-        linhas.append("")
+    for nome_tabela, df in tabelas.items():
+        partes.append(_tabela_tmdl(nome_tabela, df))
 
-    linhas.extend(_gerar_relacionamentos(tabelas))
-    linhas.append("")
+    for bloco in _relacionamentos(tabelas):
+        partes.append(bloco)
 
-    linhas.extend(_gerar_tabela_medidas(tabelas))
+    medidas_tmdl = _medidas_tmdl(tabelas)
+    if medidas_tmdl:
+        partes.append(medidas_tmdl)
 
-    return "\n".join(linhas)
+    return "".join(partes)
