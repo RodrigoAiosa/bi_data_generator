@@ -58,11 +58,20 @@ def rand_dates(start: date, end: date, n: int) -> list[date]:
 
 
 # ── Exportação ZIP ───────────────────────────────────────────────────────────
-def to_zip(tables: dict[str, "pd.DataFrame"]) -> bytes:
+def to_zip(tables: dict[str, "pd.DataFrame"], extra_files: dict[str, str] | None = None) -> bytes:
+    """
+    Empacota as tabelas (CSV) em um .zip.
+
+    extra_files: dict opcional {nome_do_arquivo: conteudo_texto} para incluir
+    arquivos adicionais no zip (ex.: {"model.tmdl": conteudo_tmdl}).
+    """
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for name, df in tables.items():
             csv_buf = io.StringIO()
             df.to_csv(csv_buf, index=False)
             zf.writestr(f"{name}.csv", csv_buf.getvalue())
+        if extra_files:
+            for filename, conteudo in extra_files.items():
+                zf.writestr(filename, conteudo)
     return buf.getvalue()
