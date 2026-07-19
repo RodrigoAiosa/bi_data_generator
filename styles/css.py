@@ -294,9 +294,10 @@ div[data-testid="column"]:has(.stat-card) [data-testid="stMarkdownContainer"] {
 }
 .flip-wrapper:hover .flip-front { border-color: rgba(242,200,17,0.0); }
 .flip-back {
-    background: linear-gradient(145deg, rgba(242,200,17,0.20) 0%, rgba(212,175,10,0.14) 100%);
-    border: 1px solid rgba(242,200,17,0.5);
+    background: linear-gradient(145deg, #F2C811 0%, #E0B70E 100%);
+    border: 1px solid #D4AF0A;
     transform: rotateY(180deg);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
 }
 .sector-card-icon { font-size: 1.6rem; display: block; margin-bottom: 8px; line-height: 1; }
 .sector-card-name {
@@ -309,7 +310,7 @@ div[data-testid="column"]:has(.stat-card) [data-testid="stMarkdownContainer"] {
     font-family: 'Syne', sans-serif !important;
     font-size: 0.76rem;
     font-weight: 700;
-    color: #252423;
+    color: #1a1712;
     margin-bottom: 7px;
     letter-spacing: 0.2px;
 }
