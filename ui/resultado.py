@@ -90,7 +90,10 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame]) -> None:
     # ── Download ───────────────────────────────────────────────────────────
     st.markdown('<h3 class="section-header-plain">Download</h3>', unsafe_allow_html=True)
 
-    zip_bytes    = to_zip(tabelas)
+    from generators.tmdl_generator import gerar_tmdl
+    tmdl_conteudo = gerar_tmdl(nome, tabelas)
+
+    zip_bytes    = to_zip(tabelas, extra_files={"model.tmdl": tmdl_conteudo})
     nome_arquivo = f"Base_BI_{nome.replace(' ', '_')}.zip"
 
     st.download_button(
@@ -101,6 +104,8 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame]) -> None:
         use_container_width=True,
         type="primary",
     )
+    st.caption("O .zip inclui os CSVs de cada tabela + `model.tmdl` com todas as tabelas, "
+               "relacionamentos e medidas DAX prontos para importar no Power BI (Tabular Editor / TMDL).")
 
     st.markdown("""
     <div class="info-box">
