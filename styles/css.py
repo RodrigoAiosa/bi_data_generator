@@ -476,26 +476,43 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
 ::-webkit-scrollbar-thumb:hover { background: rgba(242,200,17,0.45); }
 
 /* ── BUTTONS ── */
-.stButton > button {
+.stButton > button,
+.stButton > button[kind="primary"],
+.stButton > button[kind="secondary"],
+[data-testid="stBaseButton-primary"],
+[data-testid="stBaseButton-secondary"] {
     background: #F2C811 !important;
     color: #252423 !important; border: none !important; border-radius: 12px !important;
     font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
     font-size: 0.88rem !important; padding: 10px 22px !important;
     transition: transform 0.2s, box-shadow 0.2s, background 0.2s !important;
 }
-.stButton > button:hover {
+.stButton > button *,
+[data-testid="stBaseButton-primary"] *,
+[data-testid="stBaseButton-secondary"] * {
+    color: #252423 !important;
+}
+.stButton > button:hover,
+[data-testid="stBaseButton-primary"]:hover,
+[data-testid="stBaseButton-secondary"]:hover {
     background: #D4AF0A !important;
     transform: translateY(-2px) !important;
     box-shadow: 0 8px 24px rgba(242,200,17,0.35) !important;
 }
-.stDownloadButton > button {
+.stDownloadButton > button,
+[data-testid="stBaseButton-download"] {
     background: #F2C811 !important;
     color: #252423 !important; border: none !important; border-radius: 12px !important;
     font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
     font-size: 0.9rem !important; margin-top: 8px !important;
     transition: transform 0.2s, box-shadow 0.2s, background 0.2s !important;
 }
-.stDownloadButton > button:hover {
+.stDownloadButton > button *,
+[data-testid="stBaseButton-download"] * {
+    color: #252423 !important;
+}
+.stDownloadButton > button:hover,
+[data-testid="stBaseButton-download"]:hover {
     background: #D4AF0A !important;
     transform: translateY(-2px) !important;
     box-shadow: 0 8px 28px rgba(242,200,17,0.4) !important;
