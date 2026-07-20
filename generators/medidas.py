@@ -119,14 +119,42 @@ def _titulo(col: str) -> str:
     return " ".join(p.capitalize() for p in col.split("_"))
 
 
-def _medidas_de_uma_fato(dados_setor: dict, fato_key: str) -> dict:
-    """Gera a bateria completa de medidas DAX para UMA tabela fato."""
+def _sufixo_fato(fato_key: str) -> str:
+    """'FatoRodada' -> 'Rodada' (usado para desambiguar nomes de medida repetidos entre fatos)."""
+    nome = fato_key[4:] if fato_key.startswith("Fato") else fato_key
+    return nome or fato_key
+
+
+def _medidas_de_uma_fato(
+    dados_setor: dict,
+    fato_key: str,
+    multi_fato: bool,
+    titulos_reservados: dict,
+    contagens_reservadas: dict,
+) -> dict:
+    """
+    Gera a bateria completa de medidas DAX para UMA tabela fato.
+
+    `multi_fato`, `titulos_reservados` e `contagens_reservadas` vêm de
+    `gerar_bateria_medidas` e são compartilhados entre todas as fatos do
+    setor: garantem que, quando duas fatos diferentes produziriam a MESMA
+    medida (ex.: duas fatos com FK para a mesma dimensão, ou o mesmo nome de
+    coluna de negócio), a segunda ocorrência ganhe um sufixo com o nome da
+    fato — evitando medidas duplicadas no modelo (erro no Power BI/TMDL).
+    """
     fato = dados_setor[fato_key]
     pk_propria = fato.columns[0] if len(fato.columns) else None
+    sufixo = _sufixo_fato(fato_key)
 
     col_data = _coluna_data(fato)
     colunas_medida = _colunas_numericas_fato(fato)
     fks = _chaves_estrangeiras(fato, pk_propria)
+    if col_data:
+        # A FK de data não deve entrar como "dimensão" de Qtde Distinta: já é
+        # tratada separadamente pelo Time Intelligence. Mantê-la aqui também
+        # causava falsos-positivos de resolução (ex.: duas fatos com a mesma
+        # coluna id_data podiam se confundir uma com a outra em _nome_dimensao).
+        fks = [fk for fk in fks if fk != col_data]
 
     medidas = {
         "🧮 Agregações Básicas": [],
@@ -135,9 +163,23 @@ def _medidas_de_uma_fato(dados_setor: dict, fato_key: str) -> dict:
         "📅 Time Intelligence (MoM / YoY / YTD / MTD)": [],
     }
 
+    # Resolve, uma única vez por coluna, o título "efetivo" (com ou sem
+    # sufixo de desambiguação) — usado de forma consistente nas 3 seções
+    # abaixo (agregações, % participação e time intelligence), já que elas
+    # se referenciam por nome dentro da MESMA fato.
+    titulo_efetivo = {}
+    for col in colunas_medida:
+        titulo_base = _titulo(col)
+        dono = titulos_reservados.get(titulo_base)
+        if dono is not None and dono != fato_key:
+            titulo_efetivo[col] = f"{titulo_base} ({sufixo})"
+        else:
+            titulo_efetivo[col] = titulo_base
+            titulos_reservados.setdefault(titulo_base, fato_key)
+
     # ---- 1. Agregações básicas: Total, Média, Mínimo, Máximo ----------------
     for col in colunas_medida:
-        titulo = _titulo(col)
+        titulo = titulo_efetivo[col]
         medidas["🧮 Agregações Básicas"].extend([
             {
                 "nome": f"Total {titulo}",
@@ -162,22 +204,34 @@ def _medidas_de_uma_fato(dados_setor: dict, fato_key: str) -> dict:
         ])
 
     # ---- 2. Contagens ---------------------------------------------------------
+    nome_registros = "Qtde de Registros"
+    if multi_fato:
+        # "Qtde de Registros" é o mesmo literal para qualquer fato — em
+        # setores multi-fato SEMPRE colide, então sempre desambiguamos.
+        nome_registros = f"Qtde de Registros ({sufixo})"
     medidas["🔢 Contagens"].append({
-        "nome": "Qtde de Registros",
-        "formula": f"Qtde de Registros = COUNTROWS({fato_key})",
+        "nome": nome_registros,
+        "formula": f"{nome_registros} = COUNTROWS({fato_key})",
         "descricao": f"Quantidade de linhas da tabela fato {fato_key} no contexto atual.",
     })
     for fk in fks:
         nome_dim = _nome_dimensao(fk, dados_setor, fato_key)
+        nome_base = f"Qtde Distinta de {nome_dim}"
+        dono = contagens_reservadas.get(nome_base)
+        if dono is not None and dono != fato_key:
+            nome_contagem = f"{nome_base} ({sufixo})"
+        else:
+            nome_contagem = nome_base
+            contagens_reservadas.setdefault(nome_base, fato_key)
         medidas["🔢 Contagens"].append({
-            "nome": f"Qtde Distinta de {nome_dim}",
-            "formula": f"Qtde Distinta de {nome_dim} = DISTINCTCOUNT({fato_key}[{fk}])",
+            "nome": nome_contagem,
+            "formula": f"{nome_contagem} = DISTINCTCOUNT({fato_key}[{fk}])",
             "descricao": f"Número de {nome_dim.lower()}(s) distintos presentes na fato.",
         })
 
     # ---- 3. Percentual de participação (% do total) ---------------------------
     for col in colunas_medida:
-        titulo = _titulo(col)
+        titulo = titulo_efetivo[col]
         medidas["📊 Percentual de Participação"].append({
             "nome": f"% do Total {titulo}",
             "formula": (
@@ -193,7 +247,7 @@ def _medidas_de_uma_fato(dados_setor: dict, fato_key: str) -> dict:
     # ---- 4. Time Intelligence (requer coluna de data + dCalendario) -----------
     if col_data and "dCalendario" in dados_setor:
         for col in colunas_medida:
-            titulo = _titulo(col)
+            titulo = titulo_efetivo[col]
             medidas["📅 Time Intelligence (MoM / YoY / YTD / MTD)"].extend([
                 {
                     "nome": f"{titulo} Mês Anterior",
@@ -257,8 +311,14 @@ def _medidas_de_uma_fato(dados_setor: dict, fato_key: str) -> dict:
 def gerar_bateria_medidas(dados_setor: dict) -> dict:
     """
     Gera a bateria completa de medidas DAX para TODAS as tabelas fato de um
-    setor (funciona com qualquer um dos 55 setores deste projeto, incluindo
+    setor (funciona com qualquer um dos 60 setores deste projeto, incluindo
     setores multi-fato).
+
+    Em setores com mais de uma tabela fato, desambigua automaticamente
+    medidas que colidiriam (mesmo nome vindo de fatos diferentes — ex.: duas
+    fatos com FK para a mesma dimensão, ou colunas de negócio com o mesmo
+    nome) acrescentando o nome da fato entre parênteses, evitando o erro de
+    "measure duplicada" no Power BI/TMDL.
 
     Parâmetros
     ----------
@@ -271,4 +331,12 @@ def gerar_bateria_medidas(dados_setor: dict) -> dict:
     dict {fato_key: {categoria: [ {"nome", "formula", "descricao"}, ... ]}}
     """
     fatos = [k for k in dados_setor if k.startswith("Fato")]
-    return {fato_key: _medidas_de_uma_fato(dados_setor, fato_key) for fato_key in fatos}
+    multi_fato = len(fatos) > 1
+    titulos_reservados: dict = {}
+    contagens_reservadas: dict = {}
+    return {
+        fato_key: _medidas_de_uma_fato(
+            dados_setor, fato_key, multi_fato, titulos_reservados, contagens_reservadas
+        )
+        for fato_key in fatos
+    }
