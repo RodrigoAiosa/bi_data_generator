@@ -1,38 +1,44 @@
 from generators import (
-    gerar_academia, gerar_agencia_publicidade, gerar_agtech, gerar_agronegocio,
-    gerar_alimenticio, gerar_apostas_esportivas, gerar_arquitetura, gerar_audiovisual,
-    gerar_aviacao, gerar_beleza, gerar_biotecnologia, gerar_ciberseguranca,
-    gerar_condominio, gerar_construcao, gerar_coworking, gerar_crm, gerar_drones,
-    gerar_economia_circular, gerar_ecommerce, gerar_editora, gerar_educacao,
-    gerar_energia, gerar_ensino_superior, gerar_espacial, gerar_esportes,
-    gerar_eventos, gerar_farmaceutico, gerar_financeiro, gerar_fintech,
-    gerar_florestal, gerar_franquias, gerar_frigorifico, gerar_funeraria,
-    gerar_games, gerar_governo, gerar_homecare, gerar_hotelaria, gerar_imobiliario,
-    gerar_industria, gerar_juridico, gerar_laboratorio, gerar_locadora,
-    gerar_logistica, gerar_logistica_urbana, gerar_marketing,
-    gerar_portabilidade_claro, gerar_mineracao, gerar_mobilidade, gerar_moda,
-    gerar_odontologia, gerar_pecuaria, gerar_pesca, gerar_pet, gerar_petroleo,
-    gerar_rh, gerar_restaurante, gerar_saas_b2b, gerar_saneamento, gerar_saude,
-    gerar_saude_mental, gerar_seguros, gerar_startup, gerar_streaming,
-    gerar_tecnologia, gerar_telecom, gerar_textil, gerar_transporte,
-    gerar_turismo, gerar_varejo, gerar_viagem_corp,
+    gerar_varejo, gerar_financeiro, gerar_saude, gerar_tecnologia,
+    gerar_educacao, gerar_logistica, gerar_energia, gerar_telecom,
+    gerar_industria, gerar_agronegocio, gerar_hotelaria, gerar_streaming,
+    gerar_ecommerce, gerar_rh, gerar_mobilidade, gerar_fintech,
+    gerar_turismo, gerar_imobiliario, gerar_seguros, gerar_construcao,
+    gerar_mineracao, gerar_alimenticio, gerar_juridico, gerar_esportes,
+    gerar_saas_b2b, gerar_crm, gerar_farmaceutico, gerar_marketing,
+    gerar_petroleo, gerar_governo, gerar_portabilidade_claro,
+    gerar_aviacao, gerar_pet, gerar_games, gerar_saneamento, gerar_transporte,
+    gerar_moda, gerar_eventos, gerar_laboratorio, gerar_franquias, gerar_condominio,
+    gerar_saude_mental, gerar_florestal, gerar_startup, gerar_audiovisual, gerar_pesca,
+    gerar_textil, gerar_arquitetura, gerar_viagem_corp, gerar_espacial, gerar_beleza,
+    gerar_logistica_urbana,
+    # ═══════ NOVOS SETORES ═══════
+    gerar_agtech, gerar_economia_circular, gerar_biotecnologia,
+    gerar_odontologia, gerar_academia, gerar_ciberseguranca,
+    gerar_locadora, gerar_restaurante,
+    # ═══════ +10 NOVOS SETORES ═══════
+    gerar_ensino_superior, gerar_funeraria, gerar_agencia_publicidade,
+    gerar_pecuaria, gerar_homecare, gerar_apostas_esportivas,
+    gerar_coworking, gerar_editora, gerar_drones, gerar_frigorifico
 )
 
-# ⚠️ RECONSTRUÍDO POR INFERÊNCIA — confirme/ajuste com os valores reais do seu arquivo original.
+# Configuração da página Streamlit
 PAGE_CONFIG = {
     "page_title": "BI Data Generator PRO",
     "page_icon": "📊",
     "layout": "wide",
-    "initial_sidebar_state": "expanded",
+    "initial_sidebar_state": "expanded"
 }
 
-# ⚠️ RECONSTRUÍDO POR INFERÊNCIA (com base no comportamento descrito: 100 a 100.000 linhas,
-# default observado de 5.000 em prints anteriores) — confirme os valores reais do seu arquivo.
+# Configurações do slider de linhas
 SLIDER_MIN = 100
-SLIDER_MAX = 100_000
-SLIDER_DEFAULT = 5_000
+SLIDER_MAX = 100000
+SLIDER_DEFAULT = 5000
 SLIDER_STEP = 100
 
+# ═══════════════════════════════════════════════════════════════
+# Dicionário de setores disponíveis (55 setores) — ordem alfabética
+# ═══════════════════════════════════════════════════════════════
 SETORES = {
     "🏋️ Academia & Fitness":          gerar_academia,
     "📢 Agência de Publicidade":      gerar_agencia_publicidade,
@@ -106,6 +112,9 @@ SETORES = {
     "✈️ Viagens Corporativas":        gerar_viagem_corp,
 }
 
+# ═══════════════════════════════════════════════════════════════
+# Informações para os flip-cards da tela inicial (55 setores) — ordem alfabética
+# ═══════════════════════════════════════════════════════════════
 SETORES_INFO = [
     ("🏋️", "Academia & Fitness",         "Check-ins, alunos, instrutores, pagamentos e avaliações físicas"),
     ("📢", "Agência de Publicidade",     "Projetos, campanhas de mídia, equipe e clientes"),
@@ -178,3 +187,7 @@ SETORES_INFO = [
     ("🛒", "Varejo",                      "Vendas, clientes, produtos e filiais"),
     ("✈️", "Viagens Corporativas",        "Viajantes, custos, política de viagem e SLA"),
 ]
+
+# Configurações de datas (opcional)
+DATE_DEFAULT_START = "2023-01-01"
+DATE_DEFAULT_END   = "2023-12-31"
