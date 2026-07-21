@@ -1,45 +1,45 @@
 from generators import (
-    gerar_varejo, gerar_financeiro, gerar_saude, gerar_tecnologia,
-    gerar_educacao, gerar_logistica, gerar_energia, gerar_telecom,
-    gerar_industria, gerar_agronegocio, gerar_hotelaria, gerar_streaming,
-    gerar_ecommerce, gerar_rh, gerar_mobilidade, gerar_fintech,
-    gerar_turismo, gerar_imobiliario, gerar_seguros, gerar_construcao,
-    gerar_mineracao, gerar_alimenticio, gerar_juridico, gerar_esportes,
-    gerar_saas_b2b, gerar_crm, gerar_farmaceutico, gerar_marketing,
-    gerar_petroleo, gerar_governo, gerar_portabilidade_claro,
-    gerar_aviacao, gerar_pet, gerar_games, gerar_saneamento, gerar_transporte,
-    gerar_moda, gerar_eventos, gerar_laboratorio, gerar_franquias, gerar_condominio,
-    gerar_saude_mental, gerar_florestal, gerar_startup, gerar_audiovisual, gerar_pesca,
-    gerar_textil, gerar_arquitetura, gerar_viagem_corp, gerar_espacial, gerar_beleza,
-    gerar_logistica_urbana,
-    # ═══════ NOVOS SETORES ═══════
-    gerar_agtech, gerar_economia_circular, gerar_biotecnologia,
-    gerar_odontologia, gerar_academia, gerar_ciberseguranca,
-    gerar_locadora, gerar_restaurante
+    gerar_academia, gerar_agencia_publicidade, gerar_agtech, gerar_agronegocio,
+    gerar_alimenticio, gerar_apostas_esportivas, gerar_arquitetura, gerar_audiovisual,
+    gerar_aviacao, gerar_beleza, gerar_biotecnologia, gerar_ciberseguranca,
+    gerar_condominio, gerar_construcao, gerar_coworking, gerar_crm, gerar_drones,
+    gerar_economia_circular, gerar_ecommerce, gerar_editora, gerar_educacao,
+    gerar_energia, gerar_ensino_superior, gerar_espacial, gerar_esportes,
+    gerar_eventos, gerar_farmaceutico, gerar_financeiro, gerar_fintech,
+    gerar_florestal, gerar_franquias, gerar_frigorifico, gerar_funeraria,
+    gerar_games, gerar_governo, gerar_homecare, gerar_hotelaria, gerar_imobiliario,
+    gerar_industria, gerar_juridico, gerar_laboratorio, gerar_locadora,
+    gerar_logistica, gerar_logistica_urbana, gerar_marketing,
+    gerar_portabilidade_claro, gerar_mineracao, gerar_mobilidade, gerar_moda,
+    gerar_odontologia, gerar_pecuaria, gerar_pesca, gerar_pet, gerar_petroleo,
+    gerar_rh, gerar_restaurante, gerar_saas_b2b, gerar_saneamento, gerar_saude,
+    gerar_saude_mental, gerar_seguros, gerar_startup, gerar_streaming,
+    gerar_tecnologia, gerar_telecom, gerar_textil, gerar_transporte,
+    gerar_turismo, gerar_varejo, gerar_viagem_corp,
 )
 
-# Configuração da página Streamlit
+# ⚠️ RECONSTRUÍDO POR INFERÊNCIA — confirme/ajuste com os valores reais do seu arquivo original.
 PAGE_CONFIG = {
     "page_title": "BI Data Generator PRO",
     "page_icon": "📊",
     "layout": "wide",
-    "initial_sidebar_state": "expanded"
+    "initial_sidebar_state": "expanded",
 }
 
-# Configurações do slider de linhas
+# ⚠️ RECONSTRUÍDO POR INFERÊNCIA (com base no comportamento descrito: 100 a 100.000 linhas,
+# default observado de 5.000 em prints anteriores) — confirme os valores reais do seu arquivo.
 SLIDER_MIN = 100
-SLIDER_MAX = 100000
-SLIDER_DEFAULT = 5000
+SLIDER_MAX = 100_000
+SLIDER_DEFAULT = 5_000
 SLIDER_STEP = 100
 
-# ═══════════════════════════════════════════════════════════════
-# Dicionário de setores disponíveis (55 setores) — ordem alfabética
-# ═══════════════════════════════════════════════════════════════
 SETORES = {
     "🏋️ Academia & Fitness":          gerar_academia,
+    "📢 Agência de Publicidade":      gerar_agencia_publicidade,
     "🌱 AgTech":                      gerar_agtech,
     "🌾 Agronegócio":                 gerar_agronegocio,
     "🍔 Alimentos & Bebidas":         gerar_alimenticio,
+    "🎰 Apostas Esportivas & iGaming": gerar_apostas_esportivas,
     "🏛️ Arquitetura & Design":        gerar_arquitetura,
     "🎬 Audiovisual & Produtora":     gerar_audiovisual,
     "✈️ Aviação Civil":               gerar_aviacao,
@@ -48,11 +48,15 @@ SETORES = {
     "🔐 Cibersegurança":              gerar_ciberseguranca,
     "🏢 Condomínio & Facilities":     gerar_condominio,
     "🏗️ Construção Civil":            gerar_construcao,
+    "🪑 Coworking & Espaços Compartilhados": gerar_coworking,
     "🤝 CRM":                         gerar_crm,
+    "🚁 Drones & Serviços Aéreos":    gerar_drones,
     "♻️ Economia Circular":           gerar_economia_circular,
     "🏪 E-commerce":                  gerar_ecommerce,
+    "📖 Editora & Publicação":        gerar_editora,
     "📚 Educação":                    gerar_educacao,
     "⚡ Energia":                     gerar_energia,
+    "🎓 Ensino Superior":             gerar_ensino_superior,
     "🚀 Espacial & Aeroespacial":     gerar_espacial,
     "🏟️ Esportes":                   gerar_esportes,
     "🎉 Eventos & Entretenimento":    gerar_eventos,
@@ -61,8 +65,11 @@ SETORES = {
     "🏦 Fintech":                     gerar_fintech,
     "🌲 Florestal & Papel":           gerar_florestal,
     "🏷️ Franquias":                  gerar_franquias,
+    "🥩 Frigorífico & Processamento de Carnes": gerar_frigorifico,
+    "⚰️ Funerária & Serviços Funerários": gerar_funeraria,
     "🎮 Games & eSports":             gerar_games,
     "🏛️ Governo & Setor Público":    gerar_governo,
+    "🩺 Home Care":                   gerar_homecare,
     "🏨 Hotelaria":                   gerar_hotelaria,
     "🏠 Imobiliário":                 gerar_imobiliario,
     "🏭 Indústria":                   gerar_industria,
@@ -77,6 +84,7 @@ SETORES = {
     "🚗 Mobilidade":                  gerar_mobilidade,
     "👗 Moda & Vestuário":            gerar_moda,
     "🦷 Odontologia":                 gerar_odontologia,
+    "🐄 Pecuária":                    gerar_pecuaria,
     "🐟 Pesca & Aquicultura":         gerar_pesca,
     "🐾 Pet & Veterinária":           gerar_pet,
     "🛢️ Petróleo & Gás":             gerar_petroleo,
@@ -98,14 +106,13 @@ SETORES = {
     "✈️ Viagens Corporativas":        gerar_viagem_corp,
 }
 
-# ═══════════════════════════════════════════════════════════════
-# Informações para os flip-cards da tela inicial (55 setores) — ordem alfabética
-# ═══════════════════════════════════════════════════════════════
 SETORES_INFO = [
     ("🏋️", "Academia & Fitness",         "Check-ins, alunos, instrutores, pagamentos e avaliações físicas"),
+    ("📢", "Agência de Publicidade",     "Projetos, campanhas de mídia, equipe e clientes"),
     ("🌱", "AgTech",                      "Sensores IoT, drones, monitoramento e agricultura de precisão"),
     ("🌾", "Agronegócio",                 "Safras, culturas, propriedades e insumos"),
     ("🍔", "Alimentos & Bebidas",         "Produção, plantas, produtos e fornecedores"),
+    ("🎰", "Apostas Esportivas & iGaming", "Apostas, jogadores, eventos esportivos e transações"),
     ("🏛️", "Arquitetura & Design",       "Projetos, serviços, honorários e gestão de obras"),
     ("🎬", "Audiovisual & Produtora",     "Produções, orçamentos, recursos e bilheteria"),
     ("✈️", "Aviação Civil",               "Voos, passageiros, aeronaves e aeroportos"),
@@ -114,11 +121,15 @@ SETORES_INFO = [
     ("🔐", "Cibersegurança",              "Incidentes, vulnerabilidades, ativos e SLA de resposta (SOC)"),
     ("🏢", "Condomínio & Facilities",     "Cotas, despesas, ocorrências e manutenção"),
     ("🏗️", "Construção Civil",           "Obras, custos, materiais e fornecedores"),
+    ("🪑", "Coworking & Espaços Compartilhados", "Reservas, assinaturas, espaços e clientes"),
     ("🤝", "CRM",                         "Oportunidades, contas, contatos e atividades comerciais"),
+    ("🚁", "Drones & Serviços Aéreos",    "Missões, drones, manutenção e clientes"),
     ("♻️", "Economia Circular",           "Reciclagem, logística reversa, créditos de carbono e ESG"),
     ("🏪", "E-commerce",                  "Pedidos, clientes, produtos, fretes e pagamentos"),
+    ("📖", "Editora & Publicação",        "Livros, vendas, canais e estoque"),
     ("📚", "Educação",                    "Matrículas, alunos, cursos e instrutores"),
     ("⚡", "Energia",                     "Consumo, medidores, subestações e tarifas"),
+    ("🎓", "Ensino Superior",             "Matrículas, disciplinas, cursos e desempenho acadêmico"),
     ("🚀", "Espacial & Aeroespacial",     "Missões, satélites, lançamentos e operações"),
     ("🏟️", "Esportes",                   "Partidas, atletas, clubes e competições"),
     ("🎉", "Eventos & Entretenimento",    "Ingressos, fornecedores, receitas e NPS"),
@@ -127,8 +138,11 @@ SETORES_INFO = [
     ("🏦", "Fintech",                     "Transações, cartões, usuários, comerciantes e antifraude"),
     ("🌲", "Florestal & Papel",           "Talhões, espécies, colheita e carbono"),
     ("🏷️", "Franquias",                  "Unidades, royalties, taxas e faturamento"),
+    ("🥩", "Frigorífico & Processamento de Carnes", "Abate, produtos, unidades e canais de venda"),
+    ("⚰️", "Funerária & Serviços Funerários", "Atendimentos, serviços, planos preventivos e clientes"),
     ("🎮", "Games & eSports",             "Partidas, jogadores, jogos e monetização in-game"),
     ("🏛️", "Governo & Setor Público",    "Despesas, receitas, licitações e contratos"),
+    ("🩺", "Home Care",                   "Visitas, pacientes, profissionais e ocorrências"),
     ("🏨", "Hotelaria",                   "Reservas, hóspedes, hotéis, quartos e canais"),
     ("🏠", "Imobiliário",                 "Vendas, aluguéis, imóveis e corretores"),
     ("🏭", "Indústria",                   "Produção, máquinas, insumos e operadores"),
@@ -143,6 +157,7 @@ SETORES_INFO = [
     ("🚗", "Mobilidade",                  "Viagens, motoristas, passageiros, rotas e veículos"),
     ("👗", "Moda & Vestuário",            "Coleções, vendas, estoque e devoluções"),
     ("🦷", "Odontologia",                 "Consultas, dentistas, pacientes, procedimentos e convênios"),
+    ("🐄", "Pecuária",                    "Fazendas, rebanho, manejo e produção"),
     ("🐟", "Pesca & Aquicultura",         "Espécies, produção, qualidade e biomassa"),
     ("🐾", "Pet & Veterinária",           "Atendimentos, pets, tutores e serviços veterinários"),
     ("🛢️", "Petróleo & Gás",             "Produção, poços, plataformas e custos operacionais"),
@@ -163,7 +178,3 @@ SETORES_INFO = [
     ("🛒", "Varejo",                      "Vendas, clientes, produtos e filiais"),
     ("✈️", "Viagens Corporativas",        "Viajantes, custos, política de viagem e SLA"),
 ]
-
-# Configurações de datas (opcional)
-DATE_DEFAULT_START = "2023-01-01"
-DATE_DEFAULT_END   = "2023-12-31"
