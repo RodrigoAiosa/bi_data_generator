@@ -22,7 +22,6 @@ except Exception:
     def inject_seo(lang: str = "pt") -> None:
         pass  # seo.py não encontrado — SEO desabilitado
 from ui import (
-    render_dashboard,
     render_estado_inicial,
     render_hero,
     render_resultado,
@@ -30,8 +29,6 @@ from ui import (
 )
 
 st.set_page_config(**PAGE_CONFIG)
-
-_SAMPLE_SIZE = 2_000
 
 # ── Strings de anomalia ───────────────────────────────────────────────────────
 _ANOMALY_LABEL = {"pt": "🧪 Injetar anomalias nos dados", "en": "🧪 Inject anomalies into data"}
@@ -154,36 +151,6 @@ def _gerar_com_progresso(setor: str, n_linhas: int, data_inicio, data_fim, anoma
     return tabelas
 
 
-# ── Cache do preview ──────────────────────────────────────────────────────────
-
-@st.cache_data(show_spinner=False)
-def _gerar_amostra(setor: str) -> dict:
-    from datetime import date
-    fn = SETORES[setor]
-    return fn(_SAMPLE_SIZE, date(2023, 1, 1), date(2023, 12, 31))
-
-
-# ── Preview dashboard ─────────────────────────────────────────────────────────
-
-def _render_dashboard_preview(nome: str, setor: str) -> None:
-    st.markdown(f"""
-    <div style="
-        background: linear-gradient(145deg, rgba(167,139,250,0.07) 0%, rgba(124,58,237,0.04) 100%);
-        border: 1px solid rgba(167,139,250,0.2); border-radius: 14px;
-        padding: 14px 20px; margin-bottom: 28px;
-        display: flex; align-items: center; gap: 12px;
-        font-size: 0.88rem; color: #c4b5fd;">
-        <span style="font-size:1.2rem;">⚡</span>
-        <span>{t("preview_banner")}</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    with st.spinner(t("spinner_preview", nome=nome)):
-        tabelas = _gerar_amostra(setor)
-
-    render_dashboard(nome, tabelas)
-
-
 # ── Render resultado com dicionário ──────────────────────────────────────────
 
 def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool) -> None:
@@ -238,26 +205,10 @@ def main() -> None:
             st.stop()
 
         tabelas = _gerar_com_progresso(setor, n_linhas, data_inicio, data_fim, anomalia)
-
-        tab_base, tab_dash = st.tabs([t("tab_data"), t("tab_dashboard")])
-
-        with tab_base:
-            _render_resultado_completo(nome, tabelas, anomalia)
-
-        with tab_dash:
-            render_dashboard(nome, tabelas)
+        _render_resultado_completo(nome, tabelas, anomalia)
 
     else:
-        tab_inicio, tab_preview = st.tabs([
-            t("tab_home"),
-            t("tab_preview", nome=nome),
-        ])
-
-        with tab_inicio:
-            render_estado_inicial()
-
-        with tab_preview:
-            _render_dashboard_preview(nome, setor)
+        render_estado_inicial()
 
 
 if __name__ == "__main__":
