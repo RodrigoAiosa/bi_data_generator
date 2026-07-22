@@ -68,6 +68,16 @@ from .coworking import gerar_coworking
 from .editora import gerar_editora
 from .drones import gerar_drones
 from .frigorifico import gerar_frigorifico
+from .concessionaria import gerar_concessionaria
+from .museus import gerar_museus
+from .autopecas import gerar_autopecas
+from .consultoria import gerar_consultoria
+from .vinicola import gerar_vinicola
+from .cinema import gerar_cinema
+from .metro import gerar_metro
+from .grafica import gerar_grafica
+from .seguranca_privada import gerar_seguranca_privada
+from .locacao_temporada import gerar_locacao_temporada
 from .medidas import gerar_bateria_medidas
 
 from .moda import gerar_moda
@@ -158,5 +168,15 @@ __all__ = [
     "gerar_editora",
     "gerar_drones",
     "gerar_frigorifico",
+    "gerar_concessionaria",
+    "gerar_museus",
+    "gerar_autopecas",
+    "gerar_consultoria",
+    "gerar_vinicola",
+    "gerar_cinema",
+    "gerar_metro",
+    "gerar_grafica",
+    "gerar_seguranca_privada",
+    "gerar_locacao_temporada",
     "gerar_bateria_medidas",
 ]
