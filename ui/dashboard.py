@@ -1,6 +1,9 @@
 """
 ui/dashboard.py
 Dashboard com KPIs e gráficos interativos por setor — com suporte a i18n.
+Estilo visual: "documento/papel" (fundo claro, tipografia serifada Bitter +
+IBM Plex Mono, paleta ink/green/rust/gold), aplicado via styles/css.py
+dentro do container st.container(key="dash_paper").
 """
 
 import pandas as pd
@@ -10,32 +13,39 @@ import streamlit as st
 
 from i18n import td, resolve_sector_name
 
-_BG      = "rgba(0,0,0,0)"
-_PAPER   = "rgba(0,0,0,0)"
-_GRID    = "rgba(167,139,250,0.08)"
-_TEXT    = "#7b8ba8"
-_ACCENT  = "#a78bfa"
-_PALETTE = ["#a78bfa","#7c3aed","#c4b5fd","#6d28d9","#ddd6fe","#4c1d95","#ede9fe"]
+_PAPER_BODY = "#EEF0EA"
+_PAPER      = "#F8F9F4"
+_GRID       = "#D8DAD0"
+_TEXT       = "#6B6F66"
+_INK        = "#16233F"
+_GREEN      = "#1F6F54"
+_RUST       = "#A63D2F"
+_GOLD       = "#B8862E"
+_ACCENT     = _INK
+_PALETTE    = [_INK, _GREEN, _RUST, _GOLD, "#223058", "#6E86A8", "#8A7F5E"]
+_FONT_DISPLAY = "Bitter, serif"
+_FONT_MONO    = "IBM Plex Mono, monospace"
+_FONT_BODY    = "Inter, sans-serif"
 
 
 def _base_layout(fig, title=""):
     fig.update_layout(
-        paper_bgcolor=_PAPER, plot_bgcolor=_BG,
-        font=dict(family="DM Sans, sans-serif", color=_TEXT, size=12),
-        title=dict(text=title, font=dict(color="#e2e8f0", size=14, family="Syne, sans-serif"), x=0.01),
-        margin=dict(l=16, r=16, t=40 if title else 16, b=16),
-        legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color=_TEXT)),
+        paper_bgcolor=_PAPER, plot_bgcolor=_PAPER,
+        font=dict(family=_FONT_BODY, color=_TEXT, size=12),
+        title=dict(text=title, font=dict(color=_INK, size=15, family=_FONT_DISPLAY), x=0.01),
+        margin=dict(l=16, r=16, t=44 if title else 16, b=16),
+        legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color=_TEXT, family=_FONT_MONO, size=11)),
         colorway=_PALETTE,
     )
-    fig.update_xaxes(gridcolor=_GRID, zeroline=False, tickfont=dict(color=_TEXT))
-    fig.update_yaxes(gridcolor=_GRID, zeroline=False, tickfont=dict(color=_TEXT))
+    fig.update_xaxes(gridcolor=_GRID, zeroline=False, tickfont=dict(color=_TEXT, family=_FONT_MONO, size=10))
+    fig.update_yaxes(gridcolor=_GRID, zeroline=False, tickfont=dict(color=_TEXT, family=_FONT_MONO, size=10))
     return fig
 
 
 def _metric(label, value, sub="", delta=""):
-    delta_html = f'<span style="font-size:0.78rem;color:#4ade80;margin-top:4px;display:block;">▲ {delta}</span>' if delta else ""
-    sub_html   = f'<span class="stat-sublabel">{sub}</span>' if sub else ""
-    return f'<div class="stat-card"><span class="stat-number">{value}</span><span class="stat-label">{label}</span>{sub_html}{delta_html}</div>'
+    delta_html = f'<span class="kpi-delta">▲ {delta}</span>' if delta else ""
+    sub_html   = f'<p class="kpi-sub">{sub}</p>' if sub else ""
+    return f'<div class="kpi-stamp"><p class="kpi-label">{label}</p><p class="kpi-value">{value}</p>{sub_html}{delta_html}</div>'
 
 
 def _kpi_row(metrics):
@@ -43,7 +53,7 @@ def _kpi_row(metrics):
     for col, args in zip(cols, metrics):
         with col:
             st.markdown(_metric(*args), unsafe_allow_html=True)
-    st.markdown("<div style='margin-bottom:32px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom:28px'></div>", unsafe_allow_html=True)
 
 
 def _chart_row(figs):
@@ -55,6 +65,28 @@ def _chart_row(figs):
 
 def _section(key):
     st.markdown(f'<h3 class="section-header">{td(key)}</h3>', unsafe_allow_html=True)
+
+
+def _dashboard_header(nome_setor: str, tabelas: dict) -> None:
+    """Cabeçalho estilo 'relatório impresso' no topo da aba Dashboard."""
+    from i18n import get_lang
+    lang = get_lang()
+    fato_key = next((k for k in tabelas if k.startswith("Fato")), None)
+    n = len(tabelas[fato_key]) if fato_key else 0
+    eyebrow = "Relatório de Business Intelligence · Dados Sintéticos" if lang == "pt" \
+        else "Business Intelligence Report · Synthetic Data"
+    meta = f"{n:,} registros na tabela fato · Base gerada para fins de estudo" if lang == "pt" \
+        else f"{n:,} records in fact table · Data generated for study purposes"
+    stamp = "gerado" if lang == "pt" else "generated"
+    st.markdown(f"""
+<div class="dash-header">
+    <div class="dash-stamp">&#10003; {stamp}</div>
+    <p class="dash-eyebrow">{eyebrow}</p>
+    <h1 class="dash-title">{nome_setor}</h1>
+    <p class="dash-meta">{meta}</p>
+</div>
+<div class="dash-tear"></div>
+""", unsafe_allow_html=True)
 
 
 def _by_month(df, date_col, val_col):
@@ -87,7 +119,7 @@ def _monthly_chart(df, date_col, val_col, title, y_label, agg="sum"):
 
     fig = px.area(by_mes, x="mes", y=val_col, labels={"mes": "", val_col: y_label})
     fig.update_traces(
-        line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)",
+        line_color=_ACCENT, fillcolor="rgba(22,35,63,0.08)",
         customdata=by_mes[["_mom_fmt", "_yoy_fmt"]].to_numpy(),
         hovertemplate="%{x}<br>" + y_label + ": %{y:,.2f}"
                       "<br>MoM: %{customdata[0]}<br>YoY: %{customdata[1]}<extra></extra>",
@@ -97,16 +129,16 @@ def _monthly_chart(df, date_col, val_col, title, y_label, agg="sum"):
     partes = []
     if len(by_mes) > 1 and pd.notna(by_mes["_mom"].iloc[-1]):
         v = by_mes["_mom"].iloc[-1]
-        cor = "#4ade80" if v >= 0 else "#f87171"
+        cor = _GREEN if v >= 0 else _RUST
         partes.append(f"<span style='color:{cor}'>{'▲' if v >= 0 else '▼'} {v:+.1f}% MoM</span>")
     if len(by_mes) > 12 and pd.notna(by_mes["_yoy"].iloc[-1]):
         v = by_mes["_yoy"].iloc[-1]
-        cor = "#4ade80" if v >= 0 else "#f87171"
+        cor = _GREEN if v >= 0 else _RUST
         partes.append(f"<span style='color:{cor}'>{'▲' if v >= 0 else '▼'} {v:+.1f}% YoY</span>")
     if partes:
         fig.add_annotation(
             xref="paper", yref="paper", x=1, y=1.16, showarrow=False, align="right",
-            font=dict(size=11, family="DM Sans, sans-serif"), text="   ".join(partes),
+            font=dict(size=11, family=_FONT_MONO), text="   ".join(partes),
         )
     return fig
 
@@ -136,7 +168,7 @@ def _dash_varejo(tabelas):
 
     by_canal = fato.groupby("canal")["valor_total"].sum().reset_index()
     fig_canal = px.pie(by_canal, names="canal", values="valor_total", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_canal.update_traces(textfont_color="#e2e8f0")
+    fig_canal.update_traces(textfont_color=_INK)
     _base_layout(fig_canal, td("revenue_by_channel"))
 
     top_v = (fato.groupby("id_vendedor")["valor_total"].sum().reset_index()
@@ -144,7 +176,7 @@ def _dash_varejo(tabelas):
              .merge(vendedor[["id_vendedor","nome"]], on="id_vendedor"))
     fig_vend = px.bar(top_v, x="valor_total", y="nome", orientation="h",
                       labels={"valor_total":td("revenue_brl"),"nome":""},
-                      color="valor_total", color_continuous_scale=["#6d28d9","#a78bfa","#c4b5fd"])
+                      color="valor_total", color_continuous_scale=["#16233F","#A63D2F","#B8862E"])
     fig_vend.update_layout(coloraxis_showscale=False)
     _base_layout(fig_vend, td("top10_sellers"))
     _chart_row([(fig_canal,1),(fig_vend,2)])
@@ -166,7 +198,7 @@ def _dash_financeiro(tabelas):
     by_tipo = fato.groupby("tipo")["valor"].sum().reset_index().sort_values("valor")
     fig_tipo = px.bar(by_tipo, x="valor", y="tipo", orientation="h",
                       labels={"valor":td("volume_brl"),"tipo":""},
-                      color="valor", color_continuous_scale=["#6d28d9","#a78bfa"])
+                      color="valor", color_continuous_scale=["#16233F","#B8862E"])
     fig_tipo.update_layout(coloraxis_showscale=False)
     _base_layout(fig_tipo, td("volume_by_type"))
 
@@ -175,14 +207,14 @@ def _dash_financeiro(tabelas):
 
     by_status = fato["status"].value_counts().reset_index()
     fig_status = px.pie(by_status, names="status", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_status.update_traces(textfont_color="#e2e8f0")
+    fig_status.update_traces(textfont_color=_INK)
     _base_layout(fig_status, td("status_dist"))
 
     merged = fato.merge(produto[["id_produto","categoria"]], on="id_produto")
     by_cat = merged.groupby("categoria")["valor"].sum().reset_index().sort_values("valor",ascending=False)
     fig_cat = px.bar(by_cat, x="categoria", y="valor",
                      labels={"valor":td("volume_brl"),"categoria":""},
-                     color="valor", color_continuous_scale=["#6d28d9","#a78bfa","#c4b5fd"])
+                     color="valor", color_continuous_scale=["#16233F","#A63D2F","#B8862E"])
     fig_cat.update_layout(coloraxis_showscale=False)
     _base_layout(fig_cat, td("volume_by_product"))
     _chart_row([(fig_status,1),(fig_cat,2)])
@@ -206,7 +238,7 @@ def _dash_saude(tabelas):
     by_esp = merged.groupby("especialidade").size().reset_index(name="count").sort_values("count")
     fig_esp = px.bar(by_esp, x="count", y="especialidade", orientation="h",
                      labels={"count":td("visits_axis"),"especialidade":td("specialty")},
-                     color="count", color_continuous_scale=["#6d28d9","#a78bfa"])
+                     color="count", color_continuous_scale=["#16233F","#B8862E"])
     fig_esp.update_layout(coloraxis_showscale=False)
     _base_layout(fig_esp, td("visits_by_specialty"))
 
@@ -215,14 +247,14 @@ def _dash_saude(tabelas):
 
     by_res = fato["resultado"].value_counts().reset_index()
     fig_res = px.pie(by_res, names="resultado", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_res.update_traces(textfont_color="#e2e8f0")
+    fig_res.update_traces(textfont_color=_INK)
     _base_layout(fig_res, td("result_dist"))
 
     m2 = fato.merge(paciente[["id_paciente","convenio"]], on="id_paciente")
     by_conv = m2.groupby("convenio")["valor_cobrado"].sum().reset_index().sort_values("valor_cobrado",ascending=False)
     fig_conv = px.bar(by_conv, x="convenio", y="valor_cobrado",
                       labels={"valor_cobrado":td("revenue_brl"),"convenio":""},
-                      color="valor_cobrado", color_continuous_scale=["#6d28d9","#a78bfa","#c4b5fd"])
+                      color="valor_cobrado", color_continuous_scale=["#16233F","#A63D2F","#B8862E"])
     fig_conv.update_layout(coloraxis_showscale=False)
     _base_layout(fig_conv, td("revenue_by_plan"))
     _chart_row([(fig_res,1),(fig_conv,2)])
@@ -242,7 +274,7 @@ def _dash_tecnologia(tabelas):
 
     by_tipo = fato["tipo"].value_counts().reset_index()
     fig_tipo = px.pie(by_tipo, names="tipo", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_tipo.update_traces(textfont_color="#e2e8f0")
+    fig_tipo.update_traces(textfont_color=_INK)
     _base_layout(fig_tipo, td("contracts_by_type"))
 
     _section("segmentation")
@@ -259,7 +291,7 @@ def _dash_tecnologia(tabelas):
     by_seg = merged.groupby("setor")["valor_mrr"].sum().reset_index().sort_values("valor_mrr",ascending=False)
     fig_seg = px.bar(by_seg, x="setor", y="valor_mrr",
                      labels={"valor_mrr":"MRR (R$)","setor":""},
-                     color="valor_mrr", color_continuous_scale=["#6d28d9","#a78bfa","#c4b5fd"])
+                     color="valor_mrr", color_continuous_scale=["#16233F","#A63D2F","#B8862E"])
     fig_seg.update_layout(coloraxis_showscale=False)
     _base_layout(fig_seg, td("mrr_by_segment"))
     _chart_row([(fig_nps,2),(fig_seg,3)])
@@ -284,7 +316,7 @@ def _dash_educacao(tabelas):
     m1 = fato.merge(curso[["id_curso","modalidade"]], on="id_curso")
     by_mod = m1.groupby("modalidade").size().reset_index(name="count")
     fig_mod = px.pie(by_mod, names="modalidade", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_mod.update_traces(textfont_color="#e2e8f0")
+    fig_mod.update_traces(textfont_color=_INK)
     _base_layout(fig_mod, td("by_modality"))
 
     _section("area_performance")
@@ -294,7 +326,7 @@ def _dash_educacao(tabelas):
     by_area = m2.groupby("area")["valor_pago"].sum().reset_index().sort_values("valor_pago")
     fig_area = px.bar(by_area, x="valor_pago", y="area", orientation="h",
                       labels={"valor_pago":td("revenue_brl"),"area":td("area")},
-                      color="valor_pago", color_continuous_scale=["#6d28d9","#a78bfa"])
+                      color="valor_pago", color_continuous_scale=["#16233F","#B8862E"])
     fig_area.update_layout(coloraxis_showscale=False)
     _base_layout(fig_area, td("revenue_by_area"))
 
@@ -320,7 +352,7 @@ def _dash_logistica(tabelas):
 
     by_status = fato["status"].value_counts().reset_index()
     fig_status = px.pie(by_status, names="status", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_status.update_traces(textfont_color="#e2e8f0")
+    fig_status.update_traces(textfont_color=_INK)
     _base_layout(fig_status, td("delivery_status"))
 
     _section("carriers_routes")
@@ -331,7 +363,7 @@ def _dash_logistica(tabelas):
              .merge(trans[["id_transportadora","nome"]], on="id_transportadora"))
     fig_trans = px.bar(top_t, x="valor_frete", y="nome", orientation="h",
                        labels={"valor_frete":td("revenue_brl"),"nome":""},
-                       color="valor_frete", color_continuous_scale=["#6d28d9","#a78bfa"])
+                       color="valor_frete", color_continuous_scale=["#16233F","#B8862E"])
     fig_trans.update_layout(coloraxis_showscale=False)
     _base_layout(fig_trans, td("top_carriers"))
 
@@ -362,7 +394,7 @@ def _dash_energia(tabelas):
     by_cls = merged.groupby("classe")["consumo_kwh"].sum().reset_index().sort_values("consumo_kwh")
     fig_cls = px.bar(by_cls, x="consumo_kwh", y="classe", orientation="h",
                      labels={"consumo_kwh":td("consumption_kwh"),"classe":td("class_")},
-                     color="consumo_kwh", color_continuous_scale=["#6d28d9","#a78bfa"])
+                     color="consumo_kwh", color_continuous_scale=["#16233F","#B8862E"])
     fig_cls.update_layout(coloraxis_showscale=False)
     _base_layout(fig_cls, td("consumption_by_class"))
 
@@ -378,7 +410,7 @@ def _dash_energia(tabelas):
 
     by_fat = merged.groupby("classe")["valor_fatura"].sum().reset_index().sort_values("valor_fatura",ascending=False)
     fig_fat = px.pie(by_fat, names="classe", values="valor_fatura", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_fat.update_traces(textfont_color="#e2e8f0")
+    fig_fat.update_traces(textfont_color=_INK)
     _base_layout(fig_fat, td("revenue_by_class"))
     _chart_row([(fig_tar,3),(fig_fat,2)])
 
@@ -467,7 +499,7 @@ def _dash_agronegocio(tabelas):
         by_cult = merged.groupby("nome")["producao_ton"].sum().reset_index().sort_values("producao_ton").tail(10)
         fig_cult = px.bar(by_cult, x="producao_ton", y="nome", orientation="h",
                           labels={"producao_ton":td("production_ton"),"nome":td("crop")},
-                          color="producao_ton", color_continuous_scale=["#6d28d9","#a78bfa"])
+                          color="producao_ton", color_continuous_scale=["#16233F","#B8862E"])
         fig_cult.update_layout(coloraxis_showscale=False)
         _base_layout(fig_cult, td("top10_crops"))
         figs.append((fig_cult,2))
@@ -480,7 +512,7 @@ def _dash_agronegocio(tabelas):
         by_prod = merged2.groupby("nome")["produtividade_tha"].mean().reset_index().sort_values("produtividade_tha",ascending=False).head(10)
         fig_prod = px.bar(by_prod, x="produtividade_tha", y="nome", orientation="h",
                           labels={"produtividade_tha":td("productivity_tha"),"nome":td("crop")},
-                          color="produtividade_tha", color_continuous_scale=["#a78bfa","#c4b5fd","#ddd6fe"])
+                          color="produtividade_tha", color_continuous_scale=["#16233F","#6E86A8","#B8862E"])
         fig_prod.update_layout(coloraxis_showscale=False)
         _base_layout(fig_prod, td("top10_productivity"))
         figs2.append((fig_prod,2))
@@ -488,7 +520,7 @@ def _dash_agronegocio(tabelas):
     if "status" in fato.columns:
         by_status = fato["status"].value_counts().reset_index()
         fig_status = px.pie(by_status, names="status", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
-        fig_status.update_traces(textfont_color="#e2e8f0")
+        fig_status.update_traces(textfont_color=_INK)
         _base_layout(fig_status, td("harvest_status"))
         figs2.append((fig_status,1))
 
@@ -537,7 +569,7 @@ def _dash_imobiliario(tabelas):
     merged = fato.merge(imovel[["id_imovel","tipo"]], on="id_imovel")
     by_tipo = merged.groupby("tipo")["valor_final"].sum().reset_index()
     fig_tipo = px.pie(by_tipo, names="tipo", values="valor_final", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_tipo.update_traces(textfont_color="#e2e8f0")
+    fig_tipo.update_traces(textfont_color=_INK)
     _base_layout(fig_tipo, td("by_property_type"))
     _chart_row([(fig_mes,3),(fig_tipo,2)])
 
@@ -560,7 +592,7 @@ def _dash_seguros(tabelas):
     by_tipo = merged.groupby("tipo")["valor_premio"].sum().reset_index().sort_values("valor_premio")
     fig_tipo = px.bar(by_tipo, x="valor_premio", y="tipo", orientation="h",
                       labels={"valor_premio":td("premiums_brl"),"tipo":""},
-                      color="valor_premio", color_continuous_scale=["#6d28d9","#a78bfa"])
+                      color="valor_premio", color_continuous_scale=["#16233F","#B8862E"])
     fig_tipo.update_layout(coloraxis_showscale=False)
     _base_layout(fig_tipo, td("premiums_by_type"))
     _chart_row([(fig_mes,3),(fig_tipo,2)])
@@ -1044,7 +1076,7 @@ def _dash_portabilidade_claro(tabelas):
     by_uf = fato2.groupby("uf").size().reset_index(name="count").sort_values("count", ascending=False).head(10)
     fig_uf = px.bar(by_uf, x="uf", y="count",
                     labels={"uf": "", "count": td("migrations_axis")},
-                    color="count", color_continuous_scale=["#6d28d9", "#a78bfa"])
+                    color="count", color_continuous_scale=["#16233F","#B8862E"])
     fig_uf.update_layout(coloraxis_showscale=False)
     _base_layout(fig_uf, td("migrations_by_state"))
     _chart_row([(fig_srv, 3), (fig_uf, 2)])
@@ -1068,7 +1100,7 @@ def _dash_aviacao(tabelas):
     by_status = fato["status_voo"].value_counts().reset_index()
     by_status.columns = ["status", "count"]
     fig_status = px.pie(by_status, names="status", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_status.update_traces(textfont_color="#e2e8f0")
+    fig_status.update_traces(textfont_color=_INK)
     _base_layout(fig_status, td("flights_by_status"))
 
     merged = fato.merge(aeroporto[["id_aeroporto", "codigo_iata"]],
@@ -1119,7 +1151,7 @@ def _dash_pet(tabelas):
     by_pag = fato["forma_pagamento"].value_counts().reset_index()
     by_pag.columns = ["forma", "count"]
     fig_pag = px.pie(by_pag, names="forma", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_pag.update_traces(textfont_color="#e2e8f0")
+    fig_pag.update_traces(textfont_color=_INK)
     _base_layout(fig_pag, td("payment_methods"))
     _chart_row([(fig_pag, 1)])
 
@@ -1146,7 +1178,7 @@ def _dash_games(tabelas):
 
     by_plat = fato.groupby("plataforma")["valor_gasto_loja"].sum().reset_index().sort_values("valor_gasto_loja", ascending=False)
     fig_plat = px.pie(by_plat, names="plataforma", values="valor_gasto_loja", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_plat.update_traces(textfont_color="#e2e8f0")
+    fig_plat.update_traces(textfont_color=_INK)
     _base_layout(fig_plat, td("revenue_by_platform"))
     _chart_row([(fig_jogo, 3), (fig_plat, 2)])
 
@@ -1183,7 +1215,7 @@ def _dash_saneamento(tabelas):
     by_status = fato["status_pagamento"].value_counts().reset_index()
     by_status.columns = ["status", "count"]
     fig_status = px.pie(by_status, names="status", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
-    fig_status.update_traces(textfont_color="#e2e8f0")
+    fig_status.update_traces(textfont_color=_INK)
     _base_layout(fig_status, td("payment_status"))
     _chart_row([(fig_status, 1)])
 
@@ -1303,22 +1335,27 @@ def render_dashboard(nome: str, tabelas: dict) -> None:
     Dispatcher de dashboards.
     1. Busca dashboard específico pelo nome PT
     2. Fallback: dashboard genérico que se adapta a qualquer tabela
+
+    Todo o conteúdo é renderizado dentro de um container com key="dash_paper",
+    que o styles/css.py estiliza no formato "documento/papel" (ver .st-key-dash_paper).
     """
     from i18n import get_lang, resolve_sector_name as _rsn
 
     pt_name = _rsn(nome)
     fn = _DASHBOARDS.get(pt_name) or _DASHBOARDS.get(nome)
 
-    if fn is not None:
-        try:
-            fn(tabelas)
-        except KeyError as e:
-            # Tabela esperada não existe — usa dashboard genérico
-            lang = get_lang()
-            st.warning(f"{'Usando dashboard genérico — tabela' if lang == 'pt' else 'Using generic dashboard — table'} {e} {'não encontrada.' if lang == 'pt' else 'not found.'}")
+    with st.container(key="dash_paper"):
+        _dashboard_header(nome, tabelas)
+        if fn is not None:
+            try:
+                fn(tabelas)
+            except KeyError as e:
+                # Tabela esperada não existe — usa dashboard genérico
+                lang = get_lang()
+                st.warning(f"{'Usando dashboard genérico — tabela' if lang == 'pt' else 'Using generic dashboard — table'} {e} {'não encontrada.' if lang == 'pt' else 'not found.'}")
+                _dash_generico(nome, tabelas)
+        else:
             _dash_generico(nome, tabelas)
-    else:
-        _dash_generico(nome, tabelas)
 
 
 # ════════════════════════════════════════════════════════════════════════════
