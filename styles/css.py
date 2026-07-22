@@ -656,6 +656,23 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     padding: 0.9rem 0.9rem 0.4rem;
 }
 
+/* -- Filtro de ano -- */
+.st-key-dash_paper [data-testid="stWidgetLabel"] p {
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 10.5px !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: #6B6F66 !important;
+}
+.st-key-dash_paper [data-testid="stSelectbox"] > div > div {
+    background: #F8F9F4 !important;
+    border: 1px solid #16233F !important;
+    color: #16233F !important;
+    border-radius: 4px !important;
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-weight: 600 !important;
+}
+
 /* -- Avisos (fallback genérico) dentro do papel -- */
 .st-key-dash_paper [data-testid="stAlert"] {
     font-family: 'Inter', sans-serif;
