@@ -28,6 +28,72 @@ _FONT_MONO    = "IBM Plex Mono, monospace"
 _FONT_BODY    = "Inter, sans-serif"
 
 
+def _fmt_num(v, decimals=0):
+    """
+    Formata um número no padrão brasileiro: ponto como separador de milhar,
+    vírgula como separador decimal (ex.: 36.331.804,47).
+    """
+    try:
+        decimals = int(decimals)
+    except (TypeError, ValueError):
+        decimals = 0
+    s = f"{v:,.{decimals}f}"
+    return s.translate(str.maketrans({",": "\x00", ".": ","})).replace("\x00", ".")
+
+
+def _detectar_col_data(df: pd.DataFrame):
+    """Acha a coluna de data mais provável de uma tabela fato (id_data, sk_data, data_x, x_data...)."""
+    candidatos = [c for c in df.columns if "data" in c.lower()]
+    if not candidatos:
+        return None
+    prioritarios = [c for c in candidatos if c.lower() in ("id_data", "sk_data")]
+    return prioritarios[0] if prioritarios else candidatos[0]
+
+
+def _filtro_ano(tabelas: dict) -> dict:
+    """
+    Mostra (se aplicável) um filtro de ano no topo do dashboard e retorna uma
+    cópia de `tabelas` com as tabelas fato filtradas para o ano escolhido.
+
+    Não aparece filtro nenhum se:
+    - nenhuma tabela fato tiver coluna de data reconhecível, ou
+    - só existir 1 ano de dados no período gerado.
+    """
+    from i18n import get_lang
+    lang = get_lang()
+
+    fato_keys = [k for k in tabelas if k.startswith("Fato")]
+    cols_data = {}
+    anos = set()
+    for k in fato_keys:
+        col = _detectar_col_data(tabelas[k])
+        if col is not None and len(tabelas[k]):
+            cols_data[k] = col
+            anos |= set(pd.to_datetime(tabelas[k][col]).dt.year.tolist())
+
+    if not cols_data or len(anos) <= 1:
+        return tabelas
+
+    anos_ordenados = sorted(anos)
+    label = "Ano" if lang == "pt" else "Year"
+    todos = "Todos os anos" if lang == "pt" else "All years"
+    opcoes = [todos] + [str(a) for a in anos_ordenados]
+
+    col_filtro, _ = st.columns([1, 3])
+    with col_filtro:
+        escolha = st.selectbox(label, opcoes, key="dash_filtro_ano")
+
+    if escolha == todos:
+        return tabelas
+
+    ano_sel = int(escolha)
+    filtradas = dict(tabelas)
+    for k, col in cols_data.items():
+        df = filtradas[k]
+        filtradas[k] = df[pd.to_datetime(df[col]).dt.year == ano_sel].reset_index(drop=True)
+    return filtradas
+
+
 def _base_layout(fig, title=""):
     fig.update_layout(
         paper_bgcolor=_PAPER, plot_bgcolor=_PAPER,
@@ -36,6 +102,7 @@ def _base_layout(fig, title=""):
         margin=dict(l=16, r=16, t=44 if title else 16, b=16),
         legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color=_TEXT, family=_FONT_MONO, size=11)),
         colorway=_PALETTE,
+        separators=",.",  # "," decimal · "." milhar — padrão brasileiro em eixos e hover
     )
     fig.update_xaxes(gridcolor=_GRID, zeroline=False, tickfont=dict(color=_TEXT, family=_FONT_MONO, size=10))
     fig.update_yaxes(gridcolor=_GRID, zeroline=False, tickfont=dict(color=_TEXT, family=_FONT_MONO, size=10))
@@ -75,8 +142,8 @@ def _dashboard_header(nome_setor: str, tabelas: dict) -> None:
     n = len(tabelas[fato_key]) if fato_key else 0
     eyebrow = "Relatório de Business Intelligence · Dados Sintéticos" if lang == "pt" \
         else "Business Intelligence Report · Synthetic Data"
-    meta = f"{n:,} registros na tabela fato · Base gerada para fins de estudo" if lang == "pt" \
-        else f"{n:,} records in fact table · Data generated for study purposes"
+    meta = f"{_fmt_num(n, 0)} registros na tabela fato · Base gerada para fins de estudo" if lang == "pt" \
+        else f"{_fmt_num(n, 0)} records in fact table · Data generated for study purposes"
     stamp = "gerado" if lang == "pt" else "generated"
     st.markdown(f"""
 <div class="dash-header">
@@ -149,8 +216,8 @@ def _dash_varejo(tabelas):
     receita = fato["valor_total"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"), f"R$ {receita:,.0f}",               f"{n:,} {td('sales')}"),
-        (td("avg_ticket"),    f"R$ {fato['valor_total'].mean():,.2f}", td("per_sale")),
+        (td("total_revenue"), f"R$ {_fmt_num(receita, 0)}",               f"{_fmt_num(n, 0)} {td('sales')}"),
+        (td("avg_ticket"),    f"R$ {_fmt_num(fato['valor_total'].mean(), 2)}", td("per_sale")),
         (td("avg_discount"),  f"{fato['desconto'].mean()*100:.1f}%",   td("on_full_price")),
         (td("avg_qty"),       f"{fato['quantidade'].mean():.1f}",       td("units")),
     ])
@@ -188,10 +255,10 @@ def _dash_financeiro(tabelas):
     vol = fato["valor"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_volume"),   f"R$ {vol:,.0f}",                      f"{n:,} {td('transactions')}"),
+        (td("total_volume"),   f"R$ {_fmt_num(vol, 0)}",                      f"{_fmt_num(n, 0)} {td('transactions')}"),
         (td("approval_rate"),  f"{(fato['status']=='Aprovada').mean()*100:.1f}%", td("approved_tx")),
-        (td("avg_value"),      f"R$ {fato['valor'].mean():,.2f}",      td("per_tx")),
-        (td("avg_balance"),    f"R$ {fato['saldo_apos'].mean():,.0f}", td("after_tx")),
+        (td("avg_value"),      f"R$ {_fmt_num(fato['valor'].mean(), 2)}",      td("per_tx")),
+        (td("avg_balance"),    f"R$ {_fmt_num(fato['saldo_apos'].mean(), 0)}", td("after_tx")),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "valor", td("monthly_volume"), "valor")
 
@@ -226,10 +293,10 @@ def _dash_saude(tabelas):
     receita = fato["valor_cobrado"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),  f"R$ {receita:,.0f}",                     f"{n:,} {td('visits')}"),
+        (td("total_revenue"),  f"R$ {_fmt_num(receita, 0)}",                     f"{_fmt_num(n, 0)} {td('visits')}"),
         (td("discharge_rate"), f"{(fato['resultado']=='Alta').mean()*100:.1f}%", td("of_visits")),
         (td("avg_duration"),   f"{fato['duracao_min'].mean():.0f} min",   td("per_visit")),
-        (td("avg_value"),      f"R$ {fato['valor_cobrado'].mean():,.2f}", td("per_visit")),
+        (td("avg_value"),      f"R$ {_fmt_num(fato['valor_cobrado'].mean(), 2)}", td("per_visit")),
     ])
     fato_cnt = fato.copy(); fato_cnt["_contagem"] = 1
     fig_mes = _monthly_chart(fato_cnt, "id_data", "_contagem", td("monthly_visits"), td("visits_axis"))
@@ -265,8 +332,8 @@ def _dash_tecnologia(tabelas):
     fato = tabelas["FatoContrato"]; cliente = tabelas["DimCliente"]
     _section("overview")
     _kpi_row([
-        (td("total_mrr"),   f"R$ {fato['valor_mrr'].sum():,.0f}",  f"{len(fato):,} {td('contracts')}"),
-        (td("total_arr"),   f"R$ {fato['arr'].sum():,.0f}",         td("arr_sub")),
+        (td("total_mrr"),   f"R$ {_fmt_num(fato['valor_mrr'].sum(), 0)}",  f"{_fmt_num(len(fato), 0)} {td('contracts')}"),
+        (td("total_arr"),   f"R$ {_fmt_num(fato['arr'].sum(), 0)}",         td("arr_sub")),
         (td("avg_nps"),     f"{fato['nps'].mean():.1f}",             td("nps_scale")),
         (td("churn_rate"),  f"{(fato['tipo']=='Churn').mean()*100:.1f}%", td("of_contracts")),
     ])
@@ -302,10 +369,10 @@ def _dash_educacao(tabelas):
     fato = tabelas["FatoMatricula"]; curso = tabelas["DimCurso"]
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),    f"R$ {fato['valor_pago'].sum():,.0f}",    f"{len(fato):,} {td('enrollments')}"),
+        (td("total_revenue"),    f"R$ {_fmt_num(fato['valor_pago'].sum(), 0)}",    f"{_fmt_num(len(fato), 0)} {td('enrollments')}"),
         (td("completion_rate"),  f"{fato['concluiu'].mean()*100:.1f}%",     td("of_students")),
         (td("avg_grade"),        f"{fato['nota_final'].mean():.2f}",         td("nps_scale")),
-        (td("avg_ticket"),       f"R$ {fato['valor_pago'].mean():,.2f}",    td("per_enrollment")),
+        (td("avg_ticket"),       f"R$ {_fmt_num(fato['valor_pago'].mean(), 2)}",    td("per_enrollment")),
     ])
     fato2 = fato.copy(); fato2["mes"] = pd.to_datetime(fato2["id_data"]).dt.to_period("M").astype(str)
     cnt = fato2.groupby("mes").size().reset_index(name="count")
@@ -343,8 +410,8 @@ def _dash_logistica(tabelas):
     frete_total = fato["valor_frete"].sum()
     _section("overview")
     _kpi_row([
-        (td("freight_revenue"), f"R$ {frete_total:,.0f}",              f"{len(fato):,} {td('deliveries')}"),
-        (td("avg_freight"),     f"R$ {fato['valor_frete'].mean():,.2f}",td("per_delivery")),
+        (td("freight_revenue"), f"R$ {_fmt_num(frete_total, 0)}",              f"{_fmt_num(len(fato), 0)} {td('deliveries')}"),
+        (td("avg_freight"),     f"R$ {_fmt_num(fato['valor_frete'].mean(), 2)}",td("per_delivery")),
         (td("delivery_rate"),   f"{(fato['status']=='Entregue').mean()*100:.1f}%", td("completed")),
         (td("on_time"),         f"{(fato['dias_entregue']<=fato['prazo_acordado']).mean()*100:.1f}%", td("within_deadline")),
     ])
@@ -383,9 +450,9 @@ def _dash_energia(tabelas):
     fato = tabelas["FatoConsumo"]; consumidor = tabelas["DimConsumidor"]
     _section("overview")
     _kpi_row([
-        (td("total_consumption"), f"{fato['consumo_kwh'].sum():,.0f} kWh", f"{len(fato):,} {td('readings')}"),
-        (td("total_billing"),     f"R$ {fato['valor_fatura'].sum():,.0f}",  td("all_bills")),
-        (td("avg_bill"),          f"R$ {fato['valor_fatura'].mean():,.2f}", td("per_reading")),
+        (td("total_consumption"), f"{_fmt_num(fato['consumo_kwh'].sum(), 0)} kWh", f"{_fmt_num(len(fato), 0)} {td('readings')}"),
+        (td("total_billing"),     f"R$ {_fmt_num(fato['valor_fatura'].sum(), 0)}",  td("all_bills")),
+        (td("avg_bill"),          f"R$ {_fmt_num(fato['valor_fatura'].mean(), 2)}", td("per_reading")),
         (td("power_factor"),      f"{fato['fator_potencia'].mean():.3f}",    td("overall_avg")),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "consumo_kwh", td("monthly_consumption"), "consumo_kwh")
@@ -422,11 +489,11 @@ def _dash_telecom(tabelas):
     has_qualidade = "qualidade_sinal" in fato.columns
     _section("overview")
     metrics = [
-        (td("total_calls"),   f"{len(fato):,}",                          td("in_period")),
+        (td("total_calls"),   f"{_fmt_num(len(fato), 0)}",                          td("in_period")),
         (td("avg_duration"),  f"{fato['duracao_seg'].mean():.1f}s",       td("per_call")),
     ]
     if has_custo:
-        metrics.append((td("total_cost"), f"R$ {fato['custo'].sum():,.2f}", td("billed_calls")))
+        metrics.append((td("total_cost"), f"R$ {_fmt_num(fato['custo'].sum(), 2)}", td("billed_calls")))
     else:
         metrics.append((td("avg_data"),   f"{fato['dados_mb'].mean():.1f} MB", td("avg_per_call")))
     if has_qualidade:
@@ -455,10 +522,10 @@ def _dash_industria(tabelas):
     refugo_pct= (refugo_t/qtd_total*100) if qtd_total>0 else 0
     _section("overview")
     _kpi_row([
-        (td("total_production"), f"{qtd_total:,.0f}", td("unit_plural")),
+        (td("total_production"), f"{_fmt_num(qtd_total, 0)}", td("unit_plural")),
         (td("scrap_rate"),       f"{refugo_pct:.2f}%", td("loss")),
         (td("avg_oee"),          f"{fato[oee_col].mean()*100:.1f}%", td("global_efficiency")),
-        (td("total_cost"),       f"R$ {fato[custo_col].sum():,.0f}", td("production_sub")),
+        (td("total_cost"),       f"R$ {_fmt_num(fato[custo_col].sum(), 0)}", td("production_sub")),
     ])
     if "id_maquina" in fato.columns:
         by_maq = fato.groupby("id_maquina")[qtd_col].sum().reset_index()
@@ -483,10 +550,10 @@ def _dash_agronegocio(tabelas):
     custo_total   = fato[custo_col].sum() if custo_col else 0
     _section("overview")
     _kpi_row([
-        (td("total_revenue"), f"R$ {receita:,.0f}",                              f"{n_safras:,} safras"),
-        (td("total_production") if "total_production" in {} else "Produção Total", f"{producao:,.0f} t", "toneladas colhidas"),
+        (td("total_revenue"), f"R$ {_fmt_num(receita, 0)}",                              f"{_fmt_num(n_safras, 0)} safras"),
+        (td("total_production") if "total_production" in {} else "Produção Total", f"{_fmt_num(producao, 0)} t", "toneladas colhidas"),
         (td("productivity") if "productivity" in {} else "Produtividade",          f"{produtividade:.2f} t/ha", "t/ha média"),
-        (td("avg_cost") if "avg_cost" in {} else "Custo Médio",                   f"R$ {custo_total/n_safras if n_safras else 0:,.2f}", "por safra"),
+        (td("avg_cost") if "avg_cost" in {} else "Custo Médio",                   f"R$ {_fmt_num(custo_total/n_safras if n_safras else 0, 2)}", "por safra"),
     ])
 
     figs = []
@@ -533,10 +600,10 @@ def _dash_turismo(tabelas):
     _section("overview")
     tx_cancel = (fato["status"]=="Cancelada").mean()*100 if "status" in fato.columns else 0
     _kpi_row([
-        (td("total_revenue"),   f"R$ {fato['valor_pago'].sum():,.0f}",  f"{len(fato):,} viagens"),
-        (td("avg_ticket"),      f"R$ {fato['valor_pago'].mean():,.2f}", td("per_booking")),
+        (td("total_revenue"),   f"R$ {_fmt_num(fato['valor_pago'].sum(), 0)}",  f"{_fmt_num(len(fato), 0)} viagens"),
+        (td("avg_ticket"),      f"R$ {_fmt_num(fato['valor_pago'].mean(), 2)}", td("per_booking")),
         (td("cancel_rate"),     f"{tx_cancel:.1f}%",                     td("cancelled_status")),
-        (td("total_passengers"),f"{fato['passageiros'].sum():,}",         td("persons")),
+        (td("total_passengers"),f"{_fmt_num(fato['passageiros'].sum(), 0)}",         td("persons")),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "valor_pago", td("monthly_revenue"), "valor_pago")
 
@@ -559,8 +626,8 @@ def _dash_imobiliario(tabelas):
     tx_venda = (fato["tipo_negocio"]=="Venda").mean()*100 if "tipo_negocio" in fato.columns else 50
     _section("overview")
     _kpi_row([
-        (td("business_volume"), f"R$ {fato['valor_final'].sum():,.0f}",  f"{len(fato):,} {td('contracts')}"),
-        (td("avg_value"),       f"R$ {fato['valor_final'].mean():,.2f}", td("per_contract")),
+        (td("business_volume"), f"R$ {_fmt_num(fato['valor_final'].sum(), 0)}",  f"{_fmt_num(len(fato), 0)} {td('contracts')}"),
+        (td("avg_value"),       f"R$ {_fmt_num(fato['valor_final'].mean(), 2)}", td("per_contract")),
         (td("pct_sales"),       f"{tx_venda:.1f}%",                       td("vs_rentals")),
         (td("avg_area"),        f"{imovel['area_m2'].mean():.1f} m²",     td("per_property")),
     ])
@@ -581,10 +648,10 @@ def _dash_seguros(tabelas):
     loss_ratio = indenizacoes/premios*100 if premios>0 else 0
     _section("overview")
     _kpi_row([
-        (td("total_premiums"), f"R$ {premios:,.0f}",             f"{len(fato):,} {td('policies')}"),
-        (td("paid_claims"),    f"R$ {indenizacoes:,.0f}",         td("claims_paid")),
+        (td("total_premiums"), f"R$ {_fmt_num(premios, 0)}",             f"{_fmt_num(len(fato), 0)} {td('policies')}"),
+        (td("paid_claims"),    f"R$ {_fmt_num(indenizacoes, 0)}",         td("claims_paid")),
         (td("loss_ratio"),     f"{loss_ratio:.1f}%",              td("sp_ratio")),
-        (td("avg_premium"),    f"R$ {fato['valor_premio'].mean():,.2f}", td("per_policy")),
+        (td("avg_premium"),    f"R$ {_fmt_num(fato['valor_premio'].mean(), 2)}", td("per_policy")),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "valor_premio", td("monthly_premiums"), "valor_premio")
 
@@ -604,9 +671,9 @@ def _dash_construcao(tabelas):
     custo_total = fato["custo_real"].sum(); horas = fato["horas_trabalhadas"].sum()
     _section("overview")
     _kpi_row([
-        (td("total_real_cost"), f"R$ {custo_total:,.0f}",        f"{len(fato):,} {td('cost_entries')}"),
-        (td("total_hours"),     f"{horas:,.0f}h",                  td("labor")),
-        (td("cost_per_hour"),   f"R$ {custo_total/horas if horas else 0:,.2f}", td("efficiency")),
+        (td("total_real_cost"), f"R$ {_fmt_num(custo_total, 0)}",        f"{_fmt_num(len(fato), 0)} {td('cost_entries')}"),
+        (td("total_hours"),     f"{_fmt_num(horas, 0)}h",                  td("labor")),
+        (td("cost_per_hour"),   f"R$ {_fmt_num(custo_total/horas if horas else 0, 2)}", td("efficiency")),
         (td("num_projects"),    f"{len(projeto)}",                  td("active_projects")),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "custo_real", td("monthly_costs"), "custo_real")
@@ -635,10 +702,10 @@ def _dash_hotelaria(tabelas):
     n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),  f"R$ {receita:,.0f}",                    f"{n:,} {td('in_period')}"),
-        (td("avg_ticket"),     f"R$ {receita/n:,.2f}" if n else "—",    td("per_booking")),
+        (td("total_revenue"),  f"R$ {_fmt_num(receita, 0)}",                    f"{_fmt_num(n, 0)} {td('in_period')}"),
+        (td("avg_ticket"),     f"R$ {_fmt_num(receita/n, 2)}" if n else "—",    td("per_booking")),
         (td("avg_value"),      f"{fato['diarias'].mean():.1f}" if 'diarias' in fato.columns else "—", td("in_period")),
-        (td("total_volume"),   f"{n:,}",                                 td("in_period")),
+        (td("total_volume"),   f"{_fmt_num(n, 0)}",                                 td("in_period")),
     ])
     val_col = "valor_total" if "valor_total" in fato.columns else fato.select_dtypes("number").columns[0]
     date_col = [c for c in fato.columns if "data" in c][0]
@@ -666,10 +733,10 @@ def _dash_streaming(tabelas):
     receita = fato[receita_col].sum() if receita_col else 0
     dur_media = fato[dur_col].mean() if dur_col else 0
     _kpi_row([
-        (td("total_revenue"),  f"R$ {receita:,.0f}",        f"{n:,} plays"),
+        (td("total_revenue"),  f"R$ {_fmt_num(receita, 0)}",        f"{_fmt_num(n, 0)} plays"),
         (td("avg_value"),      f"{dur_media:.0f} min",       td("per_visit")),
-        (td("total_volume"),   f"{n:,}",                     td("in_period")),
-        (td("efficiency"),     f"{fato[dur_col].sum()/60:,.0f}h" if dur_col else "—", td("in_period")),
+        (td("total_volume"),   f"{_fmt_num(n, 0)}",                     td("in_period")),
+        (td("efficiency"),     f"{_fmt_num(fato[dur_col].sum()/60, 0)}h" if dur_col else "—", td("in_period")),
     ])
     date_col = [c for c in fato.columns if "data" in c][0]
     fig_mes = _monthly_chart(fato, date_col, receita_col or num_cols[0], td("monthly_revenue"), td("revenue_brl"))
@@ -690,9 +757,9 @@ def _dash_ecommerce(tabelas):
     receita = fato["valor_total"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),  f"R$ {receita:,.0f}",                          f"{n:,} {td('sales')}"),
-        (td("avg_ticket"),     f"R$ {fato['valor_total'].mean():,.2f}",        td("per_sale")),
-        (td("avg_discount"),   f"R$ {fato['desconto'].mean():,.2f}",           td("per_sale")),
+        (td("total_revenue"),  f"R$ {_fmt_num(receita, 0)}",                          f"{_fmt_num(n, 0)} {td('sales')}"),
+        (td("avg_ticket"),     f"R$ {_fmt_num(fato['valor_total'].mean(), 2)}",        td("per_sale")),
+        (td("avg_discount"),   f"R$ {_fmt_num(fato['desconto'].mean(), 2)}",           td("per_sale")),
         (td("efficiency"),     f"{(fato['status']=='entregue').mean()*100:.1f}%" if 'status' in fato.columns else "—", td("completed")),
     ])
     fig_mes = _monthly_chart(fato, "data_pedido", "valor_total", td("monthly_revenue"), "valor_total")
@@ -718,7 +785,7 @@ def _dash_rh(tabelas):
     n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),  f"R$ {fato['custo_diario'].sum():,.0f}",          f"{n:,} {td('in_period')}"),
+        (td("total_revenue"),  f"R$ {_fmt_num(fato['custo_diario'].sum(), 0)}",          f"{_fmt_num(n, 0)} {td('in_period')}"),
         (td("avg_value"),      f"{fato['horas_trabalhadas'].mean():.1f}h",        td("per_visit")),
         (td("efficiency"),     f"{fato['produtividade'].mean():.1f}%",            td("global_efficiency")),
         (td("score"),          f"{fato['satisfacao'].mean():.2f}",                td("overall_avg")),
@@ -744,8 +811,8 @@ def _dash_mobilidade(tabelas):
     receita = fato["valor_total"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),  f"R$ {receita:,.0f}",                              f"{n:,} viagens"),
-        (td("avg_ticket"),     f"R$ {fato['valor_total'].mean():,.2f}",            td("per_sale")),
+        (td("total_revenue"),  f"R$ {_fmt_num(receita, 0)}",                              f"{_fmt_num(n, 0)} viagens"),
+        (td("avg_ticket"),     f"R$ {_fmt_num(fato['valor_total'].mean(), 2)}",            td("per_sale")),
         (td("efficiency"),     f"{fato['distancia_km'].mean():.1f} km",            td("per_sale")),
         (td("score"),          f"{fato['avaliacao_passageiro'].mean():.2f}",        td("overall_avg")),
     ])
@@ -767,10 +834,10 @@ def _dash_fintech(tabelas):
     vol = fato["valor"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_volume"),   f"R$ {vol:,.0f}",                                    f"{n:,} {td('transactions')}"),
+        (td("total_volume"),   f"R$ {_fmt_num(vol, 0)}",                                    f"{_fmt_num(n, 0)} {td('transactions')}"),
         (td("approval_rate"),  f"{(fato['status']=='aprovada').mean()*100:.1f}%",    td("approved_tx")),
-        (td("avg_value"),      f"R$ {fato['valor'].mean():,.2f}",                    td("per_tx")),
-        (td("avg_ticket"),     f"R$ {fato['cashback_valor'].mean():,.2f}",           "cashback médio"),
+        (td("avg_value"),      f"R$ {_fmt_num(fato['valor'].mean(), 2)}",                    td("per_tx")),
+        (td("avg_ticket"),     f"R$ {_fmt_num(fato['cashback_valor'].mean(), 2)}",           "cashback médio"),
     ])
     fato["_d"] = pd.to_datetime(fato["data_hora"]).dt.date.astype(str)
     fig_mes = _monthly_chart(fato, "_d", "valor", td("monthly_volume"), "valor")
@@ -796,10 +863,10 @@ def _dash_mineracao(tabelas):
     receita = fato["receita"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),     f"R$ {receita:,.0f}",                               f"{n:,} {td('in_period')}"),
-        (td("total_production"),  f"{fato['volume_extraido_ton'].sum():,.0f} t",       td("production_sub")),
+        (td("total_revenue"),     f"R$ {_fmt_num(receita, 0)}",                               f"{_fmt_num(n, 0)} {td('in_period')}"),
+        (td("total_production"),  f"{_fmt_num(fato['volume_extraido_ton'].sum(), 0)} t",       td("production_sub")),
         (td("efficiency"),        f"{fato['indice_seguranca'].mean():.1f}",            td("score")),
-        (td("avg_cost"),          f"R$ {fato['custo_operacional'].mean():,.2f}",       td("per_visit")),
+        (td("avg_cost"),          f"R$ {_fmt_num(fato['custo_operacional'].mean(), 2)}",       td("per_visit")),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
     merged = fato.merge(mineral[["id_mineral","nome"]], on="id_mineral", how="left")
@@ -817,8 +884,8 @@ def _dash_juridico(tabelas):
     honorarios = fato["honorarios"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),  f"R$ {honorarios:,.0f}",                                f"{n:,} processos"),
-        (td("avg_value"),      f"R$ {fato['valor_causa'].mean():,.2f}",                 "valor médio da causa"),
+        (td("total_revenue"),  f"R$ {_fmt_num(honorarios, 0)}",                                f"{_fmt_num(n, 0)} processos"),
+        (td("avg_value"),      f"R$ {_fmt_num(fato['valor_causa'].mean(), 2)}",                 "valor médio da causa"),
         (td("efficiency"),     f"{fato['resultado_favoravel'].mean()*100:.1f}%",        "taxa de êxito"),
         (td("avg_delay_type"), f"{fato['duracao_dias'].mean():.0f} dias",               "duração média"),
     ])
@@ -843,8 +910,8 @@ def _dash_esportes(tabelas):
     n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),  f"R$ {receita:,.0f}",                               f"{n:,} partidas"),
-        (td("avg_ticket"),     f"{fato['publico'].mean():,.0f}",                    "público médio"),
+        (td("total_revenue"),  f"R$ {_fmt_num(receita, 0)}",                               f"{_fmt_num(n, 0)} partidas"),
+        (td("avg_ticket"),     f"{_fmt_num(fato['publico'].mean(), 0)}",                    "público médio"),
         (td("score"),          f"{fato['gols_casa'].mean() + fato['gols_fora'].mean():.2f}", "gols/partida"),
         (td("efficiency"),     f"{fato['receita_bilheteria'].sum()/receita*100:.1f}%", "% bilheteria"),
     ])
@@ -863,8 +930,8 @@ def _dash_saas_b2b(tabelas):
     mrr_total = fato["mrr"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_mrr"),      f"R$ {mrr_total:,.0f}",                              f"{n:,} {td('in_period')}"),
-        (td("arr_sub"),        f"R$ {fato['arr'].mean():,.0f}",                      td("per_contract")),
+        (td("total_mrr"),      f"R$ {_fmt_num(mrr_total, 0)}",                              f"{_fmt_num(n, 0)} {td('in_period')}"),
+        (td("arr_sub"),        f"R$ {_fmt_num(fato['arr'].mean(), 0)}",                      td("per_contract")),
         (td("nps_scale"),      f"{fato['nps'].mean():.1f}",                          td("overall_avg")),
         (td("efficiency"),     f"{fato['churn'].mean()*100:.1f}%",                   "churn rate"),
     ])
@@ -887,9 +954,9 @@ def _dash_crm(tabelas):
     receita = fato["valor_fechado"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),  f"R$ {receita:,.0f}",                                  f"{n:,} oportunidades"),
+        (td("total_revenue"),  f"R$ {_fmt_num(receita, 0)}",                                  f"{_fmt_num(n, 0)} oportunidades"),
         (td("efficiency"),     f"{fato['ganho'].mean()*100:.1f}%",                     "win rate"),
-        (td("avg_ticket"),     f"R$ {fato['valor_estimado'].mean():,.2f}",             "valor médio"),
+        (td("avg_ticket"),     f"R$ {_fmt_num(fato['valor_estimado'].mean(), 2)}",             "valor médio"),
         (td("avg_delay_type"), f"{fato['ciclo_vendas_dias'].mean():.0f} dias",         "ciclo médio"),
     ])
     fig_mes = _monthly_chart(fato, "id_data_abertura", "valor_fechado", td("monthly_revenue"), "valor_fechado")
@@ -909,8 +976,8 @@ def _dash_farmaceutico(tabelas):
     receita = fato["valor_liquido"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),  f"R$ {receita:,.0f}",                              f"{n:,} {td('sales')}"),
-        (td("avg_ticket"),     f"R$ {fato['valor_liquido'].mean():,.2f}",          td("per_sale")),
+        (td("total_revenue"),  f"R$ {_fmt_num(receita, 0)}",                              f"{_fmt_num(n, 0)} {td('sales')}"),
+        (td("avg_ticket"),     f"R$ {_fmt_num(fato['valor_liquido'].mean(), 2)}",          td("per_sale")),
         (td("avg_discount"),   f"{fato['desconto_pct'].mean():.1f}%",             td("on_full_price")),
         (td("efficiency"),     f"{(~fato['devolvido']).mean()*100:.1f}%",          "taxa de retenção"),
     ])
@@ -931,9 +998,9 @@ def _dash_marketing(tabelas):
     investimento = fato["investimento"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_volume"),   f"R$ {investimento:,.0f}",                             f"{n:,} campanhas/dia"),
+        (td("total_volume"),   f"R$ {_fmt_num(investimento, 0)}",                             f"{_fmt_num(n, 0)} campanhas/dia"),
         (td("efficiency"),     f"{fato['ctr_pct'].mean():.2f}%",                      "CTR médio"),
-        (td("avg_value"),      f"R$ {fato['cpc'].mean():,.2f}",                       "CPC médio"),
+        (td("avg_value"),      f"R$ {_fmt_num(fato['cpc'].mean(), 2)}",                       "CPC médio"),
         (td("score"),          f"{conv['roas'].mean():.2f}x",                         "ROAS médio"),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "investimento", td("monthly_costs"), "investimento")
@@ -957,10 +1024,10 @@ def _dash_petroleo(tabelas):
     receita = fato["receita_usd"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),     f"US$ {receita:,.0f}",                               f"{n:,} registros"),
-        (td("total_production"),  f"{fato['vol_oleo_bbl'].sum():,.0f} bbl",             "óleo total"),
+        (td("total_revenue"),     f"US$ {_fmt_num(receita, 0)}",                               f"{_fmt_num(n, 0)} registros"),
+        (td("total_production"),  f"{_fmt_num(fato['vol_oleo_bbl'].sum(), 0)} bbl",             "óleo total"),
         (td("efficiency"),        f"{fato['eficiencia_pct'].mean():.1f}%",              td("global_efficiency")),
-        (td("avg_cost"),          f"US$ {custo['lifting_cost_bbl'].mean():,.2f}",       "lifting cost/bbl"),
+        (td("avg_cost"),          f"US$ {_fmt_num(custo['lifting_cost_bbl'].mean(), 2)}",       "lifting cost/bbl"),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "receita_usd", td("monthly_revenue"), "receita_usd")
     by_tipo = custo.groupby("tipo_custo")["valor_usd"].sum().reset_index().sort_values("valor_usd")
@@ -978,10 +1045,10 @@ def _dash_governo(tabelas):
     pago = fato["valor_pago"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_volume"),   f"R$ {pago:,.0f}",                                  f"{n:,} despesas"),
+        (td("total_volume"),   f"R$ {_fmt_num(pago, 0)}",                                  f"{_fmt_num(n, 0)} despesas"),
         (td("efficiency"),     f"{fato['execucao_pct'].mean():.1f}%",              "execução orçamentária"),
-        (td("avg_value"),      f"R$ {fato['valor_empenhado'].sum():,.0f}",         "total empenhado"),
-        (td("score"),          f"R$ {fato['valor_liquidado'].sum():,.0f}",         "total liquidado"),
+        (td("avg_value"),      f"R$ {_fmt_num(fato['valor_empenhado'].sum(), 0)}",         "total empenhado"),
+        (td("score"),          f"R$ {_fmt_num(fato['valor_liquidado'].sum(), 0)}",         "total liquidado"),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "valor_pago", td("monthly_volume"), "valor_pago")
     by_tipo = fato.groupby("tipo_despesa")["valor_pago"].sum().reset_index().sort_values("valor_pago")
@@ -1004,10 +1071,10 @@ def _dash_alimenticio(tabelas):
     receita = fato["receita"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),    f"R$ {receita:,.0f}",                               f"{n:,} lotes"),
-        (td("total_production"), f"{fato['volume_produzido_kg'].sum():,.0f} kg",      td("production_sub")),
+        (td("total_revenue"),    f"R$ {_fmt_num(receita, 0)}",                               f"{_fmt_num(n, 0)} lotes"),
+        (td("total_production"), f"{_fmt_num(fato['volume_produzido_kg'].sum(), 0)} kg",      td("production_sub")),
         (td("efficiency"),       f"{100 - fato['indice_refugo_pct'].mean():.1f}%",   "aproveitamento"),
-        (td("avg_cost"),         f"R$ {fato['custo_producao'].mean():,.2f}",          "custo médio/lote"),
+        (td("avg_cost"),         f"R$ {_fmt_num(fato['custo_producao'].mean(), 2)}",          "custo médio/lote"),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
     merged = fato.merge(produto[["id_produto","categoria"]], on="id_produto", how="left")
@@ -1035,10 +1102,10 @@ def _dash_portabilidade_claro(tabelas):
 
     _section("overview")
     _kpi_row([
-        (td("migrations_in"),  f"{n_in:,}",  td("gained_from_competitors")),
-        (td("migrations_out"), f"{n_out:,}", td("lost_to_competitors")),
+        (td("migrations_in"),  f"{_fmt_num(n_in, 0)}",  td("gained_from_competitors")),
+        (td("migrations_out"), f"{_fmt_num(n_out, 0)}", td("lost_to_competitors")),
         (td("net_balance"),    f"{saldo:+,}", td("in_minus_out")),
-        (td("net_revenue"),    f"R$ {receita_liquida:,.0f}", td("mrr_impact")),
+        (td("net_revenue"),    f"R$ {_fmt_num(receita_liquida, 0)}", td("mrr_impact")),
     ])
 
     fato2 = fato.copy()
@@ -1091,10 +1158,10 @@ def _dash_aviacao(tabelas):
 
     _section("overview")
     _kpi_row([
-        (td("total_flights"),        f"{n:,}",                                    td("issued_tickets")),
+        (td("total_flights"),        f"{_fmt_num(n, 0)}",                                    td("issued_tickets")),
         (td("on_time_rate"),         f"{on_time:.1f}%",                            td("on_time_or_early")),
         (td("avg_delay"),            f"{atrasados['atraso_min'].mean():.0f} min" if len(atrasados) else "0 min", td("among_delayed")),
-        (td("total_ticket_revenue"), f"R$ {fato['valor_passagem'].sum():,.0f}",    td("avg_per_ticket")),
+        (td("total_ticket_revenue"), f"R$ {_fmt_num(fato['valor_passagem'].sum(), 0)}",    td("avg_per_ticket")),
     ])
 
     by_status = fato["status_voo"].value_counts().reset_index()
@@ -1127,8 +1194,8 @@ def _dash_pet(tabelas):
     n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_appointments"), f"{n:,}",                                 td("appointments_sub")),
-        (td("avg_ticket_pet"),     f"R$ {fato['valor_cobrado'].mean():,.2f}", td("per_appointment")),
+        (td("total_appointments"), f"{_fmt_num(n, 0)}",                                 td("appointments_sub")),
+        (td("avg_ticket_pet"),     f"R$ {_fmt_num(fato['valor_cobrado'].mean(), 2)}", td("per_appointment")),
         (td("return_rate"),        f"{fato['retorno_necessario'].mean()*100:.1f}%", td("need_follow_up")),
         (td("avg_rating"),         f"{fato['nota_avaliacao'].mean():.1f}/5",  td("out_of_5")),
     ])
@@ -1163,9 +1230,9 @@ def _dash_games(tabelas):
     taxa_compra = (fato["valor_gasto_loja"] > 0).mean() * 100
     _section("overview")
     _kpi_row([
-        (td("total_sessions"),       f"{n:,}",                                     td("sessions_sub")),
+        (td("total_sessions"),       f"{_fmt_num(n, 0)}",                                     td("sessions_sub")),
         (td("avg_session_duration"), f"{fato['duracao_min'].mean():.0f} min",       td("per_session")),
-        (td("monetization_revenue"), f"R$ {fato['valor_gasto_loja'].sum():,.0f}",   td("store_purchases")),
+        (td("monetization_revenue"), f"R$ {_fmt_num(fato['valor_gasto_loja'].sum(), 0)}",   td("store_purchases")),
         (td("purchase_rate"),        f"{taxa_compra:.1f}%",                        td("of_sessions")),
     ])
 
@@ -1196,8 +1263,8 @@ def _dash_saneamento(tabelas):
     fato = tabelas["FatoConsumo"]
     _section("overview")
     _kpi_row([
-        (td("total_water_consumption"), f"{fato['consumo_agua_m3'].sum():,.0f} m³", td("readings_sub")),
-        (td("total_billing_water"),     f"R$ {fato['valor_fatura'].sum():,.0f}",    td("all_invoices")),
+        (td("total_water_consumption"), f"{_fmt_num(fato['consumo_agua_m3'].sum(), 0)} m³", td("readings_sub")),
+        (td("total_billing_water"),     f"R$ {_fmt_num(fato['valor_fatura'].sum(), 0)}",    td("all_invoices")),
         (td("default_rate"),            f"{fato['status_pagamento'].isin(['Vencido','Em Aberto']).mean()*100:.1f}%", td("overdue_or_open")),
         (td("avg_loss_index"),          f"{fato['indice_perdas_pct'].mean():.1f}%", td("network_leakage")),
     ])
@@ -1288,16 +1355,16 @@ def _dash_generico(nome: str, tabelas: dict) -> None:
     _section("overview")
     kpis = []
     if val_col:
-        kpis.append((td("total_revenue"), f"R$ {fato[val_col].sum():,.2f}", f"{len(fato):,} registros"))
+        kpis.append((td("total_revenue"), f"R$ {_fmt_num(fato[val_col].sum(), 2)}", f"{_fmt_num(len(fato), 0)} registros"))
     if len(num_cols) > 1:
         col2 = next((c for c in num_cols if c != val_col), None)
         if col2:
-            kpis.append((col2.replace("_"," ").title(), f"{fato[col2].mean():,.2f}", "média"))
+            kpis.append((col2.replace("_"," ").title(), f"{_fmt_num(fato[col2].mean(), 2)}", "média"))
     bool_cols = [c for c in fato.columns if fato[c].dtype == bool]
     if bool_cols:
         kpis.append((bool_cols[0].replace("_"," ").title(),
                      f"{fato[bool_cols[0]].mean()*100:.1f}%", "taxa"))
-    kpis.append(("Registros", f"{len(fato):,}", fato_key))
+    kpis.append(("Registros", f"{_fmt_num(len(fato), 0)}", fato_key))
     _kpi_row(kpis[:4])
 
     # Gráfico de linha mensal
@@ -1346,16 +1413,17 @@ def render_dashboard(nome: str, tabelas: dict) -> None:
 
     with st.container(key="dash_paper"):
         _dashboard_header(nome, tabelas)
+        tabelas_filtradas = _filtro_ano(tabelas)
         if fn is not None:
             try:
-                fn(tabelas)
+                fn(tabelas_filtradas)
             except KeyError as e:
                 # Tabela esperada não existe — usa dashboard genérico
                 lang = get_lang()
                 st.warning(f"{'Usando dashboard genérico — tabela' if lang == 'pt' else 'Using generic dashboard — table'} {e} {'não encontrada.' if lang == 'pt' else 'not found.'}")
-                _dash_generico(nome, tabelas)
+                _dash_generico(nome, tabelas_filtradas)
         else:
-            _dash_generico(nome, tabelas)
+            _dash_generico(nome, tabelas_filtradas)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1368,8 +1436,8 @@ def _dash_moda(tabelas):
     receita = fato["valor_total"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {receita:,.0f}",                          f"{n:,} {td('sales')}"),
-        (td("avg_ticket"),      f"R$ {fato['valor_total'].mean():,.2f}",        td("per_sale")),
+        (td("total_revenue"),   f"R$ {_fmt_num(receita, 0)}",                          f"{_fmt_num(n, 0)} {td('sales')}"),
+        (td("avg_ticket"),      f"R$ {_fmt_num(fato['valor_total'].mean(), 2)}",        td("per_sale")),
         (td("avg_discount"),    f"{fato['desconto_pct'].mean():.1f}%",          td("on_full_price")),
         (td("efficiency"),      f"{(~fato['devolucao']).mean()*100:.1f}%",      "retenção"),
     ])
@@ -1402,8 +1470,8 @@ def _dash_eventos(tabelas):
     receita = fato["receita_total"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {receita:,.0f}",                           f"{n:,} eventos"),
-        (td("avg_ticket"),      f"R$ {fato['receita_total'].mean():,.0f}",       "receita média"),
+        (td("total_revenue"),   f"R$ {_fmt_num(receita, 0)}",                           f"{_fmt_num(n, 0)} eventos"),
+        (td("avg_ticket"),      f"R$ {_fmt_num(fato['receita_total'].mean(), 0)}",       "receita média"),
         (td("efficiency"),      f"{fato['margem_pct'].mean():.1f}%",             "margem média"),
         (td("nps_scale"),       f"{fato['nps'].mean():.1f}",                     td("overall_avg")),
     ])
@@ -1432,7 +1500,7 @@ def _dash_laboratorio(tabelas):
     receita = fato["valor_cobrado"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {receita:,.0f}",                           f"{n:,} exames"),
+        (td("total_revenue"),   f"R$ {_fmt_num(receita, 0)}",                           f"{_fmt_num(n, 0)} exames"),
         (td("efficiency"),      f"{fato['dentro_prazo'].mean()*100:.1f}%",       td("within_deadline")),
         (td("avg_value"),       f"{fato['tempo_resposta_h'].mean():.1f}h",       "tempo médio"),
         (td("score"),           f"{fato['resultado_normal'].mean()*100:.1f}%",   "resultados normais"),
@@ -1461,8 +1529,8 @@ def _dash_franquias(tabelas):
     fat = fato["faturamento"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {fat:,.0f}",                               f"{n:,} registros"),
-        (td("avg_ticket"),      f"R$ {fato['faturamento'].mean():,.0f}",         "faturamento médio"),
+        (td("total_revenue"),   f"R$ {_fmt_num(fat, 0)}",                               f"{_fmt_num(n, 0)} registros"),
+        (td("avg_ticket"),      f"R$ {_fmt_num(fato['faturamento'].mean(), 0)}",         "faturamento médio"),
         (td("nps_scale"),       f"{fato['satisfacao_nps'].mean():.1f}",          td("overall_avg")),
         (td("efficiency"),      f"{fato['meta_atingida'].mean()*100:.1f}%",      "meta atingida"),
     ])
@@ -1491,10 +1559,10 @@ def _dash_condominio(tabelas):
     arrecadado = cota[cota["pago"]]["valor_cota"].sum(); n = len(cota)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {arrecadado:,.0f}",                        f"{n:,} cotas"),
+        (td("total_revenue"),   f"R$ {_fmt_num(arrecadado, 0)}",                        f"{_fmt_num(n, 0)} cotas"),
         (td("efficiency"),      f"{(~cota['inadimplente']).mean()*100:.1f}%",    "adimplência"),
-        (td("avg_value"),       f"R$ {desp['valor'].sum():,.0f}",               "total despesas"),
-        (td("score"),           f"{len(ocorr):,}",                              "ocorrências"),
+        (td("avg_value"),       f"R$ {_fmt_num(desp['valor'].sum(), 0)}",               "total despesas"),
+        (td("score"),           f"{_fmt_num(len(ocorr), 0)}",                              "ocorrências"),
     ])
     fig_mes = _monthly_chart(cota, "id_data", "valor_cota", "Arrecadação Mensal", "valor_cota")
 
@@ -1520,8 +1588,8 @@ def _dash_saude_mental(tabelas):
     receita = fato["valor_recebido"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {receita:,.0f}",                           f"{n:,} sessões"),
-        (td("avg_ticket"),      f"R$ {fato['valor_recebido'].mean():,.2f}",      "por sessão"),
+        (td("total_revenue"),   f"R$ {_fmt_num(receita, 0)}",                           f"{_fmt_num(n, 0)} sessões"),
+        (td("avg_ticket"),      f"R$ {_fmt_num(fato['valor_recebido'].mean(), 2)}",      "por sessão"),
         (td("efficiency"),      f"{(~fato['faltou']).mean()*100:.1f}%",          "presença"),
         (td("score"),           f"{fato['avaliacao'].mean():.2f}",               td("overall_avg")),
     ])
@@ -1548,10 +1616,10 @@ def _dash_florestal(tabelas):
     receita = fato["receita"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),    f"R$ {receita:,.0f}",                          f"{n:,} lotes"),
-        (td("total_production"), f"{fato['volume_m3'].sum():,.0f} m³",          "volume total"),
+        (td("total_revenue"),    f"R$ {_fmt_num(receita, 0)}",                          f"{_fmt_num(n, 0)} lotes"),
+        (td("total_production"), f"{_fmt_num(fato['volume_m3'].sum(), 0)} m³",          "volume total"),
         (td("efficiency"),       f"{fato['produtividade_map'].mean():.1f}",      "MAP médio (m³/ha/ano)"),
-        (td("score"),            f"{fato['carbono_ton'].sum():,.0f} t",          "carbono sequestrado"),
+        (td("score"),            f"{_fmt_num(fato['carbono_ton'].sum(), 0)} t",          "carbono sequestrado"),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
 
@@ -1576,9 +1644,9 @@ def _dash_startup(tabelas):
     captado = rodada["valor_captado"].sum(); n = len(rodada)
     _section("overview")
     _kpi_row([
-        (td("total_volume"),    f"R$ {captado:,.0f}",                           f"{n:,} rodadas"),
-        (td("avg_ticket"),      f"R$ {rodada['valuation_post'].mean():,.0f}",    "valuation médio"),
-        (td("total_mrr"),       f"R$ {metrica['mrr'].mean():,.0f}",             "MRR médio"),
+        (td("total_volume"),    f"R$ {_fmt_num(captado, 0)}",                           f"{_fmt_num(n, 0)} rodadas"),
+        (td("avg_ticket"),      f"R$ {_fmt_num(rodada['valuation_post'].mean(), 0)}",    "valuation médio"),
+        (td("total_mrr"),       f"R$ {_fmt_num(metrica['mrr'].mean(), 0)}",             "MRR médio"),
         (td("efficiency"),      f"{metrica['churn_pct'].mean():.1f}%",          "churn médio"),
     ])
     fig_mes = _monthly_chart(rodada, "id_data", "valor_captado", "Captação Mensal", "valor_captado")
@@ -1600,10 +1668,10 @@ def _dash_audiovisual(tabelas):
     receita = fato["receita"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {receita:,.0f}",                           f"{n:,} produções"),
-        (td("avg_cost"),        f"R$ {fato['custo_realizado'].mean():,.0f}",     "custo médio"),
+        (td("total_revenue"),   f"R$ {_fmt_num(receita, 0)}",                           f"{_fmt_num(n, 0)} produções"),
+        (td("avg_cost"),        f"R$ {_fmt_num(fato['custo_realizado'].mean(), 0)}",     "custo médio"),
         (td("efficiency"),      f"{fato['roi_pct'].mean():.1f}%",               "ROI médio"),
-        (td("score"),           f"{fato['views_total'].sum():,.0f}",            "views totais"),
+        (td("score"),           f"{_fmt_num(fato['views_total'].sum(), 0)}",            "views totais"),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
 
@@ -1629,8 +1697,8 @@ def _dash_pesca(tabelas):
     receita = fato["receita"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),    f"R$ {receita:,.0f}",                          f"{n:,} lotes"),
-        (td("total_production"), f"{fato['peso_kg'].sum():,.0f} kg",            "biomassa total"),
+        (td("total_revenue"),    f"R$ {_fmt_num(receita, 0)}",                          f"{_fmt_num(n, 0)} lotes"),
+        (td("total_production"), f"{_fmt_num(fato['peso_kg'].sum(), 0)} kg",            "biomassa total"),
         (td("efficiency"),       f"{fato['fcr_real'].mean():.2f}",              "FCR médio"),
         (td("score"),            f"{fato['mortalidade_pct'].mean():.1f}%",      "mortalidade média"),
     ])
@@ -1659,8 +1727,8 @@ def _dash_textil(tabelas):
     receita = fato["receita"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),    f"R$ {receita:,.0f}",                          f"{n:,} lotes"),
-        (td("total_production"), f"{fato['volume_kg'].sum():,.0f} kg",          "volume produzido"),
+        (td("total_revenue"),    f"R$ {_fmt_num(receita, 0)}",                          f"{_fmt_num(n, 0)} lotes"),
+        (td("total_production"), f"{_fmt_num(fato['volume_kg'].sum(), 0)} kg",          "volume produzido"),
         (td("efficiency"),       f"{fato['eficiencia_pct'].mean():.1f}%",       "eficiência média"),
         (td("score"),            f"{fato['refugo_pct'].mean():.1f}%",           "refugo médio"),
     ])
@@ -1687,8 +1755,8 @@ def _dash_arquitetura(tabelas):
     receita = fato["valor_total"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {receita:,.0f}",                           f"{n:,} serviços"),
-        (td("avg_ticket"),      f"R$ {fato['valor_hora'].mean():,.2f}",         "valor/hora médio"),
+        (td("total_revenue"),   f"R$ {_fmt_num(receita, 0)}",                           f"{_fmt_num(n, 0)} serviços"),
+        (td("avg_ticket"),      f"R$ {_fmt_num(fato['valor_hora'].mean(), 2)}",         "valor/hora médio"),
         (td("efficiency"),      f"{fato['aprovado_cliente'].mean()*100:.1f}%",  "aprovação cliente"),
         (td("score"),           f"{fato['retrabalho'].mean()*100:.1f}%",        "taxa retrabalho"),
     ])
@@ -1717,8 +1785,8 @@ def _dash_viagem_corp(tabelas):
     custo = fato["custo_total"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_volume"),    f"R$ {custo:,.0f}",                             f"{n:,} viagens"),
-        (td("avg_cost"),        f"R$ {fato['custo_total'].mean():,.2f}",        "custo médio"),
+        (td("total_volume"),    f"R$ {_fmt_num(custo, 0)}",                             f"{_fmt_num(n, 0)} viagens"),
+        (td("avg_cost"),        f"R$ {_fmt_num(fato['custo_total'].mean(), 2)}",        "custo médio"),
         (td("efficiency"),      f"{(fato['politica']=='Dentro da política').mean()*100:.1f}%", "dentro da política"),
         (td("score"),           f"{fato['nps_viajante'].mean():.1f}",           "NPS viajante"),
     ])
@@ -1747,10 +1815,10 @@ def _dash_espacial(tabelas):
     custo = fato["custo_realizado"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_volume"),    f"US$ {custo/1e9:.2f}B",                        f"{n:,} operações"),
+        (td("total_volume"),    f"US$ {custo/1e9:.2f}B",                        f"{_fmt_num(n, 0)} operações"),
         (td("efficiency"),      f"{fato['disponibilidade_pct'].mean():.2f}%",   "disponibilidade"),
-        (td("score"),           f"{fato['anomalias'].sum():,}",                 "anomalias totais"),
-        (td("avg_value"),       f"{fato['dados_coletados_gb'].sum():,.0f} GB",  "dados coletados"),
+        (td("score"),           f"{_fmt_num(fato['anomalias'].sum(), 0)}",                 "anomalias totais"),
+        (td("avg_value"),       f"{_fmt_num(fato['dados_coletados_gb'].sum(), 0)} GB",  "dados coletados"),
     ])
     fig_mes = _monthly_chart(fato, "id_data", "custo_realizado", "Custo Mensal de Operações", "custo_realizado")
 
@@ -1778,8 +1846,8 @@ def _dash_beleza(tabelas):
     n_venda = len(venda); n_ag = len(agenda)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {receita:,.0f}",                           f"{n_venda:,} vendas / {n_ag:,} agendamentos"),
-        (td("avg_ticket"),      f"R$ {venda['valor_total'].mean():,.2f}",        "ticket médio venda"),
+        (td("total_revenue"),   f"R$ {_fmt_num(receita, 0)}",                           f"{_fmt_num(n_venda, 0)} vendas / {_fmt_num(n_ag, 0)} agendamentos"),
+        (td("avg_ticket"),      f"R$ {_fmt_num(venda['valor_total'].mean(), 2)}",        "ticket médio venda"),
         (td("efficiency"),      f"{(agenda['status']=='Realizado').mean()*100:.1f}%", "taxa realização"),
         (td("score"),           f"{agenda['avaliacao'].mean():.2f}",            "avaliação média"),
     ])
@@ -1807,7 +1875,7 @@ def _dash_logistica_urbana(tabelas):
     frete = fato["valor_frete"].sum(); n = len(fato)
     _section("overview")
     _kpi_row([
-        (td("total_revenue"),   f"R$ {frete:,.0f}",                             f"{n:,} entregas"),
+        (td("total_revenue"),   f"R$ {_fmt_num(frete, 0)}",                             f"{_fmt_num(n, 0)} entregas"),
         (td("efficiency"),      f"{(~fato['falha']).mean()*100:.1f}%",          "taxa de sucesso"),
         (td("avg_ticket"),      f"{fato['dentro_sla'].mean()*100:.1f}%",        "dentro do SLA"),
         (td("score"),           f"{fato['avaliacao'].mean():.2f}",              "avaliação média"),
