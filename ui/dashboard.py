@@ -63,6 +63,54 @@ def _by_month(df, date_col, val_col):
     return d.groupby("_m")[val_col].sum().reset_index().rename(columns={"_m": "mes"})
 
 
+def _fmt_pct_delta(v):
+    return f"{v:+.1f}%" if pd.notna(v) else "—"
+
+
+def _monthly_chart(df, date_col, val_col, title, y_label, agg="sum"):
+    """
+    Gráfico de evolução mensal do indicador principal de qualquer setor, com
+    %MoM (mês vs. mês anterior) e %YoY (mês vs. mesmo mês do ano anterior)
+    disponíveis no hover de cada ponto, e a variação do último mês exibida
+    como selo no canto superior do gráfico. Funciona para os 70 setores.
+    """
+    d = df.copy()
+    d["_m"] = pd.to_datetime(d[date_col]).dt.to_period("M").astype(str)
+    grp = d.groupby("_m")[val_col]
+    by_mes = (grp.mean() if agg == "mean" else grp.sum()).reset_index().rename(columns={"_m": "mes"})
+    by_mes = by_mes.sort_values("mes").reset_index(drop=True)
+
+    by_mes["_mom"] = by_mes[val_col].pct_change() * 100
+    by_mes["_yoy"] = by_mes[val_col].pct_change(periods=12) * 100
+    by_mes["_mom_fmt"] = by_mes["_mom"].apply(_fmt_pct_delta)
+    by_mes["_yoy_fmt"] = by_mes["_yoy"].apply(_fmt_pct_delta)
+
+    fig = px.area(by_mes, x="mes", y=val_col, labels={"mes": "", val_col: y_label})
+    fig.update_traces(
+        line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)",
+        customdata=by_mes[["_mom_fmt", "_yoy_fmt"]].to_numpy(),
+        hovertemplate="%{x}<br>" + y_label + ": %{y:,.2f}"
+                      "<br>MoM: %{customdata[0]}<br>YoY: %{customdata[1]}<extra></extra>",
+    )
+    _base_layout(fig, title)
+
+    partes = []
+    if len(by_mes) > 1 and pd.notna(by_mes["_mom"].iloc[-1]):
+        v = by_mes["_mom"].iloc[-1]
+        cor = "#4ade80" if v >= 0 else "#f87171"
+        partes.append(f"<span style='color:{cor}'>{'▲' if v >= 0 else '▼'} {v:+.1f}% MoM</span>")
+    if len(by_mes) > 12 and pd.notna(by_mes["_yoy"].iloc[-1]):
+        v = by_mes["_yoy"].iloc[-1]
+        cor = "#4ade80" if v >= 0 else "#f87171"
+        partes.append(f"<span style='color:{cor}'>{'▲' if v >= 0 else '▼'} {v:+.1f}% YoY</span>")
+    if partes:
+        fig.add_annotation(
+            xref="paper", yref="paper", x=1, y=1.16, showarrow=False, align="right",
+            font=dict(size=11, family="DM Sans, sans-serif"), text="   ".join(partes),
+        )
+    return fig
+
+
 # ── 🛒 VAREJO ─────────────────────────────────────────────────────────────────
 def _dash_varejo(tabelas):
     fato = tabelas["FatoVendas"]; produto = tabelas["DimProduto"]; vendedor = tabelas["DimVendedor"]
@@ -74,10 +122,7 @@ def _dash_varejo(tabelas):
         (td("avg_discount"),  f"{fato['desconto'].mean()*100:.1f}%",   td("on_full_price")),
         (td("avg_qty"),       f"{fato['quantidade'].mean():.1f}",       td("units")),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_total")
-    fig_mes = px.area(by_mes, x="mes", y="valor_total", labels={"mes":"","valor_total":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_total", td("monthly_revenue"), "valor_total")
 
     merged = fato.merge(produto[["id_produto","categoria"]], on="id_produto")
     by_cat = merged.groupby("categoria")["valor_total"].sum().reset_index().sort_values("valor_total")
@@ -116,10 +161,7 @@ def _dash_financeiro(tabelas):
         (td("avg_value"),      f"R$ {fato['valor'].mean():,.2f}",      td("per_tx")),
         (td("avg_balance"),    f"R$ {fato['saldo_apos'].mean():,.0f}", td("after_tx")),
     ])
-    by_mes = _by_month(fato, "id_data", "valor")
-    fig_mes = px.area(by_mes, x="mes", y="valor", labels={"mes":"","valor":td("volume_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_volume"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor", td("monthly_volume"), "valor")
 
     by_tipo = fato.groupby("tipo")["valor"].sum().reset_index().sort_values("valor")
     fig_tipo = px.bar(by_tipo, x="valor", y="tipo", orientation="h",
@@ -157,12 +199,8 @@ def _dash_saude(tabelas):
         (td("avg_duration"),   f"{fato['duracao_min'].mean():.0f} min",   td("per_visit")),
         (td("avg_value"),      f"R$ {fato['valor_cobrado'].mean():,.2f}", td("per_visit")),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_cobrado")
-    fato2 = fato.copy(); fato2["mes"] = pd.to_datetime(fato2["id_data"]).dt.to_period("M").astype(str)
-    cnt_mes = fato2.groupby("mes").size().reset_index(name="count")
-    fig_mes = px.area(cnt_mes, x="mes", y="count", labels={"mes":"","count":td("visits_axis")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_visits"))
+    fato_cnt = fato.copy(); fato_cnt["_contagem"] = 1
+    fig_mes = _monthly_chart(fato_cnt, "id_data", "_contagem", td("monthly_visits"), td("visits_axis"))
 
     merged = fato.merge(medico[["id_medico","especialidade"]], on="id_medico")
     by_esp = merged.groupby("especialidade").size().reset_index(name="count").sort_values("count")
@@ -200,10 +238,7 @@ def _dash_tecnologia(tabelas):
         (td("avg_nps"),     f"{fato['nps'].mean():.1f}",             td("nps_scale")),
         (td("churn_rate"),  f"{(fato['tipo']=='Churn').mean()*100:.1f}%", td("of_contracts")),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_mrr")
-    fig_mes = px.area(by_mes, x="mes", y="valor_mrr", labels={"mes":"","valor_mrr":"MRR (R$)"})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("mrr_by_month"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_mrr", td("mrr_by_month"), "valor_mrr")
 
     by_tipo = fato["tipo"].value_counts().reset_index()
     fig_tipo = px.pie(by_tipo, names="tipo", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
@@ -281,10 +316,7 @@ def _dash_logistica(tabelas):
         (td("delivery_rate"),   f"{(fato['status']=='Entregue').mean()*100:.1f}%", td("completed")),
         (td("on_time"),         f"{(fato['dias_entregue']<=fato['prazo_acordado']).mean()*100:.1f}%", td("within_deadline")),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_frete")
-    fig_mes = px.area(by_mes, x="mes", y="valor_frete", labels={"mes":"","valor_frete":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_freight"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_frete", td("monthly_freight"), "valor_frete")
 
     by_status = fato["status"].value_counts().reset_index()
     fig_status = px.pie(by_status, names="status", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
@@ -324,10 +356,7 @@ def _dash_energia(tabelas):
         (td("avg_bill"),          f"R$ {fato['valor_fatura'].mean():,.2f}", td("per_reading")),
         (td("power_factor"),      f"{fato['fator_potencia'].mean():.3f}",    td("overall_avg")),
     ])
-    by_mes = _by_month(fato, "id_data", "consumo_kwh")
-    fig_mes = px.area(by_mes, x="mes", y="consumo_kwh", labels={"mes":"","consumo_kwh":td("consumption_kwh")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_consumption"))
+    fig_mes = _monthly_chart(fato, "id_data", "consumo_kwh", td("monthly_consumption"), "consumo_kwh")
 
     merged = fato.merge(consumidor[["id_consumidor","classe"]], on="id_consumidor")
     by_cls = merged.groupby("classe")["consumo_kwh"].sum().reset_index().sort_values("consumo_kwh")
@@ -430,10 +459,7 @@ def _dash_agronegocio(tabelas):
 
     figs = []
     if "receita" in fato.columns:
-        by_mes = _by_month(fato, "id_data", "receita")
-        fig_mes = px.area(by_mes, x="mes", y="receita", labels={"mes":"","receita":td("revenue_brl")})
-        fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-        _base_layout(fig_mes, td("monthly_revenue"))
+        fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
         figs.append((fig_mes,3))
 
     if "producao_ton" in fato.columns and "id_cultura" in fato.columns:
@@ -480,10 +506,7 @@ def _dash_turismo(tabelas):
         (td("cancel_rate"),     f"{tx_cancel:.1f}%",                     td("cancelled_status")),
         (td("total_passengers"),f"{fato['passageiros'].sum():,}",         td("persons")),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_pago")
-    fig_mes = px.area(by_mes, x="mes", y="valor_pago", labels={"mes":"","valor_pago":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_pago", td("monthly_revenue"), "valor_pago")
 
     fig_pais = None
     if "id_destino" in fato.columns:
@@ -509,10 +532,7 @@ def _dash_imobiliario(tabelas):
         (td("pct_sales"),       f"{tx_venda:.1f}%",                       td("vs_rentals")),
         (td("avg_area"),        f"{imovel['area_m2'].mean():.1f} m²",     td("per_property")),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_final")
-    fig_mes = px.area(by_mes, x="mes", y="valor_final", labels={"mes":"","valor_final":td("volume_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_business"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_final", td("monthly_business"), "valor_final")
 
     merged = fato.merge(imovel[["id_imovel","tipo"]], on="id_imovel")
     by_tipo = merged.groupby("tipo")["valor_final"].sum().reset_index()
@@ -534,10 +554,7 @@ def _dash_seguros(tabelas):
         (td("loss_ratio"),     f"{loss_ratio:.1f}%",              td("sp_ratio")),
         (td("avg_premium"),    f"R$ {fato['valor_premio'].mean():,.2f}", td("per_policy")),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_premio")
-    fig_mes = px.area(by_mes, x="mes", y="valor_premio", labels={"mes":"","valor_premio":td("premiums_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_premiums"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_premio", td("monthly_premiums"), "valor_premio")
 
     merged = fato.merge(plano[["id_plano","tipo"]], on="id_plano")
     by_tipo = merged.groupby("tipo")["valor_premio"].sum().reset_index().sort_values("valor_premio")
@@ -560,10 +577,7 @@ def _dash_construcao(tabelas):
         (td("cost_per_hour"),   f"R$ {custo_total/horas if horas else 0:,.2f}", td("efficiency")),
         (td("num_projects"),    f"{len(projeto)}",                  td("active_projects")),
     ])
-    by_mes = _by_month(fato, "id_data", "custo_real")
-    fig_mes = px.area(by_mes, x="mes", y="custo_real", labels={"mes":"","custo_real":td("cost_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_costs"))
+    fig_mes = _monthly_chart(fato, "id_data", "custo_real", td("monthly_costs"), "custo_real")
 
     merged = fato.merge(projeto[["id_projeto","nome"]], on="id_projeto")
     by_proj = merged.groupby("nome")["custo_real"].sum().reset_index().sort_values("custo_real",ascending=False).head(10)
@@ -596,10 +610,7 @@ def _dash_hotelaria(tabelas):
     ])
     val_col = "valor_total" if "valor_total" in fato.columns else fato.select_dtypes("number").columns[0]
     date_col = [c for c in fato.columns if "data" in c][0]
-    by_mes = _by_month(fato, date_col, val_col)
-    fig_mes = px.area(by_mes, x="mes", y=val_col, labels={"mes": "", val_col: td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, date_col, val_col, td("monthly_revenue"), val_col)
     if "canal" in fato.columns:
         by_canal = fato.groupby("canal")[val_col].sum().reset_index()
         fig_canal = px.pie(by_canal, names="canal", values=val_col, hole=0.55, color_discrete_sequence=_PALETTE)
@@ -629,10 +640,7 @@ def _dash_streaming(tabelas):
         (td("efficiency"),     f"{fato[dur_col].sum()/60:,.0f}h" if dur_col else "—", td("in_period")),
     ])
     date_col = [c for c in fato.columns if "data" in c][0]
-    by_mes = _by_month(fato, date_col, receita_col or num_cols[0])
-    fig_mes = px.area(by_mes, x="mes", y=by_mes.columns[1], labels={"mes": "", by_mes.columns[1]: td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, date_col, receita_col or num_cols[0], td("monthly_revenue"), td("revenue_brl"))
     if "genero" in fato.columns:
         by_gen = fato.groupby("genero")[receita_col].sum().reset_index().sort_values(receita_col, ascending=False).head(8)
         fig_gen = px.bar(by_gen, x=receita_col, y="genero", orientation="h",
@@ -655,10 +663,7 @@ def _dash_ecommerce(tabelas):
         (td("avg_discount"),   f"R$ {fato['desconto'].mean():,.2f}",           td("per_sale")),
         (td("efficiency"),     f"{(fato['status']=='entregue').mean()*100:.1f}%" if 'status' in fato.columns else "—", td("completed")),
     ])
-    by_mes = _by_month(fato, "data_pedido", "valor_total")
-    fig_mes = px.area(by_mes, x="mes", y="valor_total", labels={"mes": "", "valor_total": td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "data_pedido", "valor_total", td("monthly_revenue"), "valor_total")
     merged = fato.merge(produto[["sk_produto", "categoria"]], on="sk_produto", how="left")
     by_cat = merged.groupby("categoria")["valor_total"].sum().reset_index().sort_values("valor_total").tail(10)
     fig_cat = px.bar(by_cat, x="valor_total", y="categoria", orientation="h",
@@ -686,10 +691,7 @@ def _dash_rh(tabelas):
         (td("efficiency"),     f"{fato['produtividade'].mean():.1f}%",            td("global_efficiency")),
         (td("score"),          f"{fato['satisfacao'].mean():.2f}",                td("overall_avg")),
     ])
-    by_mes = _by_month(fato, "data_registro", "custo_diario")
-    fig_mes = px.area(by_mes, x="mes", y="custo_diario", labels={"mes": "", "custo_diario": td("cost_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_costs"))
+    fig_mes = _monthly_chart(fato, "data_registro", "custo_diario", td("monthly_costs"), "custo_diario")
     merged = fato.merge(dept[["sk_departamento", "nome_departamento"]], on="sk_departamento", how="left")
     by_dept = merged.groupby("nome_departamento")["custo_diario"].sum().reset_index().sort_values("custo_diario").tail(10)
     fig_dept = px.bar(by_dept, x="custo_diario", y="nome_departamento", orientation="h",
@@ -716,10 +718,7 @@ def _dash_mobilidade(tabelas):
         (td("score"),          f"{fato['avaliacao_passageiro'].mean():.2f}",        td("overall_avg")),
     ])
     fato["_data"] = pd.to_datetime(fato["data_hora_inicio"]).dt.date.astype(str)
-    by_mes = _by_month(fato, "_data", "valor_total")
-    fig_mes = px.area(by_mes, x="mes", y="valor_total", labels={"mes": "", "valor_total": td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "_data", "valor_total", td("monthly_revenue"), "valor_total")
     if "status" in fato.columns:
         by_status = fato["status"].value_counts().reset_index()
         by_status.columns = ["status", "count"]
@@ -742,10 +741,7 @@ def _dash_fintech(tabelas):
         (td("avg_ticket"),     f"R$ {fato['cashback_valor'].mean():,.2f}",           "cashback médio"),
     ])
     fato["_d"] = pd.to_datetime(fato["data_hora"]).dt.date.astype(str)
-    by_mes = _by_month(fato, "_d", "valor")
-    fig_mes = px.area(by_mes, x="mes", y="valor", labels={"mes": "", "valor": td("volume_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_volume"))
+    fig_mes = _monthly_chart(fato, "_d", "valor", td("monthly_volume"), "valor")
     comerciante = tabelas["DimComerciante"]
     merged = fato.merge(comerciante[["sk_comerciante","categoria"]], on="sk_comerciante", how="left")
     by_cat = merged.groupby("categoria")["valor"].sum().reset_index().sort_values("valor").tail(10)
@@ -773,10 +769,7 @@ def _dash_mineracao(tabelas):
         (td("efficiency"),        f"{fato['indice_seguranca'].mean():.1f}",            td("score")),
         (td("avg_cost"),          f"R$ {fato['custo_operacional'].mean():,.2f}",       td("per_visit")),
     ])
-    by_mes = _by_month(fato, "id_data", "receita")
-    fig_mes = px.area(by_mes, x="mes", y="receita", labels={"mes": "", "receita": td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
     merged = fato.merge(mineral[["id_mineral","nome"]], on="id_mineral", how="left")
     by_min = merged.groupby("nome")["volume_extraido_ton"].sum().reset_index().sort_values("volume_extraido_ton").tail(10)
     fig_min = px.bar(by_min, x="volume_extraido_ton", y="nome", orientation="h",
@@ -797,10 +790,7 @@ def _dash_juridico(tabelas):
         (td("efficiency"),     f"{fato['resultado_favoravel'].mean()*100:.1f}%",        "taxa de êxito"),
         (td("avg_delay_type"), f"{fato['duracao_dias'].mean():.0f} dias",               "duração média"),
     ])
-    by_mes = _by_month(fato, "id_data", "honorarios")
-    fig_mes = px.area(by_mes, x="mes", y="honorarios", labels={"mes": "", "honorarios": td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "honorarios", td("monthly_revenue"), "honorarios")
     by_area = fato.groupby("area_direito")["honorarios"].sum().reset_index().sort_values("honorarios").tail(8)
     fig_area = px.bar(by_area, x="honorarios", y="area_direito", orientation="h",
                       labels={"honorarios": td("revenue_brl"), "area_direito": td("area")})
@@ -827,10 +817,7 @@ def _dash_esportes(tabelas):
         (td("efficiency"),     f"{fato['receita_bilheteria'].sum()/receita*100:.1f}%", "% bilheteria"),
     ])
     fato["receita_total"] = fato["receita_bilheteria"] + fato["receita_tv"] + fato["receita_patrocinio"]
-    by_mes = _by_month(fato, "id_data", "receita_total")
-    fig_mes = px.area(by_mes, x="mes", y="receita_total", labels={"mes": "", "receita_total": td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "receita_total", td("monthly_revenue"), "receita_total")
     by_res = fato["resultado"].value_counts().reset_index()
     by_res.columns = ["resultado", "count"]
     fig_res = px.pie(by_res, names="resultado", values="count", hole=0.55, color_discrete_sequence=_PALETTE)
@@ -849,10 +836,7 @@ def _dash_saas_b2b(tabelas):
         (td("nps_scale"),      f"{fato['nps'].mean():.1f}",                          td("overall_avg")),
         (td("efficiency"),     f"{fato['churn'].mean()*100:.1f}%",                   "churn rate"),
     ])
-    by_mes = _by_month(fato, "id_data", "mrr")
-    fig_mes = px.area(by_mes, x="mes", y="mrr", labels={"mes": "", "mrr": "MRR (R$)"})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("mrr_by_month"))
+    fig_mes = _monthly_chart(fato, "id_data", "mrr", td("mrr_by_month"), "mrr")
     merged = fato.merge(cliente[["id_cliente","segmento"]], on="id_cliente", how="left")
     by_seg = merged.groupby("segmento")["mrr"].sum().reset_index()
     fig_seg = px.pie(by_seg, names="segmento", values="mrr", hole=0.55, color_discrete_sequence=_PALETTE)
@@ -876,10 +860,7 @@ def _dash_crm(tabelas):
         (td("avg_ticket"),     f"R$ {fato['valor_estimado'].mean():,.2f}",             "valor médio"),
         (td("avg_delay_type"), f"{fato['ciclo_vendas_dias'].mean():.0f} dias",         "ciclo médio"),
     ])
-    by_mes = _by_month(fato, "id_data_abertura", "valor_fechado")
-    fig_mes = px.area(by_mes, x="mes", y="valor_fechado", labels={"mes": "", "valor_fechado": td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data_abertura", "valor_fechado", td("monthly_revenue"), "valor_fechado")
     by_estagio = fato.groupby("estagio")["valor_estimado"].sum().reset_index()
     fig_funnel = px.bar(by_estagio, x="estagio", y="valor_estimado",
                         labels={"valor_estimado": td("revenue_brl"), "estagio": ""},
@@ -901,10 +882,7 @@ def _dash_farmaceutico(tabelas):
         (td("avg_discount"),   f"{fato['desconto_pct'].mean():.1f}%",             td("on_full_price")),
         (td("efficiency"),     f"{(~fato['devolvido']).mean()*100:.1f}%",          "taxa de retenção"),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_liquido")
-    fig_mes = px.area(by_mes, x="mes", y="valor_liquido", labels={"mes": "", "valor_liquido": td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_liquido", td("monthly_revenue"), "valor_liquido")
     merged = fato.merge(produto[["id_produto","classe_terapeutica"]], on="id_produto", how="left")
     by_class = merged.groupby("classe_terapeutica")["valor_liquido"].sum().reset_index().sort_values("valor_liquido").tail(10)
     fig_class = px.bar(by_class, x="valor_liquido", y="classe_terapeutica", orientation="h",
@@ -926,10 +904,7 @@ def _dash_marketing(tabelas):
         (td("avg_value"),      f"R$ {fato['cpc'].mean():,.2f}",                       "CPC médio"),
         (td("score"),          f"{conv['roas'].mean():.2f}x",                         "ROAS médio"),
     ])
-    by_mes = _by_month(fato, "id_data", "investimento")
-    fig_mes = px.area(by_mes, x="mes", y="investimento", labels={"mes": "", "investimento": td("cost_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_costs"))
+    fig_mes = _monthly_chart(fato, "id_data", "investimento", td("monthly_costs"), "investimento")
     merged = fato.merge(canal[["id_canal","nome"]], on="id_canal", how="left")
     by_canal = merged.groupby("nome")["investimento"].sum().reset_index().sort_values("investimento")
     fig_canal = px.bar(by_canal, x="investimento", y="nome", orientation="h",
@@ -955,10 +930,7 @@ def _dash_petroleo(tabelas):
         (td("efficiency"),        f"{fato['eficiencia_pct'].mean():.1f}%",              td("global_efficiency")),
         (td("avg_cost"),          f"US$ {custo['lifting_cost_bbl'].mean():,.2f}",       "lifting cost/bbl"),
     ])
-    by_mes = _by_month(fato, "id_data", "receita_usd")
-    fig_mes = px.area(by_mes, x="mes", y="receita_usd", labels={"mes": "", "receita_usd": "Receita (US$)"})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "receita_usd", td("monthly_revenue"), "receita_usd")
     by_tipo = custo.groupby("tipo_custo")["valor_usd"].sum().reset_index().sort_values("valor_usd")
     fig_custo = px.bar(by_tipo, x="valor_usd", y="tipo_custo", orientation="h",
                        labels={"valor_usd": "Valor (US$)", "tipo_custo": ""})
@@ -979,10 +951,7 @@ def _dash_governo(tabelas):
         (td("avg_value"),      f"R$ {fato['valor_empenhado'].sum():,.0f}",         "total empenhado"),
         (td("score"),          f"R$ {fato['valor_liquidado'].sum():,.0f}",         "total liquidado"),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_pago")
-    fig_mes = px.area(by_mes, x="mes", y="valor_pago", labels={"mes": "", "valor_pago": td("volume_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_volume"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_pago", td("monthly_volume"), "valor_pago")
     by_tipo = fato.groupby("tipo_despesa")["valor_pago"].sum().reset_index().sort_values("valor_pago")
     fig_tipo = px.bar(by_tipo, x="valor_pago", y="tipo_despesa", orientation="h",
                       labels={"valor_pago": td("volume_brl"), "tipo_despesa": ""})
@@ -1008,10 +977,7 @@ def _dash_alimenticio(tabelas):
         (td("efficiency"),       f"{100 - fato['indice_refugo_pct'].mean():.1f}%",   "aproveitamento"),
         (td("avg_cost"),         f"R$ {fato['custo_producao'].mean():,.2f}",          "custo médio/lote"),
     ])
-    by_mes = _by_month(fato, "id_data", "receita")
-    fig_mes = px.area(by_mes, x="mes", y="receita", labels={"mes": "", "receita": td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
     merged = fato.merge(produto[["id_produto","categoria"]], on="id_produto", how="left")
     by_cat = merged.groupby("categoria")["receita"].sum().reset_index().sort_values("receita").tail(10)
     fig_cat = px.bar(by_cat, x="receita", y="categoria", orientation="h",
@@ -1204,10 +1170,7 @@ def _dash_saneamento(tabelas):
         (td("avg_loss_index"),          f"{fato['indice_perdas_pct'].mean():.1f}%", td("network_leakage")),
     ])
 
-    by_mes = _by_month(fato, "id_data", "consumo_agua_m3")
-    fig_mes = px.area(by_mes, x="mes", y="consumo_agua_m3", labels={"mes": "", "consumo_agua_m3": td("total_water_consumption")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_consumption_water"))
+    fig_mes = _monthly_chart(fato, "id_data", "consumo_agua_m3", td("monthly_consumption_water"), "consumo_agua_m3")
 
     by_lig = fato.groupby("tipo_ligacao")["consumo_agua_m3"].sum().reset_index().sort_values("consumo_agua_m3")
     fig_lig = px.bar(by_lig, x="consumo_agua_m3", y="tipo_ligacao", orientation="h",
@@ -1307,12 +1270,12 @@ def _dash_generico(nome: str, tabelas: dict) -> None:
 
     # Gráfico de linha mensal
     if val_col and date_cols:
-        by_mes = _by_month(fato, date_cols[0], val_col)
-        fig_mes = px.area(by_mes, x="mes", y=val_col,
-                          labels={"mes": "", val_col: val_col.replace("_"," ").title()})
-        fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-        _base_layout(fig_mes, f"{val_col.replace('_',' ').title()} por Mês" if lang == "pt"
-                     else f"{val_col.replace('_',' ').title()} by Month")
+        fig_mes = _monthly_chart(
+            fato, date_cols[0], val_col,
+            f"{val_col.replace('_',' ').title()} por Mês" if lang == "pt"
+            else f"{val_col.replace('_',' ').title()} by Month",
+            val_col.replace("_", " ").title(),
+        )
         st.plotly_chart(fig_mes, use_container_width=True, config={"displayModeBar": False})
 
     # Tabela de dimensões disponíveis
@@ -1373,10 +1336,7 @@ def _dash_moda(tabelas):
         (td("avg_discount"),    f"{fato['desconto_pct'].mean():.1f}%",          td("on_full_price")),
         (td("efficiency"),      f"{(~fato['devolucao']).mean()*100:.1f}%",      "retenção"),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_total")
-    fig_mes = px.area(by_mes, x="mes", y="valor_total", labels={"mes":"","valor_total":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_total", td("monthly_revenue"), "valor_total")
 
     by_canal = fato.groupby("canal")["valor_total"].sum().reset_index().sort_values("valor_total")
     fig_canal = px.bar(by_canal, x="valor_total", y="canal", orientation="h",
@@ -1410,10 +1370,7 @@ def _dash_eventos(tabelas):
         (td("efficiency"),      f"{fato['margem_pct'].mean():.1f}%",             "margem média"),
         (td("nps_scale"),       f"{fato['nps'].mean():.1f}",                     td("overall_avg")),
     ])
-    by_mes = _by_month(fato, "id_data", "receita_total")
-    fig_mes = px.area(by_mes, x="mes", y="receita_total", labels={"mes":"","receita_total":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "receita_total", td("monthly_revenue"), "receita_total")
 
     dim_ev = tabelas["DimEvento"]
     by_tipo = fato.merge(dim_ev[["id_evento","tipo"]], on="id_evento", how="left")
@@ -1443,10 +1400,7 @@ def _dash_laboratorio(tabelas):
         (td("avg_value"),       f"{fato['tempo_resposta_h'].mean():.1f}h",       "tempo médio"),
         (td("score"),           f"{fato['resultado_normal'].mean()*100:.1f}%",   "resultados normais"),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_cobrado")
-    fig_mes = px.area(by_mes, x="mes", y="valor_cobrado", labels={"mes":"","valor_cobrado":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_cobrado", td("monthly_revenue"), "valor_cobrado")
 
     by_conv = fato.groupby("convenio")["valor_cobrado"].sum().reset_index().sort_values("valor_cobrado")
     fig_conv = px.bar(by_conv, x="valor_cobrado", y="convenio", orientation="h",
@@ -1475,10 +1429,7 @@ def _dash_franquias(tabelas):
         (td("nps_scale"),       f"{fato['satisfacao_nps'].mean():.1f}",          td("overall_avg")),
         (td("efficiency"),      f"{fato['meta_atingida'].mean()*100:.1f}%",      "meta atingida"),
     ])
-    by_mes = _by_month(fato, "id_data", "faturamento")
-    fig_mes = px.area(by_mes, x="mes", y="faturamento", labels={"mes":"","faturamento":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "faturamento", td("monthly_revenue"), "faturamento")
 
     dim_marc = tabelas["DimMarca"]
     by_marc = fato.merge(dim_marc[["id_marca","nome"]], on="id_marca", how="left")
@@ -1508,10 +1459,7 @@ def _dash_condominio(tabelas):
         (td("avg_value"),       f"R$ {desp['valor'].sum():,.0f}",               "total despesas"),
         (td("score"),           f"{len(ocorr):,}",                              "ocorrências"),
     ])
-    by_mes = _by_month(cota, "id_data", "valor_cota")
-    fig_mes = px.area(by_mes, x="mes", y="valor_cota", labels={"mes":"","valor_cota":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, "Arrecadação Mensal")
+    fig_mes = _monthly_chart(cota, "id_data", "valor_cota", "Arrecadação Mensal", "valor_cota")
 
     by_desp = desp.groupby("tipo_despesa")["valor"].sum().reset_index().sort_values("valor")
     fig_desp = px.bar(by_desp, x="valor", y="tipo_despesa", orientation="h",
@@ -1540,10 +1488,7 @@ def _dash_saude_mental(tabelas):
         (td("efficiency"),      f"{(~fato['faltou']).mean()*100:.1f}%",          "presença"),
         (td("score"),           f"{fato['avaliacao'].mean():.2f}",               td("overall_avg")),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_recebido")
-    fig_mes = px.area(by_mes, x="mes", y="valor_recebido", labels={"mes":"","valor_recebido":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_recebido", td("monthly_revenue"), "valor_recebido")
 
     by_modal = fato.groupby("modalidade")["valor_recebido"].sum().reset_index()
     fig_modal = px.pie(by_modal, names="modalidade", values="valor_recebido",
@@ -1571,10 +1516,7 @@ def _dash_florestal(tabelas):
         (td("efficiency"),       f"{fato['produtividade_map'].mean():.1f}",      "MAP médio (m³/ha/ano)"),
         (td("score"),            f"{fato['carbono_ton'].sum():,.0f} t",          "carbono sequestrado"),
     ])
-    by_mes = _by_month(fato, "id_data", "receita")
-    fig_mes = px.area(by_mes, x="mes", y="receita", labels={"mes":"","receita":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
 
     by_prod = fato.groupby("produto")["volume_m3"].sum().reset_index().sort_values("volume_m3")
     fig_prod = px.bar(by_prod, x="volume_m3", y="produto", orientation="h",
@@ -1602,10 +1544,7 @@ def _dash_startup(tabelas):
         (td("total_mrr"),       f"R$ {metrica['mrr'].mean():,.0f}",             "MRR médio"),
         (td("efficiency"),      f"{metrica['churn_pct'].mean():.1f}%",          "churn médio"),
     ])
-    by_mes = _by_month(rodada, "id_data", "valor_captado")
-    fig_mes = px.area(by_mes, x="mes", y="valor_captado", labels={"mes":"","valor_captado":td("volume_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, "Captação Mensal")
+    fig_mes = _monthly_chart(rodada, "id_data", "valor_captado", "Captação Mensal", "valor_captado")
 
     by_est = rodada.groupby("estagio")["valor_captado"].sum().reset_index()
     fig_est = px.pie(by_est, names="estagio", values="valor_captado",
@@ -1614,10 +1553,7 @@ def _dash_startup(tabelas):
     _chart_row([(fig_mes, 3), (fig_est, 2)])
 
     _section("distribution")
-    by_mrr = _by_month(metrica, "id_data", "mrr")
-    fig_mrr = px.area(by_mrr, x="mes", y="mrr", labels={"mes":"","mrr":"MRR (R$)"})
-    fig_mrr.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mrr, td("mrr_by_month"))
+    fig_mrr = _monthly_chart(metrica, "id_data", "mrr", td("mrr_by_month"), "mrr")
     st.plotly_chart(fig_mrr, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1632,10 +1568,7 @@ def _dash_audiovisual(tabelas):
         (td("efficiency"),      f"{fato['roi_pct'].mean():.1f}%",               "ROI médio"),
         (td("score"),           f"{fato['views_total'].sum():,.0f}",            "views totais"),
     ])
-    by_mes = _by_month(fato, "id_data", "receita")
-    fig_mes = px.area(by_mes, x="mes", y="receita", labels={"mes":"","receita":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
 
     by_dept = fato.groupby("departamento")["custo_realizado"].sum().reset_index().sort_values("custo_realizado")
     fig_dept = px.bar(by_dept, x="custo_realizado", y="departamento", orientation="h",
@@ -1664,10 +1597,7 @@ def _dash_pesca(tabelas):
         (td("efficiency"),       f"{fato['fcr_real'].mean():.2f}",              "FCR médio"),
         (td("score"),            f"{fato['mortalidade_pct'].mean():.1f}%",      "mortalidade média"),
     ])
-    by_mes = _by_month(fato, "id_data", "receita")
-    fig_mes = px.area(by_mes, x="mes", y="receita", labels={"mes":"","receita":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
 
     dim_esp = tabelas["DimEspecie"]
     by_esp = fato.merge(dim_esp[["id_especie","nome"]], on="id_especie", how="left")
@@ -1697,10 +1627,7 @@ def _dash_textil(tabelas):
         (td("efficiency"),       f"{fato['eficiencia_pct'].mean():.1f}%",       "eficiência média"),
         (td("score"),            f"{fato['refugo_pct'].mean():.1f}%",           "refugo médio"),
     ])
-    by_mes = _by_month(fato, "id_data", "receita")
-    fig_mes = px.area(by_mes, x="mes", y="receita", labels={"mes":"","receita":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "receita", td("monthly_revenue"), "receita")
 
     by_proc = fato.groupby("processo")["volume_kg"].sum().reset_index().sort_values("volume_kg")
     fig_proc = px.bar(by_proc, x="volume_kg", y="processo", orientation="h",
@@ -1728,10 +1655,7 @@ def _dash_arquitetura(tabelas):
         (td("efficiency"),      f"{fato['aprovado_cliente'].mean()*100:.1f}%",  "aprovação cliente"),
         (td("score"),           f"{fato['retrabalho'].mean()*100:.1f}%",        "taxa retrabalho"),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_total")
-    fig_mes = px.area(by_mes, x="mes", y="valor_total", labels={"mes":"","valor_total":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_total", td("monthly_revenue"), "valor_total")
 
     by_serv = fato.groupby("tipo_servico")["valor_total"].sum().reset_index().sort_values("valor_total")
     fig_serv = px.bar(by_serv, x="valor_total", y="tipo_servico", orientation="h",
@@ -1761,10 +1685,7 @@ def _dash_viagem_corp(tabelas):
         (td("efficiency"),      f"{(fato['politica']=='Dentro da política').mean()*100:.1f}%", "dentro da política"),
         (td("score"),           f"{fato['nps_viajante'].mean():.1f}",           "NPS viajante"),
     ])
-    by_mes = _by_month(fato, "id_data", "custo_total")
-    fig_mes = px.area(by_mes, x="mes", y="custo_total", labels={"mes":"","custo_total":td("cost_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_costs"))
+    fig_mes = _monthly_chart(fato, "id_data", "custo_total", td("monthly_costs"), "custo_total")
 
     dim_viaj = tabelas["DimViajante"]
     by_dept = fato.merge(dim_viaj[["id_viajante","departamento"]], on="id_viajante", how="left")
@@ -1794,11 +1715,7 @@ def _dash_espacial(tabelas):
         (td("score"),           f"{fato['anomalias'].sum():,}",                 "anomalias totais"),
         (td("avg_value"),       f"{fato['dados_coletados_gb'].sum():,.0f} GB",  "dados coletados"),
     ])
-    by_mes = _by_month(fato, "id_data", "custo_realizado")
-    fig_mes = px.area(by_mes, x="mes", y="custo_realizado",
-                      labels={"mes":"","custo_realizado":"Custo (US$)"})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, "Custo Mensal de Operações")
+    fig_mes = _monthly_chart(fato, "id_data", "custo_realizado", "Custo Mensal de Operações", "custo_realizado")
 
     dim_miss = tabelas["DimMissao"]
     by_tipo = dim_miss.groupby("tipo")["orcamento_mi"].sum().reset_index().sort_values("orcamento_mi")
@@ -1829,10 +1746,7 @@ def _dash_beleza(tabelas):
         (td("efficiency"),      f"{(agenda['status']=='Realizado').mean()*100:.1f}%", "taxa realização"),
         (td("score"),           f"{agenda['avaliacao'].mean():.2f}",            "avaliação média"),
     ])
-    by_mes = _by_month(venda, "id_data", "valor_total")
-    fig_mes = px.area(by_mes, x="mes", y="valor_total", labels={"mes":"","valor_total":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(venda, "id_data", "valor_total", td("monthly_revenue"), "valor_total")
 
     by_canal = venda.groupby("canal")["valor_total"].sum().reset_index().sort_values("valor_total")
     fig_canal = px.bar(by_canal, x="valor_total", y="canal", orientation="h",
@@ -1861,10 +1775,7 @@ def _dash_logistica_urbana(tabelas):
         (td("avg_ticket"),      f"{fato['dentro_sla'].mean()*100:.1f}%",        "dentro do SLA"),
         (td("score"),           f"{fato['avaliacao'].mean():.2f}",              "avaliação média"),
     ])
-    by_mes = _by_month(fato, "id_data", "valor_frete")
-    fig_mes = px.area(by_mes, x="mes", y="valor_frete", labels={"mes":"","valor_frete":td("revenue_brl")})
-    fig_mes.update_traces(line_color=_ACCENT, fillcolor="rgba(167,139,250,0.15)")
-    _base_layout(fig_mes, td("monthly_revenue"))
+    fig_mes = _monthly_chart(fato, "id_data", "valor_frete", td("monthly_revenue"), "valor_frete")
 
     by_status = fato["status"].value_counts().reset_index()
     by_status.columns = ["status", "count"]
