@@ -237,5 +237,5 @@ SETORES_INFO = [
 ]
 
 # Configurações de datas (opcional)
-DATE_DEFAULT_START = "2023-01-01"
+DATE_DEFAULT_START = "2020-01-01"
 DATE_DEFAULT_END   = "2023-12-31"
