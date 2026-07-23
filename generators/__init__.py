@@ -78,6 +78,16 @@ from .metro import gerar_metro
 from .grafica import gerar_grafica
 from .seguranca_privada import gerar_seguranca_privada
 from .locacao_temporada import gerar_locacao_temporada
+from .consorcio import gerar_consorcio
+from .metalurgia import gerar_metalurgia
+from .papelaria import gerar_papelaria
+from .terceiro_setor import gerar_terceiro_setor
+from .call_center import gerar_call_center
+from .assistencia_tecnica import gerar_assistencia_tecnica
+from .locacao_equipamentos import gerar_locacao_equipamentos
+from .cartorio import gerar_cartorio
+from .piscina_spa import gerar_piscina_spa
+from .datacenter import gerar_datacenter
 from .medidas import gerar_bateria_medidas
 
 from .moda import gerar_moda
@@ -178,5 +188,15 @@ __all__ = [
     "gerar_grafica",
     "gerar_seguranca_privada",
     "gerar_locacao_temporada",
+    "gerar_consorcio",
+    "gerar_metalurgia",
+    "gerar_papelaria",
+    "gerar_terceiro_setor",
+    "gerar_call_center",
+    "gerar_assistencia_tecnica",
+    "gerar_locacao_equipamentos",
+    "gerar_cartorio",
+    "gerar_piscina_spa",
+    "gerar_datacenter",
     "gerar_bateria_medidas",
 ]
