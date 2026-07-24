@@ -1,4 +1,4 @@
-"""ui/resultado.py — Métricas, preview de tabelas, dashboard e download."""
+"""ui/resultado.py: Métricas, preview de tabelas, dashboard e download."""
 
 import pandas as pd
 import streamlit as st
@@ -6,8 +6,11 @@ import streamlit as st
 from generators.helpers import to_zip
 
 
-def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame]) -> None:
-    """Renderiza métricas, abas de preview e botão de download do ZIP."""
+def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame], extra_files: dict[str, str] | None = None) -> None:
+    """Renderiza métricas, abas de preview e botão de download do ZIP.
+
+    extra_files: arquivos de texto adicionais para incluir no .zip de download
+    (ex.: {"case_negocio.txt": "...", "gabarito.txt": "..."})."""
 
     st.markdown(
         f'<div class="success-box">✅ Base <strong>{nome}</strong> gerada com sucesso!'
@@ -102,7 +105,11 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame]) -> None:
     from generators.tmdl_generator import gerar_tmdl
     tmdl_conteudo = gerar_tmdl(nome, tabelas)
 
-    zip_bytes    = to_zip(tabelas, extra_files={"model.tmdl": tmdl_conteudo})
+    arquivos_zip = {"model.tmdl": tmdl_conteudo}
+    if extra_files:
+        arquivos_zip.update(extra_files)
+
+    zip_bytes    = to_zip(tabelas, extra_files=arquivos_zip)
     nome_arquivo = f"Base_BI_{nome.replace(' ', '_')}.zip"
 
     st.download_button(
