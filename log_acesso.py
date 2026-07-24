@@ -18,11 +18,18 @@ silenciosamente, para nunca travar ou quebrar a experiência do usuário.
 import re
 import uuid
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import requests
 import streamlit as st
 
 _TIMEOUT_SEG = 3
+_FUSO_BRASILIA = ZoneInfo("America/Sao_Paulo")
+
+
+def _agora() -> datetime:
+    """Horário atual sempre no fuso de Brasília, independente de onde o servidor do Streamlit estiver rodando."""
+    return datetime.now(_FUSO_BRASILIA)
 
 
 def _webhook_url() -> str:
@@ -36,7 +43,7 @@ def _registrar_diagnostico(tipo: str, status: str, detalhe: str = "") -> None:
     if "log_debug" not in st.session_state:
         st.session_state.log_debug = []
     st.session_state.log_debug.append({
-        "quando": datetime.now().strftime("%H:%M:%S"),
+        "quando": _agora().strftime("%H:%M:%S"),
         "tipo": tipo,
         "status": status,
         "detalhe": detalhe,
@@ -88,7 +95,7 @@ def iniciar_sessao(idioma: str) -> None:
         return
 
     dispositivo, navegador = _detectar_dispositivo_navegador()
-    agora = datetime.now()
+    agora = _agora()
 
     st.session_state.id_sessao = uuid.uuid4().hex[:8]
     st.session_state.inicio_acesso = agora
@@ -110,7 +117,7 @@ def iniciar_sessao(idioma: str) -> None:
 def _atualizar_fim_sessao() -> None:
     if "id_sessao" not in st.session_state or "inicio_acesso" not in st.session_state:
         return
-    agora = datetime.now()
+    agora = _agora()
     duracao_seg = int((agora - st.session_state.inicio_acesso).total_seconds())
     horas, resto = divmod(max(duracao_seg, 0), 3600)
     minutos, segundos = divmod(resto, 60)
@@ -137,7 +144,7 @@ def registrar_evento(acao: str, setor: str = "", volume=None,
     _post({
         "tipo": "evento",
         "id_sessao": st.session_state.id_sessao,
-        "data_hora_evento": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "data_hora_evento": _agora().strftime("%Y-%m-%d %H:%M:%S"),
         "acao": acao,
         "setor_gerado": setor,
         "volume_linhas": volume,
