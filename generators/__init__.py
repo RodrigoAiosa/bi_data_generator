@@ -88,6 +88,16 @@ from .locacao_equipamentos import gerar_locacao_equipamentos
 from .cartorio import gerar_cartorio
 from .piscina_spa import gerar_piscina_spa
 from .datacenter import gerar_datacenter
+from .correios import gerar_correios
+from .blockchain import gerar_blockchain
+from .cooperativa_credito import gerar_cooperativa_credito
+from .optica import gerar_optica
+from .joalheria import gerar_joalheria
+from .marcenaria import gerar_marcenaria
+from .reciclagem import gerar_reciclagem
+from .casa_loterica import gerar_casa_loterica
+from .estacionamento import gerar_estacionamento
+from .leilao import gerar_leilao
 from .medidas import gerar_bateria_medidas
 
 from .moda import gerar_moda
@@ -198,5 +208,15 @@ __all__ = [
     "gerar_cartorio",
     "gerar_piscina_spa",
     "gerar_datacenter",
+    "gerar_correios",
+    "gerar_blockchain",
+    "gerar_cooperativa_credito",
+    "gerar_optica",
+    "gerar_joalheria",
+    "gerar_marcenaria",
+    "gerar_reciclagem",
+    "gerar_casa_loterica",
+    "gerar_estacionamento",
+    "gerar_leilao",
     "gerar_bateria_medidas",
 ]
