@@ -16,7 +16,7 @@ Em poucos segundos você escolhe um setor de negócio, define um período e um v
 - [Qual versão usar?](#-qual-versão-usar)
 - [Instalação e execução local](#-instalação-e-execução-local)
 - [Como usar o app](#-como-usar-o-app)
-- [Setores de negócio disponíveis](#-setores-de-negócio-disponíveis-90)
+- [Setores de negócio disponíveis](#-setores-de-negócio-disponíveis-100)
 - [Modelo de dados gerado (Star Schema)](#-modelo-de-dados-gerado-star-schema)
 - [Recursos principais](#-recursos-principais)
 - [Exportação SQL (DDL / INSERT)](#-exportação-sql-ddl--insert)
@@ -52,13 +52,13 @@ O repositório evoluiu ao longo do tempo e hoje contém a versão principal na r
 ```
 bi_data_generator/
 ├── app.py                      # ⭐ App principal (BI Data Generator PRO) — versão mais completa
-├── config.py                   # Configuração da página, slider de volume e dicionário de 90 setores
+├── config.py                   # Configuração da página, slider de volume e dicionário de 100 setores
 ├── i18n.py                     # Sistema de internacionalização (PT-BR / EN)
 ├── helpers.py                  # Funções utilitárias no nível raiz
 ├── requirements.txt            # Dependências do app principal
 ├── LICENSE
 │
-├── generators/                 # 🏭 Um módulo por setor de negócio (96 arquivos)
+├── generators/                 # 🏭 Um módulo por setor de negócio (106 arquivos)
 │   ├── __init__.py             # Exporta todas as funções gerar_<setor>
 │   ├── helpers.py              # dcalendario(), new_ids(), get_faker(), rand_dates(), to_zip()...
 │   ├── dicionario.py           # Gera o dicionário de dados (CSV zipado) com descrições PT/EN
@@ -101,7 +101,7 @@ bi_data_generator/
 
 | Versão | Pasta | Setores | Indicado para |
 |---|---|---|---|
-| **BI Data Generator PRO** (recomendada) | raiz do repositório (`app.py`) | 90 setores | Uso geral, estudo avançado, portfólio, prática de Power BI/DAX/SQL completa |
+| **BI Data Generator PRO** (recomendada) | raiz do repositório (`app.py`) | 100 setores | Uso geral, estudo avançado, portfólio, prática de Power BI/DAX/SQL completa |
 | **BI Data Generator (completo)** | `bi_data_generator/` | 55 setores* | Espelho da versão principal, útil se você quiser hospedar separadamente |
 | **EscolaDAX Simples** | `escoladax_simples/` | 8 setores (Varejo, Financeiro, Saúde, E-commerce, Logística, Educação, Imobiliário, SaaS B2B) | Quem está começando e quer uma interface mais enxuta, com menos opções |
 
@@ -146,7 +146,7 @@ streamlit run app.py
 
 ## 🖱 Como usar o app
 
-1. **Escolha o setor** — use a caixa de busca na barra lateral para filtrar entre os 90 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
+1. **Escolha o setor** — use a caixa de busca na barra lateral para filtrar entre os 100 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
 2. **Defina o período** — datas de início e fim; a tabela `dCalendario` é gerada automaticamente cobrindo esse intervalo.
 3. **Defina o volume de dados** — slider de 100 a 100.000 linhas na tabela fato (o volume das dimensões é ajustado proporcionalmente).
 4. *(Opcional)* **Ative "Injetar anomalias"** para adicionar problemas propositais nos dados (veja [Modo anomalias](#-modo-anomalias)).
@@ -161,7 +161,7 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 
 ---
 
-## 🏭 Setores de negócio disponíveis (90)
+## 🏭 Setores de negócio disponíveis (100)
 
 | Setor | Conteúdo típico |
 |---|---|
@@ -178,8 +178,10 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 | ✈️ Aviação Civil | Voos, passageiros, aeronaves e aeroportos |
 | 💄 Beleza & Estética | Vendas, serviços, agenda e salões parceiros |
 | 🧬 Biotecnologia | Genômica, CRISPR, pesquisa e experimentos laboratoriais |
+| 🪙 Blockchain & Criptomoedas | Transações, moedas, usuários e carteiras digitais |
 | 📞 Call Center & BPO | Atendimentos, atendentes, clientes e avaliação de qualidade |
 | 📜 Cartório & Serviços Notariais | Atos notariais, tabeliães, clientes e protestos |
+| 🎫 Casa Lotérica & Correspondente Bancário | Transações, apostas de loteria, unidades e serviços |
 | 🔐 Cibersegurança | Incidentes, vulnerabilidades, ativos e SLA de resposta (SOC) |
 | 🎥 Cinema & Exibição | Sessões, filmes, salas e bomboniere |
 | 🚙 Concessionária de Veículos | Vendas, veículos, vendedores e test-drives |
@@ -187,6 +189,8 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 | 🧾 Consórcios | Parcelas, contemplações, grupos e cotistas |
 | 🏗️ Construção Civil | Obras, custos, materiais e fornecedores |
 | 📊 Consultoria Empresarial | Projetos, consultores, faturas e clientes |
+| 💳 Cooperativa de Crédito | Operações, cooperados, produtos e sobras distribuídas |
+| 📦 Correios & Encomendas | Envios, agências, serviços e ocorrências |
 | 🪑 Coworking & Espaços Compartilhados | Reservas, assinaturas, espaços e clientes |
 | 🤝 CRM | Oportunidades, contas, contatos e atividades comerciais |
 | 🖥️ Data Center & Cloud Hosting | Consumo, instâncias, clientes e incidentes |
@@ -199,6 +203,7 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 | 🎓 Ensino Superior | Matrículas, disciplinas, cursos e desempenho acadêmico |
 | 🚀 Espacial & Aeroespacial | Missões, satélites, lançamentos e operações |
 | 🏟️ Esportes | Partidas, atletas, clubes e competições |
+| 🅿️ Estacionamento & Zona Azul | Entradas, estacionamentos, clientes e multas |
 | 🎉 Eventos & Entretenimento | Ingressos, fornecedores, receitas e NPS |
 | 💊 Farmacêutico | Produtos, representantes, vendas e estoque |
 | 💰 Financeiro | Transações bancárias, contas e agências |
@@ -214,13 +219,16 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 | 🏨 Hotelaria | Reservas, hóspedes, hotéis, quartos e canais |
 | 🏠 Imobiliário | Vendas, aluguéis, imóveis e corretores |
 | 🏭 Indústria | Produção, máquinas, insumos e operadores |
+| 💍 Joalheria & Relojoaria | Vendas, produtos, clientes e assistência técnica |
 | ⚖️ Jurídico | Processos, advogados, clientes e tribunais |
 | 🔬 Laboratório & Diagnóstico | Exames, pacientes, laudos e convênios |
+| 🔨 Leilão | Lances, lotes, arrematantes e arrematações |
 | 🚗 Locadora de Veículos | Reservas, frota, clientes, multas e diárias |
 | 🛠️ Locação de Equipamentos | Locações, equipamentos, manutenção e clientes |
 | 🏖️ Locação por Temporada | Reservas, imóveis, hóspedes e avaliações |
 | 🚚 Logística | Entregas, transportadoras, rotas e clientes |
 | 🚴 Logística Urbana | Entregas last mile, entregadores e SLA |
+| 🪵 Marcenaria & Móveis Planejados | Contratos, projetos, produção e clientes |
 | 📣 Marketing Digital | Campanhas, canais, performance e conversões |
 | ⚙️ Metalurgia & Siderurgia | Produção, fornos, produtos e vendas |
 | 🚇 Metrô & Trem Urbano | Validações, estações, linhas e ocorrências |
@@ -230,12 +238,14 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 | 👗 Moda & Vestuário | Coleções, vendas, estoque e devoluções |
 | 🖼️ Museus & Cultura | Visitas, exposições, eventos culturais e ingressos |
 | 🦷 Odontologia | Consultas, dentistas, pacientes, procedimentos e convênios |
+| 👓 Óptica | Vendas, produtos, clientes e exames de vista |
 | 📎 Papelaria & Material Escolar | Vendas, produtos, lojas e estoque |
 | 🐄 Pecuária | Fazendas, rebanho, manejo e produção |
 | 🐟 Pesca & Aquicultura | Espécies, produção, qualidade e biomassa |
 | 🐾 Pet & Veterinária | Atendimentos, pets, tutores e serviços veterinários |
 | 🛢️ Petróleo & Gás | Produção, poços, plataformas e custos operacionais |
 | 🏊 Piscina & Spa | Serviços, clientes, técnicos e consumo de produtos químicos |
+| 🗑️ Reciclagem & Gestão de Resíduos | Coletas, materiais, cooperativas e vendas de material |
 | 🏢 Recursos Humanos | Horas trabalhadas, funcionários, projetos e cargos |
 | 🍽️ Restaurantes & Food Service | Pedidos, cardápio, unidades, reservas e delivery |
 | ☁️ SaaS B2B | Assinaturas, MRR, churn, NPS e planos |
@@ -277,7 +287,7 @@ Cada base gerada segue o padrão de modelagem dimensional (esquema estrela):
 
 ## ✨ Recursos principais
 
-- **90 setores de negócio** com dados contextualmente coerentes (nomes, categorias, faixas de valores e distribuições plausíveis para cada indústria).
+- **100 setores de negócio** com dados contextualmente coerentes (nomes, categorias, faixas de valores e distribuições plausíveis para cada indústria).
 - **Volume configurável**: de 100 a 100.000 linhas na tabela fato via slider.
 - **Período configurável**: qualquer intervalo de datas, com geração automática da `dCalendario`.
 - **Busca de setor** na barra lateral, com índice construído a partir do nome e da descrição de cada setor.
