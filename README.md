@@ -17,6 +17,7 @@ Em poucos segundos você escolhe um setor de negócio, define um período e um v
 - [Instalação e execução local](#-instalação-e-execução-local)
 - [Como usar o app](#-como-usar-o-app)
 - [Setores de negócio disponíveis](#-setores-de-negócio-disponíveis-100)
+- [Quantidade de medidas DAX por setor](#-quantidade-de-medidas-dax-geradas-por-setor)
 - [Modelo de dados gerado (Star Schema)](#-modelo-de-dados-gerado-star-schema)
 - [Recursos principais](#-recursos-principais)
 - [Exportação SQL (DDL / INSERT)](#-exportação-sql-ddl--insert)
@@ -269,6 +270,115 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 A versão **EscolaDAX Simples** disponibiliza 8 destes setores (Varejo, Financeiro, Saúde, E-commerce, Logística, Educação, Imobiliário e SaaS B2B).
 
 > \* A pasta `bi_data_generator/` (versão espelhada standalone) ainda não recebeu os 5 setores novos — replique os arquivos de `generators/` (Academia, Cibersegurança, Locadora, Odontologia, Restaurante) e as entradas de `config.py` nela caso queira mantê-la em paridade com a raiz.
+
+---
+
+## 🧮 Quantidade de medidas DAX geradas por setor
+
+Cada setor gera uma quantidade diferente de medidas DAX automaticamente, dependendo de quantas tabelas fato, colunas numéricas e chaves estrangeiras ele tem (setores multi-fato e com mais colunas de valor multiplicam a base de medidas). Somando os 100 setores, o motor já sabe escrever **6.916 medidas DAX diferentes**, sem depender de nenhuma IA.
+
+| Setor | Medidas DAX |
+| --- | --- |
+| 🚛 Transporte | 303 |
+| 📣 Marketing Digital | 215 |
+| 🏛️ Governo & Setor Público | 185 |
+| 🚗 Mobilidade | 160 |
+| ☁️ SaaS B2B | 146 |
+| 🛢️ Petróleo & Gás | 140 |
+| 🦄 Startups & Venture Capital | 137 |
+| 💊 Farmacêutico | 118 |
+| 🏪 E-commerce | 116 |
+| 🏦 Fintech | 116 |
+| 🏟️ Esportes | 103 |
+| ⛏️ Mineração | 103 |
+| 🤝 CRM | 98 |
+| 🌾 Agronegócio | 92 |
+| 🍔 Alimentos & Bebidas | 92 |
+| 🧵 Têxtil & Confecção | 92 |
+| 🚀 Espacial & Aeroespacial | 91 |
+| 🐟 Pesca & Aquicultura | 91 |
+| ✈️ Viagens Corporativas | 91 |
+| 🏋️ Academia & Fitness | 84 |
+| 👗 Moda & Vestuário | 83 |
+| 🏢 Recursos Humanos | 83 |
+| 📢 Agência de Publicidade | 82 |
+| 💄 Beleza & Estética | 82 |
+| ♻️ Economia Circular | 82 |
+| 🎉 Eventos & Entretenimento | 82 |
+| 🏷️ Franquias | 82 |
+| 🍽️ Restaurantes & Food Service | 82 |
+| ⚖️ Jurídico | 81 |
+| 🌲 Florestal & Papel | 80 |
+| 🎮 Games & eSports | 80 |
+| 🎬 Audiovisual & Produtora | 79 |
+| 🚗 Locadora de Veículos | 72 |
+| 🐄 Pecuária | 72 |
+| ✈️ Aviação Civil | 71 |
+| 📖 Editora & Publicação | 71 |
+| 🥩 Frigorífico & Processamento de Carnes | 71 |
+| ⚡ Energia | 70 |
+| 🚴 Logística Urbana | 69 |
+| 💧 Saneamento & Água | 69 |
+| 🏢 Condomínio & Facilities | 63 |
+| 🚙 Concessionária de Veículos | 61 |
+| 🏖️ Locação por Temporada | 61 |
+| 📎 Papelaria & Material Escolar | 61 |
+| 🔧 Autopeças & Oficina Mecânica | 60 |
+| 📞 Call Center & BPO | 60 |
+| 🔐 Cibersegurança | 60 |
+| 🎥 Cinema & Exibição | 60 |
+| 🖥️ Data Center & Cloud Hosting | 60 |
+| 🚁 Drones & Serviços Aéreos | 60 |
+| 🖨️ Gráfica & Comunicação Visual | 60 |
+| 🏭 Indústria | 60 |
+| 🛠️ Locação de Equipamentos | 60 |
+| 🖼️ Museus & Cultura | 60 |
+| 🍷 Vinícola & Vitivinicultura | 60 |
+| 🌱 AgTech | 59 |
+| 🧬 Biotecnologia | 59 |
+| 🚚 Logística | 59 |
+| 🧠 Saúde Mental | 58 |
+| 🪙 Blockchain & Criptomoedas | 50 |
+| 🎓 Ensino Superior | 50 |
+| ⚙️ Metalurgia & Siderurgia | 50 |
+| 🦷 Odontologia | 50 |
+| 🎰 Apostas Esportivas & iGaming | 49 |
+| 📜 Cartório & Serviços Notariais | 49 |
+| 🎫 Casa Lotérica & Correspondente Bancário | 49 |
+| 📊 Consultoria Empresarial | 49 |
+| 📦 Correios & Encomendas | 49 |
+| 🪑 Coworking & Espaços Compartilhados | 49 |
+| ⚰️ Funerária & Serviços Funerários | 49 |
+| 🪵 Marcenaria & Móveis Planejados | 49 |
+| 👓 Óptica | 49 |
+| 🏊 Piscina & Spa | 49 |
+| 🛒 Varejo | 49 |
+| 🎬 Streaming | 48 |
+| 📡 Telecom | 48 |
+| 🔬 Laboratório & Diagnóstico | 47 |
+| 📲 Migração Claro Brasil (Portabilidade) | 47 |
+| 🧾 Consórcios | 39 |
+| 🗑️ Reciclagem & Gestão de Resíduos | 39 |
+| 🔩 Assistência Técnica de Eletrônicos | 38 |
+| 🏗️ Construção Civil | 38 |
+| 💳 Cooperativa de Crédito | 38 |
+| 🅿️ Estacionamento & Zona Azul | 38 |
+| 🩺 Home Care | 38 |
+| 🏨 Hotelaria | 38 |
+| 💍 Joalheria & Relojoaria | 38 |
+| 🔨 Leilão | 38 |
+| 🤲 Terceiro Setor & ONGs | 38 |
+| 📚 Educação | 37 |
+| 🛡️ Seguros | 37 |
+| 💻 Tecnologia | 37 |
+| 🏛️ Arquitetura & Design | 36 |
+| 🏥 Saúde | 27 |
+| 🔒 Segurança Privada | 27 |
+| ✈️ Turismo | 27 |
+| 💰 Financeiro | 26 |
+| 🐾 Pet & Veterinária | 25 |
+| 🚇 Metrô & Trem Urbano | 16 |
+| 🏠 Imobiliário | 15 |
 
 ---
 
