@@ -1,4 +1,4 @@
-"""ui/sidebar.py — Sidebar completa com toggle de idioma, pesquisa e SQL DDL/INSERT."""
+"""ui/sidebar.py: Sidebar completa com toggle de idioma, pesquisa e SQL DDL/INSERT."""
 
 from datetime import date
 
@@ -48,8 +48,8 @@ _SQL_STRINGS = {
     "btn":      {"pt": "⬇️ Gerar & Baixar SQL",   "en": "⬇️ Generate & Download SQL"},
     "spin":     {"pt": "Gerando script SQL…",      "en": "Generating SQL script…"},
     "preview":  {"pt": "👁️ Preview SQL",           "en": "👁️ SQL Preview"},
-    "trunc":    {"pt": "-- ... (truncado — baixe o arquivo para o script completo)",
-                 "en": "-- ... (truncated — download the file for the full script)"},
+    "trunc":    {"pt": "-- ... (truncado, baixe o arquivo para o script completo)",
+                 "en": "-- ... (truncated, download the file for the full script)"},
     "warn_ins": {"pt": "⚠️ INSERT usa o volume definido no slider acima.",
                  "en": "⚠️ INSERT uses the volume set in the slider above."},
 }
@@ -228,6 +228,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
 
         if st.button(_s("btn"), use_container_width=True, key="btn_gerar_sql"):
             from generators.sql_generator import gerar_sql, gerar_sql_insert, gerar_sql_completo
+            from log_acesso import registrar_evento
 
             fn          = SETORES[setor]
             nome_setor  = setor.split(" ", 1)[1]
@@ -245,6 +246,8 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
                     sql_content = gerar_sql_completo(nome_setor, tabelas_sql, dialect_key)
                     sufixo = "COMPLETO"
 
+            registrar_evento("gerou_sql", setor=nome_setor, volume=n_linhas)
+
             nome_limpo   = nome_setor.replace(" ", "_").replace("&", "e").replace("/", "_")
             nome_arquivo = f"{sufixo}_{nome_limpo}_{dialect_key}.sql"
             tamanho_kb   = len(sql_content.encode("utf-8")) / 1024
@@ -256,6 +259,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
                 mime="text/plain",
                 use_container_width=True,
                 key="dl_sql_file",
+                on_click=lambda: registrar_evento("baixou_sql", setor=nome_setor),
             )
 
             with st.expander(_s("preview"), expanded=True):
