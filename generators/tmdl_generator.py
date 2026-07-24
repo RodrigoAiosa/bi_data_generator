@@ -1,8 +1,8 @@
 """
 generators/tmdl_generator.py
-Gera um arquivo TMDL (model.tmdl) completo — tabelas, colunas, partitions
+Gera um arquivo TMDL (model.tmdl) completo: tabelas, colunas, partitions
 (Power Query apontando para os CSVs), relacionamentos e todas as medidas DAX
-da bateria gerada em generators/medidas.py — para QUALQUER setor do projeto.
+da bateria gerada em generators/medidas.py, para qualquer setor do projeto.
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ def _coluna_e_data(col: str, serie: pd.Series) -> bool:
         return True
     name = col.lower()
     # Reconhece qualquer variação com "data" no nome (id_data, sk_data,
-    # data_pedido, data_registro, data_evento, ...) — mesma regra usada em
+    # data_pedido, data_registro, data_evento, ...). Mesma regra usada em
     # medidas.py para achar a coluna de data da fato. Antes só cobria nomes
     # terminados em "_data" ou iniciados por "id_data"/"sk_data", deixando
     # fatos como FatoPedido (data_pedido) e FatoHorasTrabalhadas
@@ -96,21 +96,25 @@ def _relacionamentos(tabelas: dict[str, pd.DataFrame]) -> list[str]:
     coluna id_*/sk_* de cada tabela (que não seja a PK própria, 1ª coluna),
     procura outra tabela onde essa coluna é a PK (1ª coluna).
 
-    Quando uma tabela alcança OUTRA por mais de um caminho de relações ativas
-    — seja uma cadeia de dimensão-para-dimensão ("snowflake", ex.: DimPoco ->
-    DimPlataforma -> DimBacia, com uma FK redundante direta DimPoco ->
-    DimBacia), seja uma fato com FK direta para uma dimensão que ela também
-    alcança indiretamente por outra dimensão mais granular (ex.: FatoProducao
-    -> DimPlataforma direto E FatoProducao -> DimPoco -> DimPlataforma) — o
-    Power BI recusa isso como "relacionamento ambíguo" ao aplicar o modelo.
-    A relação redundante (a que fecharia o ciclo) é marcada `isActive: false`:
+    Quando uma tabela alcança outra por mais de um caminho de relações
+    ativas (seja uma cadeia de dimensão-para-dimensão tipo "snowflake",
+    ex.: DimPoco -> DimPlataforma -> DimBacia com uma FK redundante direta
+    DimPoco -> DimBacia; seja uma fato com FK direta para uma dimensão que
+    ela também alcança indiretamente por outra dimensão mais granular), o
+    Power BI recusa isso como relacionamento ambíguo ao aplicar o modelo.
+    A relação redundante (a que fecharia o ciclo) é marcada isActive: false:
     o caminho continua existindo no modelo, só não fica ativo por padrão.
 
-    O link fato -> dCalendario fica DE FORA dessa checagem e é sempre ativo:
-    cada fato precisa da própria relação ativa com o calendário para o Time
-    Intelligence funcionar, e — como uma fato nunca propaga filtro adiante
-    para outra tabela (relações de sentido único) — duas fatos comparti-
-    lharem dimensões (ou o calendário) nunca é, por si só, ambíguo.
+    O link fato -> dCalendario normalmente fica de fora dessa checagem e é
+    sempre ativo, já que duas fatos compartilharem dimensões ou calendário
+    não é, por si só, ambíguo (uma fato comum nunca propaga filtro adiante
+    para outra tabela). A EXCEÇÃO é quando uma fato tem uma relação ativa
+    para OUTRA fato (ex.: FatoDespesa -> FatoViagem, uma "fato-pai"): nesse
+    caso a fato-pai passa a propagar filtro adiante, e se ela mesma também
+    se liga ao calendário, a fato-filha ficaria com dois caminhos até o
+    calendário (o próprio e o herdado da fato-pai). Por isso, a fato-filha
+    tem seu link direto com o calendário desativado quando a fato-pai já
+    tem (ou vai ter) uma ligação própria com o calendário.
     """
     pk_por_tabela = {nome: df.columns[0] for nome, df in tabelas.items() if len(df.columns)}
     dono_da_pk: dict[str, str] = {}
@@ -118,9 +122,9 @@ def _relacionamentos(tabelas: dict[str, pd.DataFrame]) -> list[str]:
         dono_da_pk.setdefault(pk, nome)  # primeira tabela que "possui" essa PK
 
     # Union-Find sobre TODAS as relações PK/FK (dimensão-dimensão e
-    # fato-dimensão) — detecta qualquer ciclo (caminho redundante) entre
-    # duas tabelas quaisquer do modelo. O calendário fica de fora (tratado
-    # à parte, sempre ativo).
+    # fato-dimensão/fato-fato): detecta qualquer ciclo (caminho redundante)
+    # entre duas tabelas quaisquer do modelo. O calendário fica de fora
+    # (tratado à parte, ver docstring).
     pai: dict[str, str] = {nome: nome for nome in tabelas}
 
     def _raiz(x: str) -> str:
@@ -140,6 +144,7 @@ def _relacionamentos(tabelas: dict[str, pd.DataFrame]) -> list[str]:
     blocos = []
     contador = 1
     vistos = set()
+    pai_fato: dict[str, str] = {}  # fato_filha -> fato_pai, só quando a relação ficou ATIVA
 
     for nome_from, df in tabelas.items():
         pk_propria = df.columns[0] if len(df.columns) else None
@@ -158,6 +163,9 @@ def _relacionamentos(tabelas: dict[str, pd.DataFrame]) -> list[str]:
 
             inativo = _fecha_ciclo(nome_from, nome_to)
 
+            if not inativo and nome_from.startswith("Fato") and nome_to.startswith("Fato"):
+                pai_fato[nome_from] = nome_to
+
             linhas = [
                 f"\trelationship rel_{contador}\n",
                 f"\t\tfromColumn: {nome_from}.{col}\n",
@@ -169,9 +177,25 @@ def _relacionamentos(tabelas: dict[str, pd.DataFrame]) -> list[str]:
             blocos.append("".join(linhas))
             contador += 1
 
-    # dCalendario: liga pela coluna de data da(s) fato(s) — sempre ativa,
-    # fica de fora do Union-Find acima (ver docstring).
+    def _raiz_fato(fato: str) -> str:
+        """Sobe a cadeia de fato-pai (via relação fato-fato ativa) até o topo."""
+        visto = set()
+        while fato in pai_fato and fato not in visto:
+            visto.add(fato)
+            fato = pai_fato[fato]
+        return fato
+
+    # dCalendario: liga pela coluna de data da(s) fato(s). Sempre ativa,
+    # exceto quando a fato tem uma fato-pai (ver docstring) que também vai
+    # se ligar ao calendário: nesse caso, só a fato-pai (raiz da cadeia)
+    # fica com o link ativo, evitando dois caminhos até o calendário.
     if "dCalendario" in tabelas:
+        tem_coluna_data: dict[str, bool] = {}
+        for nome_f, df_f in tabelas.items():
+            if not nome_f.startswith("Fato"):
+                continue
+            tem_coluna_data[nome_f] = any(_coluna_e_data(c, df_f[c]) for c in df_f.columns)
+
         for nome_from, df in tabelas.items():
             if not nome_from.startswith("Fato"):
                 continue
@@ -183,11 +207,19 @@ def _relacionamentos(tabelas: dict[str, pd.DataFrame]) -> list[str]:
             if chave in vistos:
                 continue
             vistos.add(chave)
-            blocos.append(
-                f"\trelationship rel_{contador}\n"
-                f"\t\tfromColumn: {nome_from}.{col_data}\n"
-                f"\t\ttoColumn: dCalendario.Data\n\n"
-            )
+
+            raiz = _raiz_fato(nome_from)
+            inativo = raiz != nome_from and tem_coluna_data.get(raiz, False)
+
+            linhas = [
+                f"\trelationship rel_{contador}\n",
+                f"\t\tfromColumn: {nome_from}.{col_data}\n",
+                f"\t\ttoColumn: dCalendario.Data\n",
+            ]
+            if inativo:
+                linhas.append("\t\tisActive: false\n")
+            linhas.append("\n")
+            blocos.append("".join(linhas))
             contador += 1
 
     return blocos
