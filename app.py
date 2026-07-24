@@ -16,6 +16,7 @@ from config import PAGE_CONFIG, SETORES
 from generators.dicionario import gerar_dicionario
 from generators.case_negocio import gerar_case_negocio, detectar_kpi_label
 from generators.concept_drift import injetar_concept_drift
+from log_acesso import iniciar_sessao, registrar_evento
 from i18n import t
 from styles.css import inject_css
 try:
@@ -276,6 +277,7 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: 
         file_name=dict_filename,
         mime="application/zip",
         use_container_width=True,
+        on_click=lambda: registrar_evento("baixou_dicionario", setor=nome),
     )
 
 
@@ -286,11 +288,13 @@ def main() -> None:
     inject_seo(lang=_get_lang())
     render_hero()
 
+    lang = _get_lang()
+    iniciar_sessao(lang)
+
     setor, data_inicio, data_fim, n_linhas, gerar = render_sidebar()
     nome = setor.split(" ", 1)[1]
 
     # Toggles de anomalia e deriva temporal, abaixo do hero
-    lang    = _get_lang()
     anomalia = st.sidebar.toggle(
         _ANOMALY_LABEL[lang],
         value=False,
@@ -307,7 +311,15 @@ def main() -> None:
             st.error(t("date_error_stop"))
             st.stop()
 
-        tabelas, gabarito = _gerar_com_progresso(setor, n_linhas, data_inicio, data_fim, anomalia, drift)
+        try:
+            tabelas, gabarito = _gerar_com_progresso(setor, n_linhas, data_inicio, data_fim, anomalia, drift)
+        except Exception as e:
+            registrar_evento("gerou_base", setor=nome, volume=n_linhas,
+                              anomalia=anomalia, drift=drift, status="erro", erro=str(e))
+            raise
+
+        registrar_evento("gerou_base", setor=nome, volume=n_linhas,
+                          anomalia=anomalia, drift=drift, status="sucesso")
         _render_resultado_completo(nome, tabelas, anomalia, drift, gabarito)
 
     else:
