@@ -32,14 +32,28 @@ def _webhook_url() -> str:
         return ""
 
 
+def _registrar_diagnostico(tipo: str, status: str, detalhe: str = "") -> None:
+    if "log_debug" not in st.session_state:
+        st.session_state.log_debug = []
+    st.session_state.log_debug.append({
+        "quando": datetime.now().strftime("%H:%M:%S"),
+        "tipo": tipo,
+        "status": status,
+        "detalhe": detalhe,
+    })
+    st.session_state.log_debug = st.session_state.log_debug[-20:]  # guarda só os últimos 20
+
+
 def _post(payload: dict) -> None:
     url = _webhook_url()
     if not url:
+        _registrar_diagnostico(payload.get("tipo", "?"), "sem_url_configurada")
         return
     try:
-        requests.post(url, json=payload, timeout=_TIMEOUT_SEG)
-    except Exception:
-        pass  # log nunca pode derrubar o app
+        resp = requests.post(url, json=payload, timeout=_TIMEOUT_SEG)
+        _registrar_diagnostico(payload.get("tipo", "?"), f"http_{resp.status_code}", resp.text[:200])
+    except Exception as e:
+        _registrar_diagnostico(payload.get("tipo", "?"), "excecao", str(e))
 
 
 def _detectar_dispositivo_navegador() -> tuple[str, str]:
@@ -133,3 +147,35 @@ def registrar_evento(acao: str, setor: str = "", volume=None,
         "erro_detalhe": erro,
     })
     _atualizar_fim_sessao()
+
+
+def mostrar_diagnostico() -> None:
+    """
+    Mostra um painel de diagnóstico do log de acesso, só quando a URL tem
+    ?debug=1 (ex.: https://seu-app.streamlit.app/?debug=1). Não aparece
+    pra usuários normais, é só pra você conferir se o webhook está
+    funcionando de verdade.
+    """
+    try:
+        eh_debug = st.query_params.get("debug") == "1"
+    except Exception:
+        eh_debug = False
+    if not eh_debug:
+        return
+
+    with st.sidebar.expander("🔧 Diagnóstico do log de acesso", expanded=True):
+        url = _webhook_url()
+        if url:
+            st.success(f"URL configurada: {url[:50]}...")
+        else:
+            st.error("log_webhook_url NÃO está configurado em st.secrets.")
+
+        historico = st.session_state.get("log_debug", [])
+        if not historico:
+            st.info("Nenhuma tentativa de log registrada ainda nesta sessão.")
+        else:
+            for item in reversed(historico):
+                cor = "✅" if item["status"].startswith("http_2") else "❌"
+                st.write(f"{cor} `{item['quando']}` {item['tipo']}: {item['status']}")
+                if item["detalhe"]:
+                    st.caption(item["detalhe"])
