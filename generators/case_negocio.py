@@ -54,13 +54,29 @@ _DESAFIO_EN = (
 )
 
 
+def _remover_emoji_se_houver(nome_setor: str) -> str:
+    """
+    Remove o ícone do início do nome do setor, se houver (ex.: '🚁 Drones...'
+    vira 'Drones...'). Se o nome já vier sem ícone (ex.: 'Drones...', que é
+    como o app.py já chama esta função), devolve sem alterar.
+    """
+    if not nome_setor:
+        return nome_setor
+    primeiro_char = nome_setor[0]
+    # Emojis/ícones ficam em faixas de código bem acima dos caracteres latinos
+    # (incluindo acentuados em português), que não passam de ~0x017F.
+    if ord(primeiro_char) > 0x2000 and " " in nome_setor:
+        return nome_setor.split(" ", 1)[1]
+    return nome_setor
+
+
 def gerar_case_negocio(nome_setor: str, kpi_label: str, lang: str = "pt",
                         anomalia_ativa: bool = False, drift_ativo: bool = False) -> str:
     """
     Gera um parágrafo de case de negócio fictício, adaptado ao setor e ao
     modo ativo (anomalia / deriva temporal / nenhum dos dois).
     """
-    setor_txt = nome_setor.split(" ", 1)[1] if " " in nome_setor else nome_setor
+    setor_txt = _remover_emoji_se_houver(nome_setor)
 
     if lang == "en":
         empresa = fake_en.company()
