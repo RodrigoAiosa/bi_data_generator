@@ -112,6 +112,8 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame], extra_files: d
     zip_bytes    = to_zip(tabelas, extra_files=arquivos_zip)
     nome_arquivo = f"Base_BI_{nome.replace(' ', '_')}.zip"
 
+    from log_acesso import registrar_evento
+
     st.download_button(
         label=f"📥 Baixar {nome_arquivo}",
         data=zip_bytes,
@@ -119,6 +121,7 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame], extra_files: d
         mime="application/zip",
         use_container_width=True,
         type="primary",
+        on_click=lambda: registrar_evento("baixou_zip", setor=nome),
     )
     st.caption("O .zip inclui os CSVs de cada tabela + `model.tmdl` com todas as tabelas, "
                "relacionamentos e medidas DAX prontos para importar no Power BI (Tabular Editor / TMDL).")
