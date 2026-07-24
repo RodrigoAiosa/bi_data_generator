@@ -4,3 +4,4 @@ numpy
 faker
 plotly
 requests
+tzdata
