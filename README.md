@@ -2,7 +2,7 @@
 
 Gerador de **dados fictícios em modelo estrela** (fato + dimensões + calendário) para quem quer praticar **Power BI, DAX, SQL e modelagem dimensional** sem depender de bases reais, sensíveis ou difíceis de conseguir.
 
-Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário, medidas DAX sugeridas, dicionário de dados e — se quiser — os scripts SQL para recriar tudo em um banco relacional.
+Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário, medidas DAX sugeridas, modelo TMDL pronto para o Power BI, dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
 
 > Aplicação construída em **Streamlit** e distribuída publicamente em:
 > 🔗 **https://rodrigoaiosa.streamlit.app**
@@ -21,7 +21,7 @@ Em poucos segundos você escolhe um setor de negócio, define um período e um v
 - [Modelo de dados gerado (Star Schema)](#-modelo-de-dados-gerado-star-schema)
 - [Recursos principais](#-recursos-principais)
 - [Exportação SQL (DDL / INSERT)](#-exportação-sql-ddl--insert)
-- [Modo anomalias](#-modo-anomalias)
+- [Modo anomalias, deriva temporal e case de negócio](#-modo-anomalias-deriva-temporal-e-case-de-negócio)
 - [Internacionalização (PT/EN)](#-internacionalização-ptEN)
 - [Deploy no Streamlit Cloud](#-deploy-no-streamlit-cloud)
 - [Requisitos e dependências](#-requisitos-e-dependências)
@@ -40,9 +40,10 @@ O objetivo é resolver um problema comum de quem estuda ou ensina Business Intel
 - Tabelas **Dimensão** com atributos descritivos e chave primária;
 - Tabela **dCalendario** (compatível com Power Query) para análises de série temporal;
 - **Medidas DAX** sugeridas automaticamente com base nas colunas geradas;
+- **Modelo TMDL** com tabelas, relacionamentos e medidas prontos para importar no Power BI;
 - **Dicionário de dados** explicando cada tabela e coluna;
 - Scripts **SQL (DDL/INSERT)** para recriar a base em SQL Server, PostgreSQL ou MySQL;
-- Um **dashboard interativo** de pré-visualização, direto no navegador.
+- Um **case de negócio fictício**, gerado automaticamente, transformando a base num exercício com objetivo real a resolver.
 
 ---
 
@@ -52,19 +53,22 @@ O repositório evoluiu ao longo do tempo e hoje contém a versão principal na r
 
 ```
 bi_data_generator/
-├── app.py                      # ⭐ App principal (BI Data Generator PRO) — versão mais completa
+├── app.py                      # ⭐ App principal (BI Data Generator PRO), versão mais completa
 ├── config.py                   # Configuração da página, slider de volume e dicionário de 100 setores
 ├── i18n.py                     # Sistema de internacionalização (PT-BR / EN)
 ├── helpers.py                  # Funções utilitárias no nível raiz
 ├── requirements.txt            # Dependências do app principal
 ├── LICENSE
 │
-├── generators/                 # 🏭 Um módulo por setor de negócio (106 arquivos)
+├── generators/                 # 🏭 Um módulo por setor de negócio (108 arquivos)
 │   ├── __init__.py             # Exporta todas as funções gerar_<setor>
 │   ├── helpers.py              # dcalendario(), new_ids(), get_faker(), rand_dates(), to_zip()...
 │   ├── dicionario.py           # Gera o dicionário de dados (CSV zipado) com descrições PT/EN
 │   ├── medidas.py              # Gera a bateria de medidas DAX sugeridas por tabela fato
 │   ├── sql_generator.py        # Gera DDL / INSERT / script completo (SQL Server, PostgreSQL, MySQL)
+│   ├── tmdl_generator.py       # Gera o modelo TMDL (tabelas, relacionamentos e medidas) para o Power BI
+│   ├── case_negocio.py         # Gera o case de negócio fictício que acompanha cada base
+│   ├── concept_drift.py        # Injeta deriva temporal (concept drift) genérica na tabela fato
 │   ├── varejo.py, financeiro.py, saude.py, ecommerce.py, ... (um arquivo por setor)
 │   └── ...
 │
@@ -72,19 +76,18 @@ bi_data_generator/
 │   ├── hero.py                  # Seção de topo (hero) da landing
 │   ├── sidebar.py                # Sidebar: busca de setor, período, volume, botão gerar, export SQL
 │   ├── estado_inicial.py         # Tela inicial / onboarding ("Como usar")
-│   ├── resultado.py               # Métricas, preview de tabelas, medidas DAX, download do ZIP
-│   └── dashboard.py                # Dashboard interativo (gráficos com Plotly/Streamlit)
+│   └── resultado.py               # Métricas, preview de tabelas, medidas DAX, gabarito e download do ZIP
 │
 ├── styles/
-│   ├── css.py                   # CSS customizado injetado no Streamlit (tema escuro/roxo)
+│   ├── css.py                   # CSS customizado injetado no Streamlit (tema Power BI: amarelo/preto)
 │   └── seo.py                   # (opcional) meta tags de SEO
 │
-├── bi_data_generator/            # 📦 Versão completa "standalone" (55 setores*) — código-fonte espelhado
+├── bi_data_generator/            # 📦 Versão completa "standalone" (55 setores*), código-fonte espelhado
 │   ├── app.py
 │   ├── config.py
 │   └── generators/
 │
-└── escoladax_simples/            # 📦 Versão enxuta (8 setores) — ideal para começar
+└── escoladax_simples/            # 📦 Versão enxuta (8 setores), ideal para começar
     ├── app.py
     ├── requirements.txt
     └── generators_bi/
@@ -141,24 +144,26 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-> ⚠️ Cada subpasta tem seu próprio `requirements.txt` — instale as dependências dentro da pasta do app que for rodar.
+> ⚠️ Cada subpasta tem seu próprio `requirements.txt`: instale as dependências dentro da pasta do app que for rodar.
 
 ---
 
 ## 🖱 Como usar o app
 
-1. **Escolha o setor** — use a caixa de busca na barra lateral para filtrar entre os 100 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
-2. **Defina o período** — datas de início e fim; a tabela `dCalendario` é gerada automaticamente cobrindo esse intervalo.
-3. **Defina o volume de dados** — slider de 100 a 100.000 linhas na tabela fato (o volume das dimensões é ajustado proporcionalmente).
-4. *(Opcional)* **Ative "Injetar anomalias"** para adicionar problemas propositais nos dados (veja [Modo anomalias](#-modo-anomalias)).
-5. Clique em **"Gerar base agora"**. Uma barra de progresso mostra as etapas reais: criação de dimensões → geração da fato → cálculo de métricas → compactação do ZIP.
-6. Navegue pelas abas:
-   - **📦 Base de Dados** — resumo das tabelas, preview de cada uma, medidas DAX sugeridas e botão de download do `.zip`;
-   - **📊 Dashboard** — visualizações automáticas (KPIs, distribuições por categoria, séries temporais) geradas a partir da fato.
-7. Baixe o **dicionário de dados** (Excel/CSV zipado) com a descrição de cada tabela e coluna.
-8. *(Opcional)* Na barra lateral, gere o **script SQL** (DDL, INSERT ou completo) no dialeto desejado.
-
-Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automático**: uma amostra de 2.000 linhas do setor selecionado, para você ter uma ideia dos dados e do dashboard antes de configurar os parâmetros finais.
+1. **Escolha o setor**: use a caixa de busca na barra lateral para filtrar entre os 100 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
+2. **Defina o período**: datas de início e fim; a tabela `dCalendario` é gerada automaticamente cobrindo esse intervalo.
+3. **Defina o volume de dados**: slider de 100 a 100.000 linhas na tabela fato (o volume das dimensões é ajustado proporcionalmente).
+4. *(Opcional)* **Ative "Injetar anomalias nos dados"** para adicionar problemas propositais (veja [Modo anomalias, deriva temporal e case de negócio](#-modo-anomalias-deriva-temporal-e-case-de-negócio)).
+5. *(Opcional)* **Ative "Simular deriva temporal (concept drift)"** para fazer uma categoria ganhar participação gradualmente ao longo do período, sem evento único que explique.
+6. Clique em **"Gerar base agora"**. Uma barra de progresso mostra as etapas reais: criação de dimensões, geração da fato, cálculo de métricas, compactação do ZIP.
+7. A tela de resultado mostra, nessa ordem:
+   - Um **case de negócio fictício**, gerado automaticamente para o setor escolhido;
+   - O **resumo das tabelas** geradas e o **preview** de cada uma;
+   - As **medidas DAX sugeridas**, organizadas por categoria;
+   - O **gabarito** (se anomalia ou deriva temporal estiverem ativas), num expansor colapsado tipo spoiler;
+   - O **botão de download** do `.zip` completo.
+8. Baixe o **dicionário de dados** (Excel/CSV zipado) com a descrição de cada tabela e coluna.
+9. *(Opcional)* Na barra lateral, gere o **script SQL** (DDL, INSERT ou completo) no dialeto desejado.
 
 ---
 
@@ -269,7 +274,7 @@ Antes mesmo de clicar em "Gerar", o app já mostra uma aba de **preview automát
 
 A versão **EscolaDAX Simples** disponibiliza 8 destes setores (Varejo, Financeiro, Saúde, E-commerce, Logística, Educação, Imobiliário e SaaS B2B).
 
-> \* A pasta `bi_data_generator/` (versão espelhada standalone) ainda não recebeu os 5 setores novos — replique os arquivos de `generators/` (Academia, Cibersegurança, Locadora, Odontologia, Restaurante) e as entradas de `config.py` nela caso queira mantê-la em paridade com a raiz.
+> \* A pasta `bi_data_generator/` (versão espelhada standalone) ainda está parada em 55 setores. Replique os arquivos de `generators/` e as entradas de `config.py`/`i18n.py` nela caso queira mantê-la em paridade com a raiz (hoje com 100 setores).
 
 ---
 
@@ -386,12 +391,14 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 
 Cada base gerada segue o padrão de modelagem dimensional (esquema estrela):
 
-- **Tabela Fato** (`Fato*`) — uma linha por evento/transação, com chaves estrangeiras (`sk_*` / `id_*`) para as dimensões e colunas numéricas (valores, quantidades, métricas).
-- **Tabelas Dimensão** (`Dim*` ou nome do setor) — chave primária e atributos descritivos (nomes, categorias, localizações etc.).
-- **Tabela `dCalendario`** — gerada automaticamente para o período escolhido, com colunas `Data`, `Ano`, `Mes`, `MesAno` e `IdMesAno`, pronta para relacionar com Power Query/Power BI.
-- **Tabelas Bridge** (`Bridge*`) — quando o setor exige, tabelas de associação para relacionamentos N:N.
+- **Tabela Fato** (`Fato*`): uma linha por evento/transação, com chaves estrangeiras (`sk_*` / `id_*`) para as dimensões e colunas numéricas (valores, quantidades, métricas).
+- **Tabelas Dimensão** (`Dim*` ou nome do setor): chave primária e atributos descritivos (nomes, categorias, localizações etc.).
+- **Tabela `dCalendario`**: gerada automaticamente para o período escolhido, com colunas `Data`, `Ano`, `Mes`, `MesAno` e `IdMesAno`, pronta para relacionar com Power Query/Power BI.
+- **Tabelas Bridge** (`Bridge*`): quando o setor exige, tabelas de associação para relacionamentos N:N.
 
 **Dica de modelagem sugerida pelo próprio app:** importe os CSVs no Power BI e crie relacionamentos usando as colunas `sk_*` (chave estrangeira) da tabela Fato até a chave primária correspondente em cada dimensão, e conecte `dCalendario[Data]` ao campo de data da tabela Fato.
+
+Em setores onde uma fato referencia outra fato (ex.: despesas ou abastecimentos vinculados a uma viagem específica), o modelo TMDL gerado já resolve automaticamente qualquer ambiguidade de relacionamento: a fato-filha mantém o vínculo ativo com a fato-pai, e tem o link direto com o calendário desativado quando necessário, evitando o erro "caminhos ambíguos" ao aplicar o modelo no Power BI.
 
 ---
 
@@ -401,16 +408,18 @@ Cada base gerada segue o padrão de modelagem dimensional (esquema estrela):
 - **Volume configurável**: de 100 a 100.000 linhas na tabela fato via slider.
 - **Período configurável**: qualquer intervalo de datas, com geração automática da `dCalendario`.
 - **Busca de setor** na barra lateral, com índice construído a partir do nome e da descrição de cada setor.
-- **Preview automático**: antes mesmo de gerar a base completa, uma amostra de 2.000 linhas já alimenta um dashboard de pré-visualização.
-- **Barra de progresso real**, com etapas (dimensões → fato → métricas → compactação).
-- **Medidas DAX sugeridas automaticamente** (`generators/medidas.py`), organizadas por categoria e prontas para colar no Power BI.
+- **Barra de progresso real**, com etapas (dimensões, fato, métricas, compactação).
+- **Medidas DAX sugeridas automaticamente** (`generators/medidas.py`), organizadas por categoria e prontas para colar no Power BI. Somando os 100 setores, já são mais de 6.900 medidas diferentes que o motor sabe escrever sozinho, sem depender de nenhuma IA.
+- **Modelo TMDL** (`generators/tmdl_generator.py`): tabelas, relacionamentos e medidas prontos para importar no Power BI (Tabular Editor), com resolução automática de ambiguidade de relacionamento, inclusive em cadeias fato-para-fato.
 - **Dicionário de dados** (`generators/dicionario.py`): explica o significado de cada tabela e coluna com base em padrões de nome (`id_`, `valor_`, `qtd_`, `status`, `data_`, etc.), disponível em PT/EN e exportado como ZIP.
-- **Dashboard interativo** (`ui/dashboard.py` / `render_dashboard`): KPIs automáticos (total de registros, soma de valores monetários, quantidades, número de tabelas), distribuição por categorias e séries temporais.
-- **Exportação em ZIP**: todas as tabelas em CSV, compactadas em um único arquivo pronto para importar no Power BI, Tableau, Excel ou Python.
-- **Exportação SQL** (DDL/INSERT/completo) em múltiplos dialetos — veja a seção dedicada abaixo.
+- **Case de negócio automático** (`generators/case_negocio.py`): cada base vem com um parágrafo de contexto fictício, adaptado ao setor e ao modo ativo (anomalia, deriva temporal ou nenhum dos dois), transformando a geração num exercício com objetivo real.
+- **Gabarito de anomalias e deriva temporal**: quando algum desses modos está ativo, um expansor colapsado (tipo spoiler) revela exatamente o que foi alterado e onde, útil para quem ensina conferir se a análise encontrou o problema certo.
+- **Exportação em ZIP**: todas as tabelas em CSV, mais `model.tmdl`, `case_negocio.txt` e (quando aplicável) `gabarito.txt`, compactados em um único arquivo pronto para importar no Power BI, Tableau, Excel ou Python.
+- **Exportação SQL** (DDL/INSERT/completo) em múltiplos dialetos, veja a seção dedicada abaixo.
 - **Modo anomalias**: injeta problemas propositais nos dados para prática de análise de causa raiz.
+- **Deriva temporal (concept drift)**: simula uma categoria ganhando participação gradualmente ao longo do período, para praticar detecção de tendência e mudança de comportamento.
 - **Interface bilíngue** PT-BR / EN, com toggle na barra lateral.
-- **Tema visual customizado** (`styles/css.py`), com identidade escura/roxa e cards estatísticos.
+- **Tema visual customizado** (`styles/css.py`), inspirado na paleta oficial do Power BI (amarelo e preto).
 
 ---
 
@@ -418,32 +427,50 @@ Cada base gerada segue o padrão de modelagem dimensional (esquema estrela):
 
 Além do ZIP de CSVs, a barra lateral do app principal permite gerar diretamente um script SQL para o setor selecionado (`generators/sql_generator.py`), com suporte a:
 
-- **Dialetos**: SQL Server, PostgreSQL e MySQL — com mapeamento automático de tipos (`INT`/`BIGINT`, `DECIMAL`/`NUMERIC`, `BIT`/`BOOLEAN`/`TINYINT(1)`, `NVARCHAR`/`VARCHAR`, `DATETIME2`/`TIMESTAMP`/`DATETIME`, entre outros).
+- **Dialetos**: SQL Server, PostgreSQL e MySQL, com mapeamento automático de tipos (`INT`/`BIGINT`, `DECIMAL`/`NUMERIC`, `BIT`/`BOOLEAN`/`TINYINT(1)`, `NVARCHAR`/`VARCHAR`, `DATETIME2`/`TIMESTAMP`/`DATETIME`, entre outros).
 - **Tipos de script**:
-  - 📋 **CREATE TABLE (DDL)** — apenas a estrutura das tabelas, com tipos inferidos, chaves primárias (`id_`/`sk_`) e índices sugeridos. Ideal para criar o banco do zero.
-  - 💾 **INSERT INTO (dados)** — popula as tabelas com os dados gerados, no volume definido no slider, em blocos de 500 linhas por `INSERT`.
-  - 📦 **Completo (DDL + INSERT)** — os dois combinados em um único arquivo, pronto para colar no SSMS, DBeaver ou `psql` e recriar o banco inteiro.
+  - 📋 **CREATE TABLE (DDL)**: apenas a estrutura das tabelas, com tipos inferidos, chaves primárias (`id_`/`sk_`) e índices sugeridos. Ideal para criar o banco do zero.
+  - 💾 **INSERT INTO (dados)**: popula as tabelas com os dados gerados, no volume definido no slider, em blocos de 500 linhas por `INSERT`.
+  - 📦 **Completo (DDL + INSERT)**: os dois combinados em um único arquivo, pronto para colar no SSMS, DBeaver ou `psql` e recriar o banco inteiro.
 - **Overrides de tamanho de coluna** para campos conhecidos (CPF, CNPJ, CNH, placa, UF, e-mail, telefone, CEP, URL, descrição, observação, endereço etc.), evitando `VARCHAR` genérico demais.
 - **Preview do script** direto na interface antes do download (com truncamento visual para scripts muito longos).
 
 ---
 
-## 🧪 Modo anomalias
+## 🧪 Modo anomalias, deriva temporal e case de negócio
+
+### Case de negócio automático
+
+Toda base gerada vem acompanhada de um parágrafo de contexto fictício (`generators/case_negocio.py`): você é contratado(a) como Analista de BI numa empresa fictícia do setor escolhido, e recebe um problema de negócio pra resolver com os dados. O texto se adapta automaticamente conforme o cenário:
+
+- **Sem anomalia nem deriva ativas**: uma pergunta de negócio genérica (ex.: entender o desempenho do KPI principal).
+- **Com anomalia ativa**: o gatilho aponta pro tipo de sintoma (sem entregar a resposta exata, essa fica só no gabarito).
+- **Com deriva temporal ativa**: o gatilho menciona uma mudança de comportamento gradual e não percebida.
+
+O texto vai também no ZIP de download, como `case_negocio.txt`.
+
+### Modo anomalias
 
 Ao ativar o toggle **"Injetar anomalias nos dados"**, o app aplica quatro tipos de problemas propositais na tabela fato, pensados para prática de análise de causa raiz:
 
-1. **Spike de churn/cancelamento** — força um mês aleatório a concentrar cancelamentos (quando há coluna booleana + coluna de data).
-2. **Margem negativa** — cerca de 4% dos registros recebem margem/lucro/desconto negativo e exagerado.
-3. **Sazonalidade extrema** — um trimestre aleatório sofre queda artificial de 70% no valor principal.
-4. **Outliers de valor** — cerca de 1% dos registros recebem valores 10 a 30 vezes acima da média.
+1. **Spike de churn/cancelamento**: força um mês aleatório a concentrar cancelamentos (quando há coluna booleana + coluna de data).
+2. **Margem negativa**: cerca de 4% dos registros recebem margem/lucro/desconto negativo e exagerado.
+3. **Sazonalidade extrema**: um trimestre aleatório sofre queda artificial de 70% no valor principal.
+4. **Outliers de valor**: cerca de 1% dos registros recebem valores 10 a 30 vezes acima da média.
 
-Quando o modo está ativo, um aviso é exibido na interface (`⚠️ Modo anomalia ativo`) para deixar claro que os dados contêm problemas intencionais.
+### Deriva temporal (concept drift)
+
+Ao ativar o toggle **"Simular deriva temporal (concept drift)"** (`generators/concept_drift.py`), uma categoria de uma coluna categórica da tabela fato (canal, segmento, status etc.) ganha participação **gradualmente** ao longo do período gerado, sem nenhum evento único que explique a mudança. Diferente do modo anomalias (mudanças abruptas e pontuais), esse modo é pensado para praticar detecção de tendência e mudança de comportamento ao longo do tempo.
+
+### Gabarito
+
+Quando qualquer um dos dois modos acima está ativo, um aviso é exibido na interface (`⚠️ Modo anomalia ativo` / `🧬 Deriva temporal ativa`) para deixar claro que os dados contêm alterações intencionais. Um expansor colapsado, tipo spoiler ("🔍 Ver gabarito"), revela exatamente o que foi alterado, onde e quantas linhas foram afetadas, útil para quem ensina conferir se a análise encontrou o problema certo. O gabarito também vai no ZIP de download, como `gabarito.txt`.
 
 ---
 
 ## 🌐 Internacionalização (PT/EN)
 
-Todo o texto da interface — sidebar, hero, dashboard, mensagens de erro, dicionário de dados, script SQL — é controlado pelo módulo `i18n.py`, com mais de 800 linhas de strings mapeadas para **Português (pt)** e **Inglês (en)**. O toggle de idioma fica na barra lateral e afeta:
+Todo o texto da interface (sidebar, hero, resultado, case de negócio, mensagens de erro, dicionário de dados, script SQL) é controlado pelo módulo `i18n.py`, com mais de 800 linhas de strings mapeadas para **Português (pt)** e **Inglês (en)**. O toggle de idioma fica na barra lateral e afeta:
 
 - Textos da interface e mensagens;
 - Nomes de meses na `dCalendario`;
@@ -495,4 +522,4 @@ Contribuições e sugestões são bem-vindas via *issues* e *pull requests*.
 
 ## ⚖️ Aviso legal
 
-Todos os dados gerados são **100% fictícios e sintéticos**, criados com o pacote [`Faker`](https://faker.readthedocs.io/) e regras de negócio simuladas. Nenhuma informação real de pessoas, empresas ou entidades é utilizada. O projeto é destinado a fins **educacionais e de portfólio** — para estudo de Power BI, DAX, modelagem dimensional e SQL.
+Todos os dados gerados são **100% fictícios e sintéticos**, criados com o pacote [`Faker`](https://faker.readthedocs.io/) e regras de negócio simuladas. Nenhuma informação real de pessoas, empresas ou entidades é utilizada. O projeto é destinado a fins **educacionais e de portfólio**, para estudo de Power BI, DAX, modelagem dimensional e SQL.
