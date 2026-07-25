@@ -320,8 +320,21 @@ def main() -> None:
 
         registrar_evento("gerou_base", setor=nome, volume=n_linhas,
                           anomalia=anomalia, drift=drift, status="sucesso")
-        _render_resultado_completo(nome, tabelas, anomalia, drift, gabarito)
 
+        # Guarda o resultado em session_state: cliques em botões de download
+        # (que disparam um novo rerun do script) não podem perder a tela de
+        # resultado nem gerar dados diferentes dos que já foram baixados.
+        st.session_state["ultima_geracao"] = {
+            "nome": nome,
+            "tabelas": tabelas,
+            "anomalia": anomalia,
+            "drift": drift,
+            "gabarito": gabarito,
+        }
+
+    if "ultima_geracao" in st.session_state:
+        dados = st.session_state["ultima_geracao"]
+        _render_resultado_completo(dados["nome"], dados["tabelas"], dados["anomalia"], dados["drift"], dados["gabarito"])
     else:
         render_estado_inicial()
 
