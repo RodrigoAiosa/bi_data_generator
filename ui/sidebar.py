@@ -227,6 +227,11 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
             )
 
         if st.button(_s("btn"), use_container_width=True, key="btn_gerar_sql"):
+            if data_fim <= data_inicio:
+                msg_erro_data = "Corrija as datas antes de gerar." if lang == "pt" else "Fix the dates before generating."
+                st.error(msg_erro_data)
+                st.stop()
+
             from generators.sql_generator import gerar_sql, gerar_sql_insert, gerar_sql_completo
             from log_acesso import registrar_evento
 
