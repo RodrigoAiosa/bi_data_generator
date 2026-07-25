@@ -16,7 +16,7 @@ from config import PAGE_CONFIG, SETORES
 from generators.dicionario import gerar_dicionario
 from generators.case_negocio import gerar_case_negocio, detectar_kpi_label
 from generators.concept_drift import injetar_concept_drift
-from log_acesso import iniciar_sessao, registrar_evento, mostrar_diagnostico
+from log_acesso import iniciar_sessao, registrar_evento
 from i18n import t
 from styles.css import inject_css
 try:
@@ -290,7 +290,6 @@ def main() -> None:
 
     lang = _get_lang()
     iniciar_sessao(lang)
-    mostrar_diagnostico()
 
     setor, data_inicio, data_fim, n_linhas, gerar = render_sidebar()
     nome = setor.split(" ", 1)[1]
