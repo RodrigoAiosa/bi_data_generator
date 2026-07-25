@@ -234,7 +234,12 @@ def gerar_sql(nome_setor: str, tabelas: dict[str, pd.DataFrame], dialect: str = 
         fk_cols = [c for c in tdf.columns if c.lower().startswith("id_") and c != tdf.columns[0]]
         date_cols = [c for c in tdf.columns if any(p in c.lower() for p in ["data", "date", "dt_"])]
 
-        for col in fk_cols + date_cols:
+        # Uma coluna pode cair nas duas listas ao mesmo tempo (ex.: id_data_inicio
+        # começa com "id_" E contém "data"). dict.fromkeys() remove a duplicidade
+        # mantendo a ordem, evitando "CREATE INDEX" repetido pro mesmo nome.
+        colunas_indexadas = list(dict.fromkeys(fk_cols + date_cols))
+
+        for col in colunas_indexadas:
             idx_name = f"IX_{tname}_{col}"
             if dialect == "sqlserver":
                 lines.append(f"CREATE INDEX [{idx_name}] ON [dbo].[{tname}] ([{col}]);")
@@ -427,11 +432,6 @@ def gerar_sql_insert(
         lines.append(f"-- {tname}  ({len(tdf):,} linhas)")
         lines.append(f"-- {sep}")
 
-        # Identidade SQL Server
-        has_pk = tdf.columns[0].lower().startswith(("id_", "sk_"))
-        if dialect == "sqlserver" and has_pk:
-            lines.append(f"SET IDENTITY_INSERT [dbo].[{tname}] ON;")
-
         # Monta lista de colunas
         if dialect == "sqlserver":
             cols_str = ", ".join(f"[{c}]" for c in tdf.columns)
@@ -465,11 +465,6 @@ def gerar_sql_insert(
                 lines.append(",\n".join(value_rows) + ";")
 
             lines.append("")
-
-        # Fecha IDENTITY_INSERT
-        if dialect == "sqlserver" and has_pk:
-            lines.append(f"SET IDENTITY_INSERT [dbo].[{tname}] OFF;")
-            lines.append("GO")
 
         lines.append("")
 
