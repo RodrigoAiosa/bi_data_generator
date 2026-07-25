@@ -46,10 +46,19 @@ def _infer_sql_type(col: str, dtype: str, dialect: str) -> str:
     if col_lower.startswith("km_") or col_lower.endswith("_km") or col_lower == "km_atual":
         return "BIGINT" if dialect != "mysql" else "BIGINT"
 
-    # Datas por nome
-    if any(p in col_lower for p in ["data", "date", "dt_", "_at", "vencimento", "validade"]):
-        if dialect == "sqlserver":
-            return "DATE"
+    # Datas por nome. "_at" fica restrito a SUFIXO (padrão "criado_at",
+    # "atualizado_at"): como substring solta, "_at" casava com qualquer
+    # coluna com "at" no meio do nome (id_atendente, tipo_ataque,
+    # motivo_atraso, area_atuacao, meta_atingida...), forçando texto/número
+    # a virar DATE no DDL e quebrando o INSERT com erro de conversão.
+    parece_data_pelo_nome = (
+        any(p in col_lower for p in ["data", "date", "dt_", "vencimento", "validade"])
+        or col_lower.endswith("_at")
+    )
+    # Mesmo quando o nome parece data, nunca força DATE numa coluna que o
+    # próprio pandas já identificou como número/booleano (ex.: validade_dias,
+    # que é uma DURAÇÃO em dias, não uma data).
+    if parece_data_pelo_nome and dtype not in ("int64", "int32", "float64", "float32", "bool"):
         return "DATE"
 
     # IDs inteiros
