@@ -21,6 +21,8 @@ import pandas as pd
 import streamlit as st
 
 from generators.medidas import _titulo
+from generators.tmdl_generator import _tabela_tmdl, _e_chave, _coluna_e_data
+from generators.helpers import to_zip
 
 OPCOES_TIPO = [
     "Detectar automaticamente",
@@ -397,6 +399,178 @@ def _montar_texto_dax(medidas_por_tabela: dict, tem_calendario: bool) -> str:
     return "\n".join(linhas)
 
 
+def _relacionamentos_genericos(tabelas: dict) -> list:
+    """
+    Versão do detector de relacionamentos do gerador principal, adaptada
+    pro Automatizar BI: a lógica de FK->PK e de resolução de ciclo é a
+    mesma, mas sem exigir que as tabelas se chamem "Fato*"/"dCalendario"
+    (aqui não existe padrão Fato/Dim, cada tabela enviada é só uma
+    tabela). O vínculo com o calendário procura a tabela "Calendario"
+    (gerada automaticamente) e vale para qualquer tabela com coluna de
+    data, não só as que "parecem fato".
+    """
+    pk_por_tabela = {nome: df.columns[0] for nome, df in tabelas.items() if len(df.columns)}
+    dono_da_pk = {}
+    for nome, pk in pk_por_tabela.items():
+        dono_da_pk.setdefault(pk, nome)
+
+    pai = {nome: nome for nome in tabelas}
+
+    def _raiz(x):
+        while pai[x] != x:
+            pai[x] = pai[pai[x]]
+            x = pai[x]
+        return x
+
+    def _fecha_ciclo(a, b):
+        ra, rb = _raiz(a), _raiz(b)
+        if ra == rb:
+            return True
+        pai[ra] = rb
+        return False
+
+    blocos = []
+    contador = 1
+    vistos = set()
+    pai_tabela = {}
+
+    for nome_from, df in tabelas.items():
+        pk_propria = df.columns[0] if len(df.columns) else None
+        for col in df.columns:
+            if not _e_chave(col):
+                continue
+            if col == pk_propria and nome_from == dono_da_pk.get(col):
+                continue
+            nome_to = dono_da_pk.get(col)
+            if not nome_to or nome_to == nome_from:
+                continue
+            chave = (nome_from, col, nome_to)
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+
+            inativo = _fecha_ciclo(nome_from, nome_to)
+            if not inativo and nome_to != "Calendario":
+                pai_tabela[nome_from] = nome_to
+
+            linhas = [
+                f"\trelationship rel_{contador}\n",
+                f"\t\tfromColumn: {nome_from}.{col}\n",
+                f"\t\ttoColumn: {nome_to}.{col}\n",
+            ]
+            if inativo:
+                linhas.append("\t\tisActive: false\n")
+            linhas.append("\n")
+            blocos.append("".join(linhas))
+            contador += 1
+
+    def _raiz_tabela(nome):
+        visto = set()
+        while nome in pai_tabela and nome not in visto:
+            visto.add(nome)
+            nome = pai_tabela[nome]
+        return nome
+
+    if "Calendario" in tabelas:
+        tem_coluna_data = {
+            nome: any(_coluna_e_data(c, df[c]) for c in df.columns)
+            for nome, df in tabelas.items() if nome != "Calendario"
+        }
+        for nome_from, df in tabelas.items():
+            if nome_from == "Calendario":
+                continue
+            candidatas = [c for c in df.columns if _coluna_e_data(c, df[c])]
+            if not candidatas:
+                continue
+            col_data = candidatas[0]
+            chave = (nome_from, col_data, "Calendario")
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+
+            raiz = _raiz_tabela(nome_from)
+            inativo = raiz != nome_from and tem_coluna_data.get(raiz, False)
+
+            linhas = [
+                f"\trelationship rel_{contador}\n",
+                f"\t\tfromColumn: {nome_from}.{col_data}\n",
+                f"\t\ttoColumn: Calendario.Data\n",
+            ]
+            if inativo:
+                linhas.append("\t\tisActive: false\n")
+            linhas.append("\n")
+            blocos.append("".join(linhas))
+            contador += 1
+
+    return blocos
+
+
+def _medidas_tmdl_bloco(medidas_por_tabela: dict) -> str:
+    """Monta a tabela 'Medidas' em formato TMDL a partir do dicionário de
+    medidas já gerado pelo Automatizar BI (mesmo formato usado pelo
+    gerador principal, para o arquivo abrir igual no Power BI/Tabular Editor)."""
+    if not medidas_por_tabela:
+        return ""
+
+    linhas = ["\ttable Medidas\n\n"]
+    for _nome_tabela, categorias in medidas_por_tabela.items():
+        for categoria, lista in categorias.items():
+            if not lista:
+                continue
+            pasta_categoria = categoria.split(" ", 1)[1] if " " in categoria else categoria
+            for m in lista:
+                nome = m["nome"]
+                formula = m["formula"]
+                corpo = formula.split("=", 1)[1].strip() if "=" in formula else formula
+                if "\n" in corpo:
+                    linhas.append(f"\t\tmeasure '{nome}' = ```\n")
+                    for l in corpo.split("\n"):
+                        linhas.append(f"\t\t\t{l}\n")
+                    linhas.append("\t\t\t```\n")
+                else:
+                    linhas.append(f"\t\tmeasure '{nome}' = {corpo}\n")
+                linhas.append(f"\t\t\tdisplayFolder: {pasta_categoria}\n\n")
+
+    linhas.append("\t\tpartition Medidas = m\n")
+    linhas.append("\t\t\tmode: import\n")
+    linhas.append("\t\t\tsource =\n")
+    linhas.append("\t\t\t\tlet\n")
+    linhas.append(
+        '\t\t\t\t    Origem = Table.FromRows(Json.Document(Binary.Decompress('
+        'Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), '
+        'let _t = ((type nullable text) meta [Serialized.Text = true]) in type table '
+        '[#"Coluna 1" = _t]),\n'
+    )
+    linhas.append('\t\t\t\t    #"Colunas Removidas" = Table.RemoveColumns(Origem,{"Coluna 1"})\n')
+    linhas.append("\t\t\t\tin\n")
+    linhas.append('\t\t\t\t    #"Colunas Removidas"\n')
+    return "".join(linhas)
+
+
+def _gerar_tmdl_automatizar(tabelas: dict, medidas_por_tabela: dict) -> str:
+    """Monta o model.tmdl completo (parâmetro + tabelas + relacionamentos + medidas)
+    pras tabelas enviadas no Automatizar BI, incluindo a Calendario se ela existir."""
+    partes = [
+        "createOrReplace\n\n"
+        '\texpression CaminhoPasta = \n'
+        '\t\t\t"C:\\Dados\\" meta [IsParameterQuery=true, List={"C:\\Dados\\"}, '
+        'DefaultValue="C:\\Dados\\", Type="Text", IsParameterQueryRequired=true]\n'
+        "\t\tannotation PBI_ResultType = Text\n\n"
+    ]
+
+    for nome_tabela, df in tabelas.items():
+        partes.append(_tabela_tmdl(nome_tabela, df))
+
+    for bloco in _relacionamentos_genericos(tabelas):
+        partes.append(bloco)
+
+    medidas_tmdl = _medidas_tmdl_bloco(medidas_por_tabela)
+    if medidas_tmdl:
+        partes.append(medidas_tmdl)
+
+    return "".join(partes)
+
+
 def render_automatizar_bi() -> None:
     st.markdown("## 🤖 Automatizar BI")
     st.caption(
@@ -463,8 +637,15 @@ def render_automatizar_bi() -> None:
         calendario, colunas_data = _gerar_calendario(tabelas_convertidas, tipos_por_tabela)
         medidas_por_tabela = _gerar_medidas_genericas(tabelas_convertidas, tipos_por_tabela, colunas_data)
 
+        tabelas_para_tmdl = dict(tabelas_convertidas)
+        if calendario is not None:
+            tabelas_para_tmdl["Calendario"] = calendario
+        tmdl_texto = _gerar_tmdl_automatizar(tabelas_para_tmdl, medidas_por_tabela)
+
         st.session_state["automatizar_bi_medidas"] = medidas_por_tabela
         st.session_state["automatizar_bi_calendario"] = calendario
+        st.session_state["automatizar_bi_tabelas_tmdl"] = tabelas_para_tmdl
+        st.session_state["automatizar_bi_tmdl_texto"] = tmdl_texto
 
     if "automatizar_bi_medidas" in st.session_state:
         medidas_por_tabela = st.session_state["automatizar_bi_medidas"]
@@ -488,11 +669,10 @@ def render_automatizar_bi() -> None:
                         st.code(m["formula"], language="dax")
 
         texto_dax = _montar_texto_dax(medidas_por_tabela, calendario is not None)
+        tmdl_texto = st.session_state.get("automatizar_bi_tmdl_texto", "")
+        tabelas_para_tmdl = st.session_state.get("automatizar_bi_tabelas_tmdl", {})
 
-        if calendario is not None:
-            col_dl1, col_dl2 = st.columns(2)
-        else:
-            col_dl1, col_dl2 = st.columns(1)[0], None
+        col_dl1, col_dl2, col_dl3 = st.columns(3)
 
         with col_dl1:
             st.download_button(
@@ -502,12 +682,23 @@ def render_automatizar_bi() -> None:
                 mime="text/plain",
                 use_container_width=True,
             )
-        if calendario is not None and col_dl2 is not None:
-            with col_dl2:
+        with col_dl2:
+            if calendario is not None:
                 st.download_button(
                     "📥 Baixar tabela Calendario (.csv)",
                     data=calendario.to_csv(index=False).encode("utf-8"),
                     file_name="Calendario.csv",
                     mime="text/csv",
                     use_container_width=True,
+                )
+        with col_dl3:
+            if tmdl_texto and tabelas_para_tmdl:
+                zip_bytes = to_zip(tabelas_para_tmdl, extra_files={"model.tmdl": tmdl_texto})
+                st.download_button(
+                    "📥 Baixar modelo completo (.zip)",
+                    data=zip_bytes,
+                    file_name="modelo_automatizar_bi.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                    help="CSVs de cada tabela + model.tmdl (tabelas, relacionamentos e medidas), pronto para importar no Power BI/Tabular Editor.",
                 )
