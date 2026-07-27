@@ -30,6 +30,7 @@ from ui import (
     render_resultado,
     render_sidebar,
 )
+from ui.automatizar_bi import render_automatizar_bi
 
 st.set_page_config(**PAGE_CONFIG)
 
@@ -306,37 +307,43 @@ def main() -> None:
         help=_DRIFT_HELP[lang],
     )
 
-    if gerar:
-        if data_fim <= data_inicio:
-            st.error(t("date_error_stop"))
-            st.stop()
+    tab_gerador, tab_automatizar = st.tabs(["🏭 Gerador de Setores", "🤖 Automatizar BI"])
 
-        try:
-            tabelas, gabarito = _gerar_com_progresso(setor, n_linhas, data_inicio, data_fim, anomalia, drift)
-        except Exception as e:
+    with tab_gerador:
+        if gerar:
+            if data_fim <= data_inicio:
+                st.error(t("date_error_stop"))
+                st.stop()
+
+            try:
+                tabelas, gabarito = _gerar_com_progresso(setor, n_linhas, data_inicio, data_fim, anomalia, drift)
+            except Exception as e:
+                registrar_evento("gerou_base", setor=nome, volume=n_linhas,
+                                  anomalia=anomalia, drift=drift, status="erro", erro=str(e))
+                raise
+
             registrar_evento("gerou_base", setor=nome, volume=n_linhas,
-                              anomalia=anomalia, drift=drift, status="erro", erro=str(e))
-            raise
+                              anomalia=anomalia, drift=drift, status="sucesso")
 
-        registrar_evento("gerou_base", setor=nome, volume=n_linhas,
-                          anomalia=anomalia, drift=drift, status="sucesso")
+            # Guarda o resultado em session_state: cliques em botões de download
+            # (que disparam um novo rerun do script) não podem perder a tela de
+            # resultado nem gerar dados diferentes dos que já foram baixados.
+            st.session_state["ultima_geracao"] = {
+                "nome": nome,
+                "tabelas": tabelas,
+                "anomalia": anomalia,
+                "drift": drift,
+                "gabarito": gabarito,
+            }
 
-        # Guarda o resultado em session_state: cliques em botões de download
-        # (que disparam um novo rerun do script) não podem perder a tela de
-        # resultado nem gerar dados diferentes dos que já foram baixados.
-        st.session_state["ultima_geracao"] = {
-            "nome": nome,
-            "tabelas": tabelas,
-            "anomalia": anomalia,
-            "drift": drift,
-            "gabarito": gabarito,
-        }
+        if "ultima_geracao" in st.session_state:
+            dados = st.session_state["ultima_geracao"]
+            _render_resultado_completo(dados["nome"], dados["tabelas"], dados["anomalia"], dados["drift"], dados["gabarito"])
+        else:
+            render_estado_inicial()
 
-    if "ultima_geracao" in st.session_state:
-        dados = st.session_state["ultima_geracao"]
-        _render_resultado_completo(dados["nome"], dados["tabelas"], dados["anomalia"], dados["drift"], dados["gabarito"])
-    else:
-        render_estado_inicial()
+    with tab_automatizar:
+        render_automatizar_bi()
 
 
 if __name__ == "__main__":
