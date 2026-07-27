@@ -8,6 +8,14 @@ participação e, quando houver coluna de data, Time Intelligence completo
 (MoM/YoY/YTD/MTD), com uma tabela Calendario gerada automaticamente a
 partir da própria data enviada. Não depende do padrão Fato/Dim dos
 setores prontos: cada tabela enviada é tratada de forma independente.
+
+Também repara automaticamente dois problemas comuns em arquivos
+exportados de forma errada:
+- CSV colado como texto corrido numa única coluna (sem separar de
+  verdade em colunas), detectado quando o próprio nome da coluna já
+  contém vírgulas.
+- Acentuação quebrada (texto UTF-8 lido como Latin-1, tipo "CobranÃ§a"
+  em vez de "Cobrança").
 """
 import pandas as pd
 import streamlit as st
@@ -27,7 +35,9 @@ OPCOES_TIPO = [
 
 
 def _sugerir_tipo(serie: pd.Series) -> str:
-    """Sugere o tipo mais provável da coluna, combinando dtype e nome."""
+    """Sugere o tipo mais provável da coluna, combinando dtype, nome e,
+    quando a coluna já é texto (comum depois do reparo de coluna única),
+    o conteúdo real dos valores."""
     if pd.api.types.is_bool_dtype(serie):
         return "Verdadeiro/Falso (booleano)"
     if pd.api.types.is_integer_dtype(serie):
@@ -38,10 +48,32 @@ def _sugerir_tipo(serie: pd.Series) -> str:
         return "Data e hora"
 
     nome = str(serie.name).lower() if serie.name else ""
+
+    # Checa "parece data" ANTES de "parece chave": uma coluna como
+    # "id_data" bate nos dois padrões (começa com "id_" e contém "data"),
+    # e o papel de data é o que importa pra habilitar o Time Intelligence
+    # (mesma prioridade usada no motor principal dos 100 setores prontos).
     if any(p in nome for p in ["data", "date", "dt_"]):
         return "Data"
     if nome.startswith(("id_", "sk_", "cod_")) or nome in ("id", "codigo"):
         return "Chave/ID"
+
+    # A coluna ainda é texto (object), mas pode ter vindo assim só por
+    # causa do reparo de "coluna única" (planilha colada sem separar em
+    # colunas de verdade). Fareja o CONTEÚDO antes de desistir e chamar
+    # de Texto, senão toda coluna numérica reparada perderia a sugestão.
+    amostra = serie.dropna().astype(str).str.strip()
+    amostra = amostra[amostra != ""].head(50)
+    if len(amostra):
+        convertidos_num = pd.to_numeric(amostra, errors="coerce")
+        if convertidos_num.notna().mean() >= 0.9:
+            eh_inteiro = (convertidos_num.dropna() % 1 == 0).all()
+            return "Número inteiro" if eh_inteiro else "Número decimal"
+
+        convertidos_data = pd.to_datetime(amostra, errors="coerce", dayfirst=True)
+        if convertidos_data.notna().mean() >= 0.9:
+            return "Data"
+
     return "Texto"
 
 
@@ -67,9 +99,76 @@ def _aplicar_tipos(df: pd.DataFrame, tipos: dict) -> pd.DataFrame:
     return df
 
 
-def _ler_arquivos(arquivos) -> dict:
-    """Lê os arquivos enviados (.csv/.xlsx, podendo ter várias abas) e devolve {nome_tabela: DataFrame}."""
+def _corrigir_mojibake_texto(texto: str) -> str:
+    """Corrige o erro clássico de acentuação (UTF-8 lido como Latin-1/cp1252,
+    ex.: 'CobranÃ§a' em vez de 'Cobrança'). Se não for esse o problema,
+    devolve o texto original sem alterar."""
+    try:
+        return texto.encode("latin-1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError, AttributeError):
+        return texto
+
+
+def _corrigir_mojibake_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Aplica a correção de acentuação em toda coluna de texto (e nos
+    próprios nomes de coluna), só quando detectar o padrão quebrado
+    (ex.: 'Ã' seguido de outro caractere)."""
+    df = df.copy()
+    df.columns = [
+        _corrigir_mojibake_texto(c) if isinstance(c, str) and ("Ã" in c or "Â" in c) else c
+        for c in df.columns
+    ]
+    for col in df.select_dtypes(include="object").columns:
+        amostra = df[col].dropna().astype(str)
+        if amostra.empty:
+            continue
+        tem_padrao_quebrado = amostra.str.contains("Ã.|Â.", regex=True).any()
+        if not tem_padrao_quebrado:
+            continue
+        try:
+            df.loc[amostra.index, col] = amostra.apply(_corrigir_mojibake_texto)
+        except Exception:
+            pass
+    return df
+
+
+def _reparar_coluna_unica(df: pd.DataFrame) -> tuple[pd.DataFrame, bool]:
+    """
+    Alguns arquivos chegam com todas as colunas despejadas como texto
+    corrido numa única célula por linha (ex.: o cabeçalho vira o nome de
+    uma única coluna "id,nome,valor", e cada linha vira a string
+    "1,Ana,150.5"). Isso acontece quando o arquivo foi exportado sem
+    separar de fato em colunas. Se detectar esse padrão (uma única
+    coluna cujo próprio nome já contém vírgulas), tenta separar de volta
+    usando vírgula como delimitador.
+
+    Devolve (dataframe, foi_reparado).
+    """
+    if len(df.columns) != 1:
+        return df, False
+
+    nome_coluna = str(df.columns[0])
+    if "," not in nome_coluna:
+        return df, False
+
+    novos_nomes = [c.strip() for c in nome_coluna.split(",")]
+    try:
+        dividido = df[df.columns[0]].astype(str).str.split(",", expand=True)
+        if dividido.shape[1] != len(novos_nomes):
+            return df, False  # não bate o número de colunas, não arrisca reparar
+        dividido.columns = novos_nomes
+        return dividido, True
+    except Exception:
+        return df, False
+
+
+def _ler_arquivos(arquivos) -> tuple[dict, list]:
+    """
+    Lê os arquivos enviados (.csv/.xlsx, podendo ter várias abas) e
+    devolve ({nome_tabela: DataFrame}, avisos_de_reparo).
+    """
     tabelas = {}
+    avisos = []
     for arquivo in arquivos:
         nome_base = arquivo.name.rsplit(".", 1)[0]
         if arquivo.name.lower().endswith(".csv"):
@@ -78,13 +177,19 @@ def _ler_arquivos(arquivos) -> dict:
             except Exception:
                 arquivo.seek(0)
                 df = pd.read_csv(arquivo, sep=";")  # tenta separador ao estilo BR
-            tabelas[nome_base] = df
+            df, reparado = _reparar_coluna_unica(df)
+            if reparado:
+                avisos.append(nome_base)
+            tabelas[nome_base] = _corrigir_mojibake_df(df)
         else:
             planilhas = pd.read_excel(arquivo, sheet_name=None)
             for nome_aba, df in planilhas.items():
                 chave = nome_base if len(planilhas) == 1 else f"{nome_base}_{nome_aba}"
-                tabelas[chave] = df
-    return tabelas
+                df, reparado = _reparar_coluna_unica(df)
+                if reparado:
+                    avisos.append(chave)
+                tabelas[chave] = _corrigir_mojibake_df(df)
+    return tabelas, avisos
 
 
 def _coluna_data_da_tabela(df: pd.DataFrame, tipos: dict) -> str | None:
@@ -312,7 +417,7 @@ def render_automatizar_bi() -> None:
         return
 
     try:
-        tabelas = _ler_arquivos(arquivos)
+        tabelas, avisos_reparo = _ler_arquivos(arquivos)
     except Exception as e:
         st.error(f"Não foi possível ler um dos arquivos enviados. Detalhe: {e}")
         return
@@ -322,6 +427,14 @@ def render_automatizar_bi() -> None:
         return
 
     st.success(f"{len(tabelas)} tabela(s) carregada(s): {', '.join(tabelas.keys())}")
+
+    if avisos_reparo:
+        st.warning(
+            f"⚠️ As tabelas **{', '.join(avisos_reparo)}** chegaram com todas as colunas "
+            f"despejadas numa única coluna de texto (sinal de que o arquivo original não "
+            f"foi separado em colunas de verdade). Elas foram reconstruídas automaticamente "
+            f"usando vírgula como separador. Confira o preview abaixo pra garantir que ficou certo."
+        )
 
     tipos_por_tabela = {}
     for nome_tabela, df in tabelas.items():
@@ -375,7 +488,11 @@ def render_automatizar_bi() -> None:
                         st.code(m["formula"], language="dax")
 
         texto_dax = _montar_texto_dax(medidas_por_tabela, calendario is not None)
-        col_dl1, col_dl2 = st.columns(2) if calendario is not None else (st.columns(1)[0], None)
+
+        if calendario is not None:
+            col_dl1, col_dl2 = st.columns(2)
+        else:
+            col_dl1, col_dl2 = st.columns(1)[0], None
 
         with col_dl1:
             st.download_button(
