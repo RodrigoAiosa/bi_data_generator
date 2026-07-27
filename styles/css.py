@@ -487,7 +487,9 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     color: #252423 !important; border: none !important; border-radius: 12px !important;
     font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
     font-size: 0.88rem !important; padding: 10px 22px !important;
-    transition: transform 0.2s, box-shadow 0.2s, background 0.2s !important;
+    transform: translateY(0) !important;
+    box-shadow: 0 0 0 rgba(242,200,17,0) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
 }
 .stButton > button *,
 [data-testid="stBaseButton-primary"] *,
@@ -507,7 +509,9 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     color: #252423 !important; border: none !important; border-radius: 12px !important;
     font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
     font-size: 0.9rem !important; margin-top: 8px !important;
-    transition: transform 0.2s, box-shadow 0.2s, background 0.2s !important;
+    transform: translateY(0) !important;
+    box-shadow: 0 0 0 rgba(242,200,17,0) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
 }
 .stDownloadButton > button *,
 [data-testid="stBaseButton-download"] * {
