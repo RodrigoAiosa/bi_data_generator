@@ -2,12 +2,13 @@
 ui/automatizar_bi.py: Aba "Automatizar BI".
 
 Permite ao usuário enviar suas próprias planilhas (.csv/.xlsx), revisar e
-ajustar o tipo de cada coluna, e gerar automaticamente todas as medidas
-DAX que a tabela permite (agregações, contagens e percentual de
-participação), sem depender do padrão Fato/Dim dos setores prontos.
+ajustar o tipo de cada coluna, e gerar automaticamente TODAS as medidas
+DAX que a tabela permite: agregações básicas, contagens, percentual de
+participação e, quando houver coluna de data, Time Intelligence completo
+(MoM/YoY/YTD/MTD), com uma tabela Calendario gerada automaticamente a
+partir da própria data enviada. Não depende do padrão Fato/Dim dos
+setores prontos: cada tabela enviada é tratada de forma independente.
 """
-import io
-
 import pandas as pd
 import streamlit as st
 
@@ -86,23 +87,76 @@ def _ler_arquivos(arquivos) -> dict:
     return tabelas
 
 
-def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict) -> dict:
+def _coluna_data_da_tabela(df: pd.DataFrame, tipos: dict) -> str | None:
+    """Acha a coluna de data de uma tabela: prioriza o que o usuário marcou
+    como Data/Data e hora; se ninguém marcou, cai para qualquer coluna que
+    já seja datetime de verdade."""
+    for col, tipo in tipos.items():
+        if tipo in ("Data", "Data e hora") and col in df.columns:
+            return col
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            return col
+    return None
+
+
+def _gerar_calendario(tabelas: dict, tipos_por_tabela: dict) -> tuple[pd.DataFrame | None, dict]:
     """
-    Gera a bateria de medidas DAX possíveis para cada tabela enviada,
-    sem exigir o padrão Fato/Dim: cada tabela é tratada de forma
-    independente (agregações nas colunas numéricas, contagem distinta
-    nas colunas marcadas como Chave/ID, e percentual de participação).
+    Gera uma tabela Calendario cobrindo do menor ao maior valor de data
+    encontrado em qualquer tabela enviada (olhando só as colunas marcadas
+    como Data/Data e hora). Devolve (calendario, {tabela: coluna_de_data}).
+    """
+    colunas_data = {}
+    series_datas = []
+    for nome_tabela, df in tabelas.items():
+        col = _coluna_data_da_tabela(df, tipos_por_tabela.get(nome_tabela, {}))
+        if col:
+            colunas_data[nome_tabela] = col
+            validas = df[col].dropna()
+            if len(validas):
+                series_datas.append(validas)
+
+    if not series_datas:
+        return None, {}
+
+    todas = pd.concat(series_datas)
+    data_min, data_max = todas.min(), todas.max()
+    if pd.isna(data_min) or pd.isna(data_max):
+        return None, {}
+
+    calendario = pd.DataFrame({"Data": pd.date_range(data_min, data_max, freq="D")})
+    calendario["Ano"] = calendario["Data"].dt.year
+    calendario["Mes"] = calendario["Data"].dt.month
+    calendario["MesAno"] = calendario["Data"].dt.strftime("%m/%Y")
+    return calendario, colunas_data
+
+
+def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendario: dict) -> dict:
+    """
+    Gera a bateria COMPLETA de medidas DAX possíveis para cada tabela
+    enviada: agregações básicas, contagens, percentual de participação e,
+    quando a tabela tiver coluna de data (e a Calendario existir), Time
+    Intelligence completo (MoM/YoY/YTD/MTD), o mesmo menu de medidas
+    usado nos 100 setores prontos, só que sem exigir o padrão Fato/Dim.
     """
     resultado = {}
     for nome_tabela, df in tabelas.items():
         tipos = tipos_por_tabela.get(nome_tabela, {})
-        medidas = {"Agregações Básicas": [], "Contagens": [], "Percentual de Participação": [], "Datas": []}
+        col_data = tem_calendario.get(nome_tabela)
+        medidas = {
+            "🧮 Agregações Básicas": [],
+            "🔢 Contagens": [],
+            "📊 Percentual de Participação": [],
+            "📅 Time Intelligence (MoM / YoY / YTD / MTD)": [],
+        }
 
-        medidas["Contagens"].append({
+        medidas["🔢 Contagens"].append({
             "nome": "Qtde de Registros",
-            "formula": f"COUNTROWS('{nome_tabela}')",
+            "formula": f"Qtde de Registros = COUNTROWS('{nome_tabela}')",
+            "descricao": f"Quantidade de linhas da tabela '{nome_tabela}' no contexto atual.",
         })
 
+        colunas_numericas = []
         for col in df.columns:
             tipo = tipos.get(col, "Detectar automaticamente")
             eh_numerica_automatica = (
@@ -112,47 +166,129 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict) -> dict:
             )
 
             if tipo == "Chave/ID":
-                medidas["Contagens"].append({
-                    "nome": f"Qtde Distinta de {_titulo(col)}",
-                    "formula": f"DISTINCTCOUNT('{nome_tabela}'[{col}])",
+                titulo = _titulo(col)
+                medidas["🔢 Contagens"].append({
+                    "nome": f"Qtde Distinta de {titulo}",
+                    "formula": f"Qtde Distinta de {titulo} = DISTINCTCOUNT('{nome_tabela}'[{col}])",
+                    "descricao": f"Número de valores distintos de '{col}' presentes na tabela.",
                 })
 
             elif tipo in ("Número inteiro", "Número decimal") or eh_numerica_automatica:
+                colunas_numericas.append(col)
                 titulo = _titulo(col)
-                medidas["Agregações Básicas"].extend([
-                    {"nome": f"Total {titulo}", "formula": f"SUM('{nome_tabela}'[{col}])"},
-                    {"nome": f"Média {titulo}", "formula": f"AVERAGE('{nome_tabela}'[{col}])"},
-                    {"nome": f"Mínimo {titulo}", "formula": f"MIN('{nome_tabela}'[{col}])"},
-                    {"nome": f"Máximo {titulo}", "formula": f"MAX('{nome_tabela}'[{col}])"},
+                medidas["🧮 Agregações Básicas"].extend([
+                    {"nome": f"Total {titulo}", "formula": f"Total {titulo} = SUM('{nome_tabela}'[{col}])",
+                     "descricao": f"Soma de '{nome_tabela}'[{col}] no contexto de filtro atual."},
+                    {"nome": f"Média {titulo}", "formula": f"Média {titulo} = AVERAGE('{nome_tabela}'[{col}])",
+                     "descricao": f"Média de '{nome_tabela}'[{col}] no contexto de filtro atual."},
+                    {"nome": f"Mínimo {titulo}", "formula": f"Mínimo {titulo} = MIN('{nome_tabela}'[{col}])",
+                     "descricao": f"Menor valor de '{nome_tabela}'[{col}] no contexto atual."},
+                    {"nome": f"Máximo {titulo}", "formula": f"Máximo {titulo} = MAX('{nome_tabela}'[{col}])",
+                     "descricao": f"Maior valor de '{nome_tabela}'[{col}] no contexto atual."},
                 ])
-                medidas["Percentual de Participação"].append({
+                medidas["📊 Percentual de Participação"].append({
                     "nome": f"% do Total {titulo}",
                     "formula": (
-                        f"DIVIDE([Total {titulo}], "
-                        f"CALCULATE([Total {titulo}], ALL('{nome_tabela}')))"
+                        f"% do Total {titulo} =\n"
+                        f"DIVIDE(\n"
+                        f"    [Total {titulo}],\n"
+                        f"    CALCULATE([Total {titulo}], ALL('{nome_tabela}'))\n"
+                        f")"
                     ),
+                    "descricao": f"Participação percentual do contexto atual sobre o total geral de {titulo}.",
                 })
 
             elif tipo in ("Data", "Data e hora"):
                 titulo = _titulo(col)
-                medidas["Datas"].extend([
-                    {"nome": f"{titulo} Mínima", "formula": f"MIN('{nome_tabela}'[{col}])"},
-                    {"nome": f"{titulo} Máxima", "formula": f"MAX('{nome_tabela}'[{col}])"},
+                medidas["🧮 Agregações Básicas"].extend([
+                    {"nome": f"{titulo} Mínima", "formula": f"{titulo} Mínima = MIN('{nome_tabela}'[{col}])",
+                     "descricao": f"Data mais antiga em '{nome_tabela}'[{col}]."},
+                    {"nome": f"{titulo} Máxima", "formula": f"{titulo} Máxima = MAX('{nome_tabela}'[{col}])",
+                     "descricao": f"Data mais recente em '{nome_tabela}'[{col}]."},
+                ])
+
+        # ---- Time Intelligence: só quando há coluna de data + Calendario ----
+        if col_data and colunas_numericas:
+            for col in colunas_numericas:
+                titulo = _titulo(col)
+                medidas["📅 Time Intelligence (MoM / YoY / YTD / MTD)"].extend([
+                    {
+                        "nome": f"{titulo} Mês Anterior",
+                        "formula": (
+                            f"{titulo} Mês Anterior =\n"
+                            f"CALCULATE(\n"
+                            f"    [Total {titulo}],\n"
+                            f"    DATEADD(Calendario[Data], -1, MONTH)\n"
+                            f")"
+                        ),
+                        "descricao": f"Valor de {titulo} no mesmo período do mês anterior.",
+                    },
+                    {
+                        "nome": f"{titulo} %MoM",
+                        "formula": (
+                            f"{titulo} %MoM =\n"
+                            f"DIVIDE(\n"
+                            f"    [Total {titulo}] - [{titulo} Mês Anterior],\n"
+                            f"    [{titulo} Mês Anterior]\n"
+                            f")"
+                        ),
+                        "descricao": f"Variação percentual de {titulo} frente ao mês anterior (Month over Month).",
+                    },
+                    {
+                        "nome": f"{titulo} Ano Anterior",
+                        "formula": (
+                            f"{titulo} Ano Anterior =\n"
+                            f"CALCULATE(\n"
+                            f"    [Total {titulo}],\n"
+                            f"    SAMEPERIODLASTYEAR(Calendario[Data])\n"
+                            f")"
+                        ),
+                        "descricao": f"Valor de {titulo} no mesmo período do ano anterior.",
+                    },
+                    {
+                        "nome": f"{titulo} %YoY",
+                        "formula": (
+                            f"{titulo} %YoY =\n"
+                            f"DIVIDE(\n"
+                            f"    [Total {titulo}] - [{titulo} Ano Anterior],\n"
+                            f"    [{titulo} Ano Anterior]\n"
+                            f")"
+                        ),
+                        "descricao": f"Variação percentual de {titulo} frente ao mesmo período do ano anterior (Year over Year).",
+                    },
+                    {
+                        "nome": f"{titulo} Acumulado no Ano (YTD)",
+                        "formula": f"{titulo} Acumulado no Ano (YTD) = TOTALYTD([Total {titulo}], Calendario[Data])",
+                        "descricao": f"Acumulado de {titulo} desde o início do ano até a data em contexto.",
+                    },
+                    {
+                        "nome": f"{titulo} Acumulado no Mês (MTD)",
+                        "formula": f"{titulo} Acumulado no Mês (MTD) = TOTALMTD([Total {titulo}], Calendario[Data])",
+                        "descricao": f"Acumulado de {titulo} desde o início do mês até a data em contexto.",
+                    },
                 ])
 
         resultado[nome_tabela] = {k: v for k, v in medidas.items() if v}
     return resultado
 
 
-def _montar_texto_dax(medidas_por_tabela: dict) -> str:
+def _montar_texto_dax(medidas_por_tabela: dict, tem_calendario: bool) -> str:
     linhas = ["-- Medidas DAX geradas automaticamente pelo Automatizar BI", ""]
+    if tem_calendario:
+        linhas.append(
+            "-- Este pacote inclui uma tabela Calendario. No Power BI, relacione "
+            "Calendario[Data] com a coluna de data de cada tabela antes de usar "
+            "as medidas de Time Intelligence (MoM/YoY/YTD/MTD)."
+        )
+        linhas.append("")
     for nome_tabela, categorias in medidas_por_tabela.items():
         linhas.append(f"-- ===== Tabela: {nome_tabela} =====")
         for categoria, lista in categorias.items():
             linhas.append(f"-- {categoria}")
             for m in lista:
-                linhas.append(f"{m['nome']} = {m['formula']}")
-            linhas.append("")
+                linhas.append(m["formula"])
+                linhas.append("")
+        linhas.append("")
     return "\n".join(linhas)
 
 
@@ -160,7 +296,8 @@ def render_automatizar_bi() -> None:
     st.markdown("## 🤖 Automatizar BI")
     st.caption(
         "Envie suas planilhas (.csv ou .xlsx). Depois de revisar o tipo de cada coluna, "
-        "geramos automaticamente todas as medidas DAX que a tabela permite."
+        "geramos automaticamente todas as medidas DAX que a tabela permite, incluindo "
+        "Time Intelligence quando houver coluna de data."
     )
 
     arquivos = st.file_uploader(
@@ -210,26 +347,50 @@ def render_automatizar_bi() -> None:
             nome_tabela: _aplicar_tipos(df, tipos_por_tabela.get(nome_tabela, {}))
             for nome_tabela, df in tabelas.items()
         }
-        medidas_por_tabela = _gerar_medidas_genericas(tabelas_convertidas, tipos_por_tabela)
+        calendario, colunas_data = _gerar_calendario(tabelas_convertidas, tipos_por_tabela)
+        medidas_por_tabela = _gerar_medidas_genericas(tabelas_convertidas, tipos_por_tabela, colunas_data)
+
         st.session_state["automatizar_bi_medidas"] = medidas_por_tabela
+        st.session_state["automatizar_bi_calendario"] = calendario
 
     if "automatizar_bi_medidas" in st.session_state:
         medidas_por_tabela = st.session_state["automatizar_bi_medidas"]
+        calendario = st.session_state.get("automatizar_bi_calendario")
         total_medidas = sum(len(lista) for cats in medidas_por_tabela.values() for lista in cats.values())
         st.markdown(f"### 🧮 Medidas DAX sugeridas ({total_medidas})")
+
+        if calendario is not None:
+            st.info(
+                f"📅 Uma tabela **Calendario** foi gerada automaticamente "
+                f"({calendario['Data'].min().strftime('%d/%m/%Y')} a {calendario['Data'].max().strftime('%d/%m/%Y')}), "
+                f"habilitando as medidas de Time Intelligence. No Power BI, relacione "
+                f"`Calendario[Data]` com a coluna de data de cada tabela."
+            )
 
         for nome_tabela, categorias in medidas_por_tabela.items():
             st.markdown(f"**{nome_tabela}**")
             for categoria, lista in categorias.items():
                 with st.expander(f"{categoria} ({len(lista)})"):
                     for m in lista:
-                        st.code(f"{m['nome']} = {m['formula']}", language="dax")
+                        st.code(m["formula"], language="dax")
 
-        texto_dax = _montar_texto_dax(medidas_por_tabela)
-        st.download_button(
-            "📥 Baixar todas as medidas (.txt)",
-            data=texto_dax.encode("utf-8"),
-            file_name="medidas_automatizar_bi.txt",
-            mime="text/plain",
-            use_container_width=True,
-        )
+        texto_dax = _montar_texto_dax(medidas_por_tabela, calendario is not None)
+        col_dl1, col_dl2 = st.columns(2) if calendario is not None else (st.columns(1)[0], None)
+
+        with col_dl1:
+            st.download_button(
+                "📥 Baixar todas as medidas (.txt)",
+                data=texto_dax.encode("utf-8"),
+                file_name="medidas_automatizar_bi.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+        if calendario is not None and col_dl2 is not None:
+            with col_dl2:
+                st.download_button(
+                    "📥 Baixar tabela Calendario (.csv)",
+                    data=calendario.to_csv(index=False).encode("utf-8"),
+                    file_name="Calendario.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
