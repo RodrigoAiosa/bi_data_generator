@@ -5,3 +5,4 @@ faker
 plotly
 requests
 tzdata
+openpyxl
