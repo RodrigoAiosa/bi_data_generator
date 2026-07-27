@@ -700,5 +700,10 @@ def render_automatizar_bi() -> None:
                     file_name="modelo_automatizar_bi.zip",
                     mime="application/zip",
                     use_container_width=True,
-                    help="CSVs de cada tabela + model.tmdl (tabelas, relacionamentos e medidas), pronto para importar no Power BI/Tabular Editor.",
                 )
+
+        if tmdl_texto and tabelas_para_tmdl:
+            st.caption(
+                "O modelo completo traz os CSVs de cada tabela + model.tmdl (tabelas, "
+                "relacionamentos e medidas), pronto para importar no Power BI/Tabular Editor."
+            )
