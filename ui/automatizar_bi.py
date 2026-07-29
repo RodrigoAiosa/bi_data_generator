@@ -571,6 +571,75 @@ def _gerar_tmdl_automatizar(tabelas: dict, medidas_por_tabela: dict) -> str:
     return "".join(partes)
 
 
+def _coluna_categorica_para_pergunta(df: pd.DataFrame, tipos: dict) -> str | None:
+    """
+    Acha uma coluna de texto com poucas categorias (boa pra 'agrupar por' /
+    'qual categoria mais gera X'), ignorando Chave/ID e colunas de texto
+    livre (com cardinalidade alta demais pra servir de categoria).
+    """
+    candidatas = []
+    for col, tipo in tipos.items():
+        if col not in df.columns:
+            continue
+        eh_texto = tipo == "Texto" or (tipo == "Detectar automaticamente" and df[col].dtype == "object")
+        if not eh_texto:
+            continue
+        n_unicos = df[col].nunique(dropna=True)
+        if 2 <= n_unicos <= 30:
+            candidatas.append((col, n_unicos))
+    if not candidatas:
+        return None
+    candidatas.sort(key=lambda x: x[1])  # prioriza a categoria com menos valores distintos
+    return candidatas[0][0]
+
+
+def _gerar_perguntas_negocio(tabelas: dict, tipos_por_tabela: dict, medidas_por_tabela: dict) -> dict:
+    """
+    Gera perguntas de negócio em linguagem natural a partir das colunas
+    REAIS de cada tabela enviada (não uma história fictícia de setor,
+    diferente do case de negócio do Gerador de Setores). Cada pergunta
+    é ancorada numa medida que o próprio motor já gerou pra essa tabela.
+    """
+    perguntas_por_tabela = {}
+    for nome_tabela, df in tabelas.items():
+        tipos = tipos_por_tabela.get(nome_tabela, {})
+        categorias_medidas = medidas_por_tabela.get(nome_tabela, {})
+
+        agregacoes = categorias_medidas.get("🧮 Agregações Básicas", [])
+        medida_total = next((m for m in agregacoes if m["nome"].startswith("Total ")), None)
+        if not medida_total:
+            continue  # tabela sem nenhuma coluna numérica agregável, não dá pra ancorar pergunta
+
+        titulo_kpi = medida_total["nome"].replace("Total ", "", 1)
+        tem_time_intel = bool(categorias_medidas.get("📅 Time Intelligence (MoM / YoY / YTD / MTD)"))
+        col_categoria = _coluna_categorica_para_pergunta(df, tipos)
+
+        perguntas = [f"Qual foi o Total de {titulo_kpi} no período analisado, na tabela '{nome_tabela}'?"]
+
+        if col_categoria:
+            titulo_cat = _titulo(col_categoria)
+            perguntas.append(f"Qual {titulo_cat} apresenta o maior {titulo_kpi}?")
+            perguntas.append(
+                f"Existe algum {titulo_cat} responsável por mais da metade do {titulo_kpi} "
+                f"total (Princípio de Pareto)?"
+            )
+
+        perguntas.append(f"Quais são os 5 registros com maior {titulo_kpi} na tabela '{nome_tabela}'?")
+
+        if tem_time_intel:
+            perguntas.append(
+                f"Como o {titulo_kpi} evoluiu mês a mês? Houve algum mês com queda "
+                f"relevante (%MoM negativo)?"
+            )
+            perguntas.append(
+                f"Qual foi a variação de {titulo_kpi} frente ao mesmo período do ano anterior (%YoY)?"
+            )
+
+        perguntas_por_tabela[nome_tabela] = perguntas
+
+    return perguntas_por_tabela
+
+
 def render_automatizar_bi() -> None:
     st.markdown("## 🤖 Automatizar BI")
     st.caption(
@@ -636,6 +705,7 @@ def render_automatizar_bi() -> None:
         }
         calendario, colunas_data = _gerar_calendario(tabelas_convertidas, tipos_por_tabela)
         medidas_por_tabela = _gerar_medidas_genericas(tabelas_convertidas, tipos_por_tabela, colunas_data)
+        perguntas_por_tabela = _gerar_perguntas_negocio(tabelas_convertidas, tipos_por_tabela, medidas_por_tabela)
 
         tabelas_para_tmdl = dict(tabelas_convertidas)
         if calendario is not None:
@@ -643,13 +713,27 @@ def render_automatizar_bi() -> None:
         tmdl_texto = _gerar_tmdl_automatizar(tabelas_para_tmdl, medidas_por_tabela)
 
         st.session_state["automatizar_bi_medidas"] = medidas_por_tabela
+        st.session_state["automatizar_bi_perguntas"] = perguntas_por_tabela
         st.session_state["automatizar_bi_calendario"] = calendario
         st.session_state["automatizar_bi_tabelas_tmdl"] = tabelas_para_tmdl
         st.session_state["automatizar_bi_tmdl_texto"] = tmdl_texto
 
     if "automatizar_bi_medidas" in st.session_state:
         medidas_por_tabela = st.session_state["automatizar_bi_medidas"]
+        perguntas_por_tabela = st.session_state.get("automatizar_bi_perguntas", {})
         calendario = st.session_state.get("automatizar_bi_calendario")
+
+        if perguntas_por_tabela:
+            st.markdown("### ❓ Perguntas de negócio pra explorar seus dados")
+            st.caption(
+                "Geradas a partir das colunas reais que você enviou (não são um exemplo fictício), "
+                "cada uma ancorada numa medida que já foi gerada abaixo."
+            )
+            for nome_tabela, perguntas in perguntas_por_tabela.items():
+                with st.expander(f"📄 {nome_tabela}", expanded=False):
+                    for p in perguntas:
+                        st.markdown(f"- {p}")
+
         total_medidas = sum(len(lista) for cats in medidas_por_tabela.values() for lista in cats.values())
         st.markdown(f"### 🧮 Medidas DAX sugeridas ({total_medidas})")
 
