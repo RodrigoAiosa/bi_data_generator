@@ -40,6 +40,30 @@ _SQL_STRINGS = {
             "Paste into SSMS, DBeaver or psql and run to recreate the full database."
         ),
     },
+    "help_dialeto": {
+        "pt": (
+            "🟦 SQL Server\n"
+            "Sintaxe T-SQL. Usa colchetes [nome] para identificadores e TOP para limitar linhas. "
+            "Ideal para SSMS, Azure SQL ou qualquer ambiente Microsoft.\n\n"
+            "🐘 PostgreSQL\n"
+            "Sintaxe padrão ANSI SQL, com tipos como SERIAL para autoincremento. "
+            "Ideal para pgAdmin, DBeaver ou psql.\n\n"
+            "🐬 MySQL\n"
+            "Usa crase (`nome`) para identificadores e AUTO_INCREMENT. "
+            "Ideal para MySQL Workbench, phpMyAdmin ou MariaDB."
+        ),
+        "en": (
+            "🟦 SQL Server\n"
+            "T-SQL syntax. Uses square brackets [name] for identifiers and TOP to limit rows. "
+            "Ideal for SSMS, Azure SQL or any Microsoft environment.\n\n"
+            "🐘 PostgreSQL\n"
+            "Standard ANSI SQL syntax, with types like SERIAL for auto-increment. "
+            "Ideal for pgAdmin, DBeaver or psql.\n\n"
+            "🐬 MySQL\n"
+            "Uses backticks (`name`) for identifiers and AUTO_INCREMENT. "
+            "Ideal for MySQL Workbench, phpMyAdmin or MariaDB."
+        ),
+    },
     "dialect":  {"pt": "Dialeto",                  "en": "Dialect"},
     "tipo":     {"pt": "Tipo de script",           "en": "Script type"},
     "opt_ddl":  {"pt": "CREATE TABLE (DDL)",       "en": "CREATE TABLE (DDL)"},
@@ -185,12 +209,13 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
         # HTML/CSS: o customizado ficava cortado pelo container da sidebar
         # e nunca aparecia de verdade ao passar o mouse.
         sql_help_texto_md = _s("help_detail").replace("\n", "  \n")
+        dialeto_help_texto_md = _s("help_dialeto").replace("\n", "  \n")
 
         dialect_choice = st.selectbox(
             _s("dialect"),
             options=["SQL Server", "PostgreSQL", "MySQL"],
             key="sql_dialect",
-            help=sql_help_texto_md,
+            help=dialeto_help_texto_md,
         )
         script_type = st.selectbox(
             _s("tipo"),
