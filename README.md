@@ -4,6 +4,8 @@ Gerador de **dados fictícios em modelo estrela** (fato + dimensões + calendár
 
 Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário, medidas DAX sugeridas, modelo TMDL pronto para o Power BI, dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
 
+O app principal tem **3 abas**: o Gerador de Setores (100 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente) e o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft).
+
 > Aplicação construída em **Streamlit** e distribuída publicamente em:
 > 🔗 **https://rodrigoaiosa.streamlit.app**
 
@@ -22,6 +24,9 @@ Em poucos segundos você escolhe um setor de negócio, define um período e um v
 - [Recursos principais](#-recursos-principais)
 - [Exportação SQL (DDL / INSERT)](#-exportação-sql-ddl--insert)
 - [Modo anomalias, deriva temporal e case de negócio](#-modo-anomalias-deriva-temporal-e-case-de-negócio)
+- [Automatizar BI (suas próprias planilhas)](#-automatizar-bi-suas-próprias-planilhas)
+- [Simulador de Certificação PL-300](#-simulador-de-certificação-pl-300)
+- [Log de acesso e painel de uso](#-log-de-acesso-e-painel-de-uso)
 - [Internacionalização (PT/EN)](#-internacionalização-ptEN)
 - [Deploy no Streamlit Cloud](#-deploy-no-streamlit-cloud)
 - [Requisitos e dependências](#-requisitos-e-dependências)
@@ -43,7 +48,9 @@ O objetivo é resolver um problema comum de quem estuda ou ensina Business Intel
 - **Modelo TMDL** com tabelas, relacionamentos e medidas prontos para importar no Power BI;
 - **Dicionário de dados** explicando cada tabela e coluna;
 - Scripts **SQL (DDL/INSERT)** para recriar a base em SQL Server, PostgreSQL ou MySQL;
-- Um **case de negócio fictício**, gerado automaticamente, transformando a base num exercício com objetivo real a resolver.
+- Um **case de negócio fictício**, gerado automaticamente, transformando a base num exercício com objetivo real a resolver;
+- Um modo **Automatizar BI**, que aplica esse mesmo motor de medidas/modelo em **planilhas que você mesmo envia** (.csv/.xlsx);
+- Um **Simulador de Certificação PL-300**, com perguntas originais organizadas nos 4 domínios oficiais do exame.
 
 ---
 
@@ -57,6 +64,7 @@ bi_data_generator/
 ├── config.py                   # Configuração da página, slider de volume e dicionário de 100 setores
 ├── i18n.py                     # Sistema de internacionalização (PT-BR / EN)
 ├── helpers.py                  # Funções utilitárias no nível raiz
+├── log_acesso.py               # Log de acesso e uso (sessão, eventos) enviado para uma planilha Google Sheets
 ├── requirements.txt            # Dependências do app principal
 ├── LICENSE
 │
@@ -76,7 +84,9 @@ bi_data_generator/
 │   ├── hero.py                  # Seção de topo (hero) da landing
 │   ├── sidebar.py                # Sidebar: busca de setor, período, volume, botão gerar, export SQL
 │   ├── estado_inicial.py         # Tela inicial / onboarding ("Como usar")
-│   └── resultado.py               # Métricas, preview de tabelas, medidas DAX, gabarito e download do ZIP
+│   ├── resultado.py               # Métricas, preview de tabelas, medidas DAX, gabarito e download do ZIP
+│   ├── automatizar_bi.py           # Aba "Automatizar BI": upload de planilha, tipos, medidas e TMDL
+│   └── simulador_pl300.py           # Aba "Simulador PL-300": quiz de prática para a certificação
 │
 ├── styles/
 │   ├── css.py                   # CSS customizado injetado no Streamlit (tema Power BI: amarelo/preto)
@@ -150,6 +160,10 @@ streamlit run app.py
 
 ## 🖱 Como usar o app
 
+O app abre com **3 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI" e "🎓 Simulador PL-300".
+
+### Aba 🏭 Gerador de Setores
+
 1. **Escolha o setor**: use a caixa de busca na barra lateral para filtrar entre os 100 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
 2. **Defina o período**: datas de início e fim; a tabela `dCalendario` é gerada automaticamente cobrindo esse intervalo.
 3. **Defina o volume de dados**: slider de 100 a 100.000 linhas na tabela fato (o volume das dimensões é ajustado proporcionalmente).
@@ -164,6 +178,14 @@ streamlit run app.py
    - O **botão de download** do `.zip` completo.
 8. Baixe o **dicionário de dados** (Excel/CSV zipado) com a descrição de cada tabela e coluna.
 9. *(Opcional)* Na barra lateral, gere o **script SQL** (DDL, INSERT ou completo) no dialeto desejado.
+
+### Aba 🤖 Automatizar BI
+
+Veja a seção [Automatizar BI (suas próprias planilhas)](#-automatizar-bi-suas-próprias-planilhas) para o passo a passo completo.
+
+### Aba 🎓 Simulador PL-300
+
+Veja a seção [Simulador de Certificação PL-300](#-simulador-de-certificação-pl-300) para o passo a passo completo.
 
 ---
 
@@ -420,6 +442,9 @@ Em setores onde uma fato referencia outra fato (ex.: despesas ou abastecimentos 
 - **Deriva temporal (concept drift)**: simula uma categoria ganhando participação gradualmente ao longo do período, para praticar detecção de tendência e mudança de comportamento.
 - **Interface bilíngue** PT-BR / EN, com toggle na barra lateral.
 - **Tema visual customizado** (`styles/css.py`), inspirado na paleta oficial do Power BI (amarelo e preto).
+- **Automatizar BI** (`ui/automatizar_bi.py`): envie sua própria planilha (.csv/.xlsx) e receba medidas DAX completas, tabela Calendario e modelo TMDL, gerados automaticamente a partir das colunas reais que você enviou.
+- **Simulador de Certificação PL-300** (`ui/simulador_pl300.py`): quiz de prática com perguntas originais nos 4 domínios oficiais do exame, com correção, nota por domínio e explicação.
+- **Log de acesso** (`log_acesso.py`): registra uso real do app numa planilha Google Sheets, com um painel de análise separado ([`dash_bi_data_generator`](https://github.com/RodrigoAiosa/dash_bi_data_generator)).
 
 ---
 
@@ -465,6 +490,65 @@ Ao ativar o toggle **"Simular deriva temporal (concept drift)"** (`generators/co
 ### Gabarito
 
 Quando qualquer um dos dois modos acima está ativo, um aviso é exibido na interface (`⚠️ Modo anomalia ativo` / `🧬 Deriva temporal ativa`) para deixar claro que os dados contêm alterações intencionais. Um expansor colapsado, tipo spoiler ("🔍 Ver gabarito"), revela exatamente o que foi alterado, onde e quantas linhas foram afetadas, útil para quem ensina conferir se a análise encontrou o problema certo. O gabarito também vai no ZIP de download, como `gabarito.txt`.
+
+---
+
+## 🤖 Automatizar BI (suas próprias planilhas)
+
+A segunda aba do app aplica o mesmo motor de medidas DAX e modelo TMDL usado nos 100 setores prontos, só que em **planilhas que você mesmo envia**, sem depender do padrão Fato/Dimensão dos setores prontos.
+
+### Passo a passo
+
+1. Envie um ou mais arquivos **.csv** ou **.xlsx** (um Excel com várias abas vira várias tabelas separadas automaticamente).
+2. Cada tabela aparece num expansor com preview das 10 primeiras linhas e um combobox por coluna, já com um **tipo sugerido automaticamente** (Texto, Número inteiro/decimal, Data, Data e hora, Verdadeiro/Falso, Chave/ID), que você pode ajustar.
+3. Clique em **"🧮 Gerar medidas DAX"**. O motor gera:
+   - **Perguntas de negócio** montadas a partir das colunas reais que você enviou (não são um exemplo fictício);
+   - **Medidas DAX completas**: agregações básicas, contagens, percentual de participação e, quando existir coluna de data, **Time Intelligence completo** (Mês Anterior, %MoM, Ano Anterior, %YoY, YTD, MTD);
+   - Uma tabela **Calendario** gerada automaticamente, cobrindo do menor ao maior valor de data encontrado nas tabelas enviadas;
+   - Um **model.tmdl completo**, com os relacionamentos detectados automaticamente entre as tabelas (mesma lógica de resolução de ambiguidade usada no Gerador de Setores).
+4. Baixe o que precisar: só as medidas (`.txt`), só o `Calendario.csv`, ou o **modelo completo** (`.zip` com os CSVs de cada tabela + `model.tmdl`, pronto para importar no Power BI ou no Tabular Editor).
+
+### Reparos automáticos
+
+Alguns arquivos exportados de forma errada chegam com todas as colunas despejadas como texto corrido numa única coluna (o cabeçalho vira o nome de uma única coluna cheia de vírgulas). O Automatizar BI detecta esse padrão e **desmembra automaticamente** de volta em colunas de verdade, avisando na tela quando isso acontece. Também corrige automaticamente acentuação quebrada (texto UTF-8 lido como Latin-1, tipo "CobranÃ§a" em vez de "Cobrança").
+
+---
+
+## 🎓 Simulador de Certificação PL-300
+
+A terceira aba é um quiz de prática para a certificação **PL-300 (Microsoft Certified: Power BI Data Analyst Associate)**, com **perguntas 100% originais** (escritas para este projeto, nunca reproduzidas de prova real ou de sites de "exam dump"), organizadas nos 4 domínios oficiais do exame:
+
+- Preparar os dados
+- Modelar os dados
+- Visualizar e analisar os dados
+- Gerenciar e proteger o Power BI
+
+Algumas perguntas usam a base que você acabou de gerar na aba do Gerador de Setores como contexto (nome do setor, tabela fato, coluna real).
+
+### Como usar
+
+1. Escolha quantas perguntas quer no simulado (5/10/15/20) e clique em **"🎲 Sortear novo simulado"**.
+2. Responda todas as perguntas no formulário.
+3. Clique em **"✅ Corrigir simulado"** para ver a nota geral, o desempenho por domínio, e a revisão pergunta a pergunta com explicação.
+
+### Fontes oficiais (recomendado usar junto)
+
+Este simulador não substitui o exame real nem o material oficial. Um expansor na própria tela linka direto para:
+
+- [Practice Assessment oficial (gratuito), no Microsoft Learn](https://learn.microsoft.com/en-us/credentials/certifications/data-analyst-associate/practice/assessment?assessment-type=practice&assessmentId=48&practice-assessment-type=certification)
+- [Guia de estudo oficial da prova](https://aka.ms/pl300-StudyGuide)
+- [Página da certificação PL-300](https://learn.microsoft.com/en-us/credentials/certifications/data-analyst-associate/)
+
+---
+
+## 📊 Log de acesso e painel de uso
+
+O app registra automaticamente eventos de uso (início de sessão, geração de base, download de ZIP/dicionário/SQL) numa planilha do Google Sheets, via `log_acesso.py` e um Web App do Google Apps Script.
+
+- O log é **best-effort**: se o webhook não estiver configurado ou a chamada falhar, o app continua funcionando normalmente, só sem gravar aquele evento.
+- Os horários gravados usam sempre o fuso de Brasília (`America/Sao_Paulo`), independente de onde o servidor do Streamlit estiver rodando.
+- Para configurar, defina `log_webhook_url` em `st.secrets` com a URL do seu Web App do Apps Script (veja o cabeçalho de `log_acesso.py` para o passo a passo completo de publicação).
+- Existe um **painel de acesso separado** (outro projeto Streamlit, [`dash_bi_data_generator`](https://github.com/RodrigoAiosa/dash_bi_data_generator)) que lê essa mesma planilha e mostra KPIs, gráficos e filtros (Ano, Mês, Dia, Setor, Ação, Status, Dispositivo) sobre o uso real do app.
 
 ---
 
