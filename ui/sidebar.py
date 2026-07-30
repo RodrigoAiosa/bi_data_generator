@@ -196,6 +196,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
             _s("tipo"),
             options=[_s("opt_ddl"), _s("opt_ins"), _s("opt_full")],
             key="sql_tipo",
+            help=sql_help_texto_md,
         )
 
         dialect_map = {"SQL Server": "sqlserver", "PostgreSQL": "postgresql", "MySQL": "mysql"}
