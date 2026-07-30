@@ -12,6 +12,8 @@ Este simulador NÃO substitui o Practice Assessment oficial da Microsoft
 vazamento de prova real.
 """
 import random
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import streamlit as st
 
@@ -274,6 +276,33 @@ def _montar_banco_perguntas() -> list:
     return _banco_perguntas_fixas() + _banco_perguntas_contextuais()
 
 
+def _montar_csv_resultado(perguntas: list, acertos: int, total: int, pct: float) -> bytes:
+    """
+    Monta o CSV do resultado da prova: uma linha por pergunta respondida,
+    no formato data_hora;pergunta;resposta_aluno;resposta_correta;
+    total_acertos;total_erros;%total_acerto. Os 3 últimos campos se
+    repetem em toda linha, representando o resultado geral daquela
+    tentativa (útil para juntar vários arquivos depois e acompanhar
+    a evolução ao longo do tempo).
+    """
+    agora = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m-%d %H:%M:%S")
+    total_erros = total - acertos
+
+    def _limpar(texto: str) -> str:
+        return str(texto).replace(";", ",").replace("\n", " ").strip()
+
+    linhas = ["data_hora;pergunta;resposta_aluno;resposta_correta;total_acertos;total_erros;%total_acerto"]
+    for i, p in enumerate(perguntas):
+        resposta = st.session_state["pl300_respostas"].get(i) or "(não respondida)"
+        correta_texto = p["opcoes"][p["correta"]]
+        linhas.append(
+            f"{agora};{_limpar(p['pergunta'])};{_limpar(resposta)};{_limpar(correta_texto)};"
+            f"{acertos};{total_erros};{pct:.1f}"
+        )
+
+    return ("\n".join(linhas)).encode("utf-8-sig")
+
+
 def render_simulador_pl300() -> None:
     st.markdown("## 🎓 Simulador de Certificação PL-300")
     st.caption(
@@ -342,6 +371,19 @@ def render_simulador_pl300() -> None:
             acertos_d, total_d = por_dominio[dominio]
             with col:
                 st.metric(dominio, f"{acertos_d}/{total_d}" if total_d else "-")
+
+        csv_resultado = _montar_csv_resultado(perguntas, acertos, total, pct)
+        st.download_button(
+            "📥 Baixar resultado desta prova (.csv)",
+            data=csv_resultado,
+            file_name=f"resultado_pl300_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+        st.caption(
+            "Guarde esse arquivo: baixando um novo a cada prova feita, você monta seu próprio "
+            "histórico de evolução ao longo do tempo (basta juntar as linhas de vários arquivos numa planilha)."
+        )
 
         st.markdown("### Revisão pergunta a pergunta")
         for i, p in enumerate(perguntas):
