@@ -31,6 +31,7 @@ from ui import (
     render_sidebar,
 )
 from ui.automatizar_bi import render_automatizar_bi
+from ui.simulador_pl300 import render_simulador_pl300
 
 st.set_page_config(**PAGE_CONFIG)
 
@@ -307,7 +308,7 @@ def main() -> None:
         help=_DRIFT_HELP[lang],
     )
 
-    tab_gerador, tab_automatizar = st.tabs(["🏭 Gerador de Setores", "🤖 Automatizar BI"])
+    tab_gerador, tab_automatizar, tab_pl300 = st.tabs(["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300"])
 
     with tab_gerador:
         if gerar:
@@ -344,6 +345,9 @@ def main() -> None:
 
     with tab_automatizar:
         render_automatizar_bi()
+
+    with tab_pl300:
+        render_simulador_pl300()
 
 
 if __name__ == "__main__":
