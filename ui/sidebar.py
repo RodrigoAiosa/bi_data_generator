@@ -176,40 +176,21 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
             return _SQL_STRINGS[key][lang]
 
         st.markdown(f'<p style="{_LABEL_STYLE} margin-bottom: 6px;">{_s("title")}</p>', unsafe_allow_html=True)
-        sql_help_text = _s("help_detail").replace("\n", "<br>")
         st.markdown(
-            f'''<div style="display:flex;align-items:flex-start;gap:4px;margin-bottom:12px;">
-                <span style="font-size:0.72rem;color:#7b8ba8;line-height:1.4;">{_s("hint")}</span>
-                <span style="position:relative;display:inline-block;cursor:pointer;"
-                      class="sql-help-icon">
-                  <span style="font-size:0.7rem;color:#7b8ba8;font-weight:600;
-                               border:1px solid #7b8ba8;border-radius:50%;
-                               width:14px;height:14px;display:inline-flex;
-                               align-items:center;justify-content:center;
-                               line-height:1;flex-shrink:0;">?</span>
-                  <span style="visibility:hidden;opacity:0;transition:opacity 0.2s;
-                               position:absolute;left:20px;top:-4px;z-index:9999;
-                               background:#1e1b4b;border:1px solid rgba(167,139,250,0.3);
-                               border-radius:8px;padding:10px 14px;
-                               font-size:0.72rem;color:#c4b5fd;
-                               width:220px;line-height:1.5;
-                               white-space:pre-line;"
-                        class="sql-tooltip">{sql_help_text}</span>
-                </span>
-            </div>
-            <style>
-            .sql-help-icon:hover .sql-tooltip {{
-                visibility: visible !important;
-                opacity: 1 !important;
-            }}
-            </style>''',
+            f'<span style="font-size:0.72rem;color:#7b8ba8;line-height:1.4;">{_s("hint")}</span>',
             unsafe_allow_html=True,
         )
+
+        # Tooltip nativo do Streamlit (help=), em vez do "?" customizado em
+        # HTML/CSS: o customizado ficava cortado pelo container da sidebar
+        # e nunca aparecia de verdade ao passar o mouse.
+        sql_help_texto_md = _s("help_detail").replace("\n", "  \n")
 
         dialect_choice = st.selectbox(
             _s("dialect"),
             options=["SQL Server", "PostgreSQL", "MySQL"],
             key="sql_dialect",
+            help=sql_help_texto_md,
         )
         script_type = st.selectbox(
             _s("tipo"),
