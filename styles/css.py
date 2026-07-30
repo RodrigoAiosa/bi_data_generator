@@ -13,7 +13,7 @@ import streamlit as st
 # accent:       #F2C811  (amarelo Power BI)
 # accent_dark:  #D4AF0A  (amarelo escuro / hover)
 # accent_light: #F7DC6F  (amarelo claro / texto sobre fundo escuro)
-# accent_ink:   #252423  (texto escuro sobre fundo amarelo — cor de marca PBI)
+# accent_ink:   #252423  (texto escuro sobre fundo amarelo, cor de marca PBI)
 # text_primary: #F3F2F1
 # text_muted:   #B3B0AD
 # text_dim:     #605E5C
@@ -458,7 +458,7 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     border-color: rgba(242,200,17,0.4) !important;
 }
 
-/* ── SLIDER — esconde input numérico e tickbar ── */
+/* ── SLIDER: esconde input numérico e tickbar ── */
 [data-testid="stSidebar"] [data-testid="stSlider"] input[type="number"],
 [data-testid="stSliderTickBar"] { display: none !important; }
 
@@ -522,6 +522,17 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     background: #D4AF0A !important;
     transform: translateY(-2px) !important;
     box-shadow: 0 8px 28px rgba(242,200,17,0.4) !important;
+}
+
+/* ── Ícone de ajuda (?) do selectbox: por padrão o Streamlit empurra
+   esse ícone até a borda direita do rótulo, bem longe do texto. Aqui
+   ele fica colado no texto, igual já acontece nos toggles. ── */
+[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-testid="stWidgetLabel"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: fit-content !important;
+    gap: 6px !important;
 }
 
 </style>
