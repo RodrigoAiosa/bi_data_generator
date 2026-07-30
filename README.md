@@ -443,7 +443,7 @@ Em setores onde uma fato referencia outra fato (ex.: despesas ou abastecimentos 
 - **Interface bilíngue** PT-BR / EN, com toggle na barra lateral.
 - **Tema visual customizado** (`styles/css.py`), inspirado na paleta oficial do Power BI (amarelo e preto).
 - **Automatizar BI** (`ui/automatizar_bi.py`): envie sua própria planilha (.csv/.xlsx) e receba medidas DAX completas, tabela Calendario e modelo TMDL, gerados automaticamente a partir das colunas reais que você enviou.
-- **Simulador de Certificação PL-300** (`ui/simulador_pl300.py`): quiz de prática com perguntas originais nos 4 domínios oficiais do exame, com correção, nota por domínio e explicação.
+- **Simulador de Certificação PL-300** (`ui/simulador_pl300.py`): quiz de prática com perguntas originais nos 4 domínios oficiais do exame, com correção, nota por domínio, explicação e download do resultado em CSV para acompanhar a evolução ao longo do tempo.
 - **Log de acesso** (`log_acesso.py`): registra uso real do app numa planilha Google Sheets, com um painel de análise separado ([`dash_bi_data_generator`](https://github.com/RodrigoAiosa/dash_bi_data_generator)).
 
 ---
@@ -530,6 +530,17 @@ Algumas perguntas usam a base que você acabou de gerar na aba do Gerador de Set
 1. Escolha quantas perguntas quer no simulado (5/10/15/20) e clique em **"🎲 Sortear novo simulado"**.
 2. Responda todas as perguntas no formulário.
 3. Clique em **"✅ Corrigir simulado"** para ver a nota geral, o desempenho por domínio, e a revisão pergunta a pergunta com explicação.
+4. Baixe o **"📥 Baixar resultado desta prova (.csv)"**.
+
+### Acompanhando a evolução ao longo do tempo
+
+Cada prova corrigida gera um CSV com uma linha por pergunta respondida, no formato:
+
+```
+data_hora;pergunta;resposta_aluno;resposta_correta;total_acertos;total_erros;%total_acerto
+```
+
+O `data_hora` (fuso de Brasília) marca o momento exato daquela tentativa, e os campos `total_acertos`/`total_erros`/`%total_acerto` se repetem em toda linha do arquivo, representando o resultado geral daquela prova. Guardando o arquivo baixado a cada nova tentativa e empilhando as linhas de vários arquivos numa mesma planilha (ex.: colar um embaixo do outro no Excel/Google Sheets), dá para montar o próprio histórico de evolução ao longo do tempo, sem depender de nenhuma conta ou login.
 
 ### Fontes oficiais (recomendado usar junto)
 
