@@ -1,544 +1,283 @@
-"""
-styles/css.py
-Todo o CSS customizado da aplicação em um único lugar.
-Para alterar o tema, edite apenas este arquivo.
+"""ui/sidebar.py: Sidebar completa com toggle de idioma, pesquisa e SQL DDL/INSERT."""
 
-Tema: Power BI (paleta oficial da marca + paleta de dados padrão)
-"""
+from datetime import date
 
 import streamlit as st
 
-# ── Paleta de cores (referência para manutenção) ────────────────────────────
-# bg_primary:   #121212  (neutro escuro, sem tinta azul/roxa)
-# accent:       #F2C811  (amarelo Power BI)
-# accent_dark:  #D4AF0A  (amarelo escuro / hover)
-# accent_light: #F7DC6F  (amarelo claro / texto sobre fundo escuro)
-# accent_ink:   #252423  (texto escuro sobre fundo amarelo, cor de marca PBI)
-# text_primary: #F3F2F1
-# text_muted:   #B3B0AD
-# text_dim:     #605E5C
-# data_teal:    #01B8AA  (paleta de dados padrão do Power BI, uso decorativo)
-# data_coral:   #FD625E
+from config import SETORES, SETORES_INFO, SLIDER_DEFAULT, SLIDER_MAX, SLIDER_MIN, SLIDER_STEP
+from i18n import get_lang, set_lang, t
 
-_CSS = """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+_LABEL_STYLE = (
+    'font-family: Syne, sans-serif; font-size: 0.7rem; font-weight: 700;'
+    ' letter-spacing: 2px; text-transform: uppercase; color: #4a5568;'
+)
 
-*, *::before, *::after { box-sizing: border-box; }
-
-html, body, .main, [data-testid="stAppViewContainer"] {
-    background-color: #121212 !important;
-}
-
-[data-testid="stAppViewContainer"] {
-    background-image:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(242,200,17,0.10) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 30% at 80% 60%, rgba(1,184,170,0.06) 0%, transparent 50%);
-}
-
-[data-testid="stHeader"] { background: transparent !important; }
-
-.main h1, .main h2, .main h3, .main h4,
-.main p, .main a, .main li,
-[data-testid="stAppViewContainer"] div:not([data-testid="stSidebar"]) {
-    font-family: 'DM Sans', sans-serif !important;
-}
-
-[data-testid="stMarkdownContainer"] { width: 100% !important; }
-.block-container {
-    max-width: 100% !important;
-    padding-left: 4rem !important;
-    padding-right: 4rem !important;
-}
-
-/* ── SIDEBAR ── */
-[data-testid="stSidebar"] {
-    background: rgba(18, 18, 18, 0.95) !important;
-    border-right: 1px solid rgba(242,200,17,0.15) !important;
-}
-[data-testid="stSidebar"] * {
-    font-family: 'DM Sans', sans-serif !important;
-    color: #e2e0dd !important;
-}
-[data-testid="stSidebar"] .stSelectbox > div > div {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(242,200,17,0.2) !important;
-    color: #e2e0dd !important;
-    border-radius: 12px !important;
-}
-[data-testid="stSidebar"] .stSlider > div > div > div {
-    background: #F2C811 !important;
-}
-
-/* ── HERO ── */
-.hero-wrapper {
-    text-align: center;
-    padding: 72px 20px 48px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.hero-badge {
-    display: inline-block;
-    font-family: 'Syne', sans-serif !important;
-    font-size: 0.70rem;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: #F2C811;
-    border: 1px solid rgba(242,200,17,0.35);
-    background: rgba(242,200,17,0.07);
-    padding: 6px 18px;
-    border-radius: 100px;
-    margin-bottom: 26px;
-}
-.hero-title {
-    font-family: 'Syne', sans-serif !important;
-    font-size: clamp(2.2rem, 4.5vw, 3.6rem);
-    font-weight: 800;
-    line-height: 1.08;
-    letter-spacing: -1.5px;
-    color: #F3F2F1;
-    margin: 0 auto 18px;
-    max-width: 760px;
-    text-align: center;
-}
-.hero-title .accent {
-    background: linear-gradient(135deg, #F2C811 0%, #D4AF0A 50%, #F7DC6F 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-.hero-subtitle {
-    font-size: 1rem;
-    font-weight: 300;
-    color: #B3B0AD;
-    max-width: 520px;
-    margin: 0 auto 44px;
-    line-height: 1.75;
-    text-align: center;
-}
-.hero-stats {
-    display: flex;
-    justify-content: center;
-    gap: 48px;
-    flex-wrap: wrap;
-    margin-bottom: 52px;
-}
-.hero-stat { text-align: center; }
-.hero-stat-number {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 2rem;
-    font-weight: 800;
-    color: #F2C811;
-    display: block;
-    line-height: 1;
-}
-.hero-stat-label {
-    font-size: 0.72rem;
-    color: #605E5C;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-top: 6px;
-    display: block;
-}
-.hero-divider {
-    width: 100%;
-    max-width: 860px;
-    margin: 0 auto 52px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(242,200,17,0.3), transparent);
+_SQL_STRINGS = {
+    "title":    {"pt": "🗄️ Script SQL",            "en": "🗄️ SQL Script"},
+    "hint":     {"pt": "Gera DDL, INSERT ou script completo para o setor selecionado.",
+                 "en": "Generates DDL, INSERT or full script for the selected sector."},
+    "help_detail": {
+        "pt": (
+            "📋 CREATE TABLE (DDL)\n"
+            "Gera apenas a estrutura das tabelas: tipos de dados inferidos automaticamente, "
+            "chaves primárias e índices sugeridos. Ideal para criar o banco do zero.\n\n"
+            "💾 INSERT INTO (dados)\n"
+            "Popula as tabelas com os dados gerados. Usa o volume definido no slider. "
+            "Gera blocos de 500 linhas por INSERT.\n\n"
+            "📦 Completo (DDL + INSERT)\n"
+            "Combina os dois scripts num único arquivo. "
+            "Cole no SSMS, DBeaver ou psql e execute para recriar o banco completo."
+        ),
+        "en": (
+            "📋 CREATE TABLE (DDL)\n"
+            "Generates table structure only: auto-inferred data types, "
+            "primary keys and suggested indexes. Ideal to create the database from scratch.\n\n"
+            "💾 INSERT INTO (data)\n"
+            "Populates tables with generated data. Uses the volume set in the slider. "
+            "Generates blocks of 500 rows per INSERT.\n\n"
+            "📦 Full (DDL + INSERT)\n"
+            "Combines both scripts into a single file. "
+            "Paste into SSMS, DBeaver or psql and run to recreate the full database."
+        ),
+    },
+    "help_dialeto": {
+        "pt": (
+            "🟦 SQL Server\n"
+            "Sintaxe T-SQL. Usa colchetes [nome] para identificadores e TOP para limitar linhas. "
+            "Ideal para SSMS, Azure SQL ou qualquer ambiente Microsoft.\n\n"
+            "🐘 PostgreSQL\n"
+            "Sintaxe padrão ANSI SQL, com tipos como SERIAL para autoincremento. "
+            "Ideal para pgAdmin, DBeaver ou psql.\n\n"
+            "🐬 MySQL\n"
+            "Usa crase (`nome`) para identificadores e AUTO_INCREMENT. "
+            "Ideal para MySQL Workbench, phpMyAdmin ou MariaDB."
+        ),
+        "en": (
+            "🟦 SQL Server\n"
+            "T-SQL syntax. Uses square brackets [name] for identifiers and TOP to limit rows. "
+            "Ideal for SSMS, Azure SQL or any Microsoft environment.\n\n"
+            "🐘 PostgreSQL\n"
+            "Standard ANSI SQL syntax, with types like SERIAL for auto-increment. "
+            "Ideal for pgAdmin, DBeaver or psql.\n\n"
+            "🐬 MySQL\n"
+            "Uses backticks (`name`) for identifiers and AUTO_INCREMENT. "
+            "Ideal for MySQL Workbench, phpMyAdmin or MariaDB."
+        ),
+    },
+    "dialect":  {"pt": "Dialeto",                  "en": "Dialect"},
+    "tipo":     {"pt": "Tipo de script",           "en": "Script type"},
+    "opt_ddl":  {"pt": "CREATE TABLE (DDL)",       "en": "CREATE TABLE (DDL)"},
+    "opt_ins":  {"pt": "INSERT INTO (dados)",      "en": "INSERT INTO (data)"},
+    "opt_full": {"pt": "Completo (DDL + INSERT)",  "en": "Full (DDL + INSERT)"},
+    "btn":      {"pt": "⬇️ Gerar & Baixar SQL",   "en": "⬇️ Generate & Download SQL"},
+    "spin":     {"pt": "Gerando script SQL…",      "en": "Generating SQL script…"},
+    "preview":  {"pt": "👁️ Preview SQL",           "en": "👁️ SQL Preview"},
+    "trunc":    {"pt": "-- ... (truncado, baixe o arquivo para o script completo)",
+                 "en": "-- ... (truncated, download the file for the full script)"},
+    "warn_ins": {"pt": "⚠️ INSERT usa o volume definido no slider acima.",
+                 "en": "⚠️ INSERT uses the volume set in the slider above."},
 }
 
-/* ── SECTION HEADERS ── */
-.section-header {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #F3F2F1;
-    margin: 44px 0 24px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid rgba(242,200,17,0.2);
-    letter-spacing: -0.5px;
-    position: relative;
-}
-.section-header::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 48px;
-    height: 2px;
-    background: #F2C811;
-}
-.section-header-plain {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #F3F2F1;
-    margin: 44px 0 24px;
-    padding-bottom: 0;
-    border-bottom: none;
-    letter-spacing: -0.5px;
-}
 
-/* ── STAT CARDS ── */
-.stat-card {
-    background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%);
-    border: 1px solid rgba(242,200,17,0.2);
-    border-radius: 18px;
-    padding: 28px 22px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 190px;
-    box-sizing: border-box;
-}
-.stat-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(242,200,17,0.4);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-}
-.stat-card-icon { font-size: 1.8rem; margin-bottom: 10px; display: block; }
-.stat-number {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #F2C811;
-    margin-bottom: 6px;
-    line-height: 1;
-    display: block;
-    white-space: nowrap;
-}
-.stat-label {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #e2e0dd;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    width: 100%;
-    min-height: 2.4em;
-    align-items: center;
-    justify-content: center;
-}
-.stat-sublabel {
-    font-size: 0.78rem;
-    color: #605E5C;
-    margin-top: 6px;
-    font-weight: 300;
-    display: block;
-}
+def _build_index() -> dict[str, str]:
+    index = {}
+    for key in SETORES:
+        nome_limpo = key.split(" ", 1)[-1].lower()
+        desc = ""
+        for _ico, nome_info, desc_info in SETORES_INFO:
+            if nome_info.lower() in nome_limpo or nome_limpo in nome_info.lower():
+                desc = desc_info.lower()
+                break
+        index[key] = f"{nome_limpo} {desc}"
+    return index
 
-/* Garante que as colunas do Streamlit fiquem com a mesma altura na linha do resumo */
-div[data-testid="column"]:has(.stat-card) {
-    display: flex;
-}
-div[data-testid="column"]:has(.stat-card) > div {
-    display: flex;
-    width: 100%;
-}
-div[data-testid="column"]:has(.stat-card) [data-testid="stMarkdownContainer"] {
-    display: flex;
-    width: 100%;
-}
-
-/* ── SECTOR CARDS (flip 3D) ── */
-.sector-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
-    margin: 20px 0;
-}
-.flip-wrapper {
-    perspective: 800px;
-    height: 120px;
-    cursor: default;
-}
-.flip-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.flip-wrapper:hover .flip-inner { transform: rotateY(180deg); }
-.flip-front, .flip-back {
-    position: absolute;
-    inset: 0;
-    border-radius: 14px;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 14px 12px;
-    text-align: center;
-}
-.flip-front {
-    background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%);
-    border: 1px solid rgba(242,200,17,0.18);
-    transition: border-color 0.3s;
-}
-.flip-wrapper:hover .flip-front { border-color: rgba(242,200,17,0.0); }
-.flip-back {
-    background: linear-gradient(145deg, #F2C811 0%, #E0B70E 100%);
-    border: 1px solid #D4AF0A;
-    transform: rotateY(180deg);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-}
-.sector-card-icon { font-size: 1.6rem; display: block; margin-bottom: 8px; line-height: 1; }
-.sector-card-name {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #e2e0dd;
-}
-.flip-back-title {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: #1a1712;
-    margin-bottom: 7px;
-    letter-spacing: 0.2px;
-}
-.flip-back-desc { font-size: 0.72rem; color: #3a3937; line-height: 1.55; font-weight: 400; }
-
-/* ── STEPS ── */
-.steps-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin: 20px 0;
-}
-.step-card {
-    background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%);
-    border: 1px solid rgba(242,200,17,0.18);
-    border-radius: 16px;
-    padding: 24px 20px;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-.step-card:hover {
-    border-color: rgba(242,200,17,0.4);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.3);
-}
-.step-num {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #F2C811;
-    background: rgba(242,200,17,0.1);
-    border: 1px solid rgba(242,200,17,0.2);
-    border-radius: 100px;
-    padding: 3px 12px;
-    display: inline-block;
-    margin-bottom: 14px;
-}
-.step-icon { font-size: 1.8rem; display: block; margin-bottom: 10px; }
-.step-title {
-    font-family: 'Syne', sans-serif !important;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #F3F2F1;
-    margin-bottom: 8px;
-}
-.step-text { font-size: 0.78rem; color: #B3B0AD; line-height: 1.6; font-weight: 300; }
-
-/* ── INFO / SUCCESS BOXES ── */
-.info-box {
-    background: linear-gradient(145deg, rgba(242,200,17,0.10) 0%, rgba(212,175,10,0.06) 100%);
-    border: 1px solid rgba(242,200,17,0.3);
-    border-radius: 14px;
-    padding: 18px 22px;
-    margin: 20px 0;
-    font-size: 0.88rem;
-    color: #F7DC6F;
-    line-height: 1.7;
-}
-.info-box strong { color: #F2C811; }
-.success-box {
-    background: linear-gradient(145deg, rgba(1,184,170,0.10) 0%, rgba(1,184,170,0.05) 100%);
-    border: 1px solid rgba(1,184,170,0.3);
-    border-radius: 14px;
-    padding: 16px 20px;
-    font-size: 0.9rem;
-    color: #5DCAA5;
-    margin: 16px 0;
-}
-
-/* ── INPUTS ── */
-.stSelectbox > div > div {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(242,200,17,0.2) !important;
-    color: #e2e0dd !important;
-    border-radius: 12px !important;
-}
-.stDateInput > div > div {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(242,200,17,0.2) !important;
-    border-radius: 12px !important;
-}
-hr {
-    border: none !important;
-    border-top: 1px solid rgba(242,200,17,0.1) !important;
-    margin: 36px 0 !important;
-}
-
-/* ── TABS ── */
-.stTabs [data-baseweb="tab-list"] {
-    background: transparent !important;
-    border-bottom: 1px solid rgba(242,200,17,0.2) !important;
-    gap: 4px;
-}
-.stTabs [data-baseweb="tab"] {
-    background: transparent !important;
-    color: #B3B0AD !important;
-    font-family: 'Syne', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.82rem !important;
-    letter-spacing: 0.5px;
-    border-radius: 8px 8px 0 0 !important;
-    padding: 10px 20px !important;
-    transition: color 0.2s, background 0.2s;
-}
-.stTabs [aria-selected="true"] {
-    background: rgba(242,200,17,0.1) !important;
-    color: #F2C811 !important;
-    border-bottom: 2px solid #F2C811 !important;
-}
-
-/* ── DATAFRAME ── */
-.stDataFrame {
-    border: 1px solid rgba(242,200,17,0.2) !important;
-    border-radius: 12px !important;
-}
-
-/* ── BOTÃO COLAPSAR SIDEBAR ── */
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0');
-span[data-testid="stIconMaterial"] {
-    font-size: 0 !important; line-height: 0 !important;
-    display: inline-block !important; width: 24px !important; height: 24px !important;
-    position: relative !important;
-}
-span[data-testid="stIconMaterial"]::before {
-    font-family: 'Material Symbols Rounded' !important;
-    font-size: 24px !important; line-height: 24px !important;
-    color: #F2C811 !important; position: absolute !important;
-    top: 0; left: 0 !important; content: "\\eac3" !important;
-}
-[data-testid="stSidebarCollapsedControl"] span[data-testid="stIconMaterial"]::before,
-[data-testid="stHeader"] span[data-testid="stIconMaterial"]::before {
-    content: "\\eac9" !important;
-}
-button[data-testid="stBaseButton-headerNoPadding"],
-[data-testid="stSidebarCollapsedControl"] button {
-    background: rgba(242,200,17,0.08) !important;
-    border: 1px solid rgba(242,200,17,0.2) !important;
-    border-radius: 8px !important;
-}
-button[data-testid="stBaseButton-headerNoPadding"]:hover,
-[data-testid="stSidebarCollapsedControl"] button:hover {
-    background: rgba(242,200,17,0.18) !important;
-    border-color: rgba(242,200,17,0.4) !important;
-}
-
-/* ── SLIDER: esconde input numérico e tickbar ── */
-[data-testid="stSidebar"] [data-testid="stSlider"] input[type="number"],
-[data-testid="stSliderTickBar"] { display: none !important; }
-
-/* ── Remove borda superior nativa dos blocos de coluna ── */
-[data-testid="stVerticalBlockBorderWrapper"],
-[data-testid="stVerticalBlockBorderWrapper"] > div,
-[data-testid="column"] > div:first-child {
-    border-top: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-}
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #121212; }
-::-webkit-scrollbar-thumb { background: rgba(242,200,17,0.25); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(242,200,17,0.45); }
-
-/* ── BUTTONS ── */
-.stButton > button,
-.stButton > button[kind="primary"],
-.stButton > button[kind="secondary"],
-[data-testid="stBaseButton-primary"],
-[data-testid="stBaseButton-secondary"] {
-    background: #F2C811 !important;
-    color: #252423 !important; border: none !important; border-radius: 12px !important;
-    font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
-    font-size: 0.88rem !important; padding: 10px 22px !important;
-    transform: translateY(0) !important;
-    box-shadow: 0 0 0 rgba(242,200,17,0) !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
-}
-.stButton > button *,
-[data-testid="stBaseButton-primary"] *,
-[data-testid="stBaseButton-secondary"] * {
-    color: #252423 !important;
-}
-.stButton > button:hover,
-[data-testid="stBaseButton-primary"]:hover,
-[data-testid="stBaseButton-secondary"]:hover {
-    background: #D4AF0A !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(242,200,17,0.35) !important;
-}
-.stDownloadButton > button,
-[data-testid="stBaseButton-download"] {
-    background: #F2C811 !important;
-    color: #252423 !important; border: none !important; border-radius: 12px !important;
-    font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
-    font-size: 0.9rem !important; margin-top: 8px !important;
-    transform: translateY(0) !important;
-    box-shadow: 0 0 0 rgba(242,200,17,0) !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
-}
-.stDownloadButton > button *,
-[data-testid="stBaseButton-download"] * {
-    color: #252423 !important;
-}
-.stDownloadButton > button:hover,
-[data-testid="stBaseButton-download"]:hover {
-    background: #D4AF0A !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 28px rgba(242,200,17,0.4) !important;
-}
-
-/* ── Ícone de ajuda (?) do selectbox: por padrão o Streamlit empurra
-   esse ícone até a borda direita do rótulo, bem longe do texto. Aqui
-   ele fica colado no texto, igual já acontece nos toggles. ── */
-[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-testid="stWidgetLabel"] {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    width: fit-content !important;
-    gap: 6px !important;
-}
-
-</style>
-"""
+_BUSCA_INDEX = _build_index()
 
 
-def inject_css() -> None:
-    """Injeta o CSS customizado na página Streamlit."""
-    st.markdown(_CSS, unsafe_allow_html=True)
+def _filtrar_setores(query: str) -> list[str]:
+    q = query.strip().lower()
+    if not q:
+        return list(SETORES.keys())
+    return [k for k, texto in _BUSCA_INDEX.items() if q in texto]
+
+
+def render_sidebar() -> tuple[str, date, date, int, bool]:
+    with st.sidebar:
+
+        # ── Logo ──────────────────────────────────────────────────────────
+        st.markdown("""
+        <div style="padding: 8px 0 16px;">
+            <div style="font-family: Syne, sans-serif; font-size: 1.1rem; font-weight: 800;
+                        color: #f0f4ff; margin-bottom: 4px;">BI Data Generator</div>
+            <div style="font-family: Syne, sans-serif; font-size: 0.65rem; font-weight: 700;
+                        letter-spacing: 3px; text-transform: uppercase; color: #a78bfa;
+                        background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25);
+                        border-radius: 100px; padding: 3px 12px; display: inline-block;">PRO</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── Toggle de idioma ───────────────────────────────────────────────
+        if st.button(t("lang_toggle"), use_container_width=True):
+            set_lang("en" if get_lang() == "pt" else "pt")
+            st.rerun()
+
+        st.markdown(
+            '<div style="height:1px; background: rgba(167,139,250,0.15); margin: 16px 0;"></div>',
+            unsafe_allow_html=True,
+        )
+
+        # ── Pesquisa ───────────────────────────────────────────────────────
+        lang = get_lang()
+        st.markdown(f'<p style="{_LABEL_STYLE} margin-bottom: 8px;">{t("search_label")}</p>', unsafe_allow_html=True)
+        query = st.text_input(
+            "",
+            placeholder=t("search_placeholder"),
+            label_visibility="collapsed",
+            key="busca_setor",
+        )
+
+        setores_filtrados = _filtrar_setores(query)
+
+        if query and not setores_filtrados:
+            st.markdown(
+                f'<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);'
+                f'border-radius:10px;padding:8px 12px;font-size:0.78rem;color:#fca5a5;margin-bottom:10px;">'
+                f'{t("search_empty")}</div>',
+                unsafe_allow_html=True,
+            )
+            setores_filtrados = list(SETORES.keys())
+
+        if query and setores_filtrados:
+            st.markdown(
+                f'<p style="font-size:0.72rem;color:#a78bfa;margin:-4px 0 8px;">'
+                f'{t("search_found", n=len(setores_filtrados))}</p>',
+                unsafe_allow_html=True,
+            )
+
+        # ── Setor ──────────────────────────────────────────────────────────
+        st.markdown(f'<p style="{_LABEL_STYLE} margin-bottom: 10px;">{t("sector_label")}</p>', unsafe_allow_html=True)
+        setor = st.selectbox("", setores_filtrados, label_visibility="collapsed")
+
+        # ── Período ────────────────────────────────────────────────────────
+        st.markdown(f'<p style="{_LABEL_STYLE} margin: 18px 0 10px;">{t("period_label")}</p>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            data_inicio = st.date_input(t("start_label"), value=date(2023, 1, 1))
+        with col2:
+            data_fim = st.date_input(t("end_label"), value=date(2023, 12, 31))
+
+        if data_fim <= data_inicio:
+            st.markdown(
+                f'<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);'
+                f'border-radius:10px;padding:10px 14px;font-size:0.8rem;color:#fca5a5;margin-top:8px;">'
+                f'{t("date_error")}</div>',
+                unsafe_allow_html=True,
+            )
+
+        # ── Volume ─────────────────────────────────────────────────────────
+        st.markdown(f'<p style="{_LABEL_STYLE} margin: 18px 0 10px;">{t("volume_label")}</p>', unsafe_allow_html=True)
+        n_linhas = st.slider("", min_value=SLIDER_MIN, max_value=SLIDER_MAX,
+                             value=SLIDER_DEFAULT, step=SLIDER_STEP, label_visibility="collapsed")
+        st.markdown(
+            f'<p style="font-size:0.75rem;color:#7b8ba8;text-align:center;margin-top:-8px;">'
+            f'{t("volume_hint", n=f"{n_linhas:,}")}</p>',
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            '<div style="height:1px; background: rgba(167,139,250,0.15); margin: 20px 0;"></div>',
+            unsafe_allow_html=True,
+        )
+        gerar = st.button(t("gerar_btn"), use_container_width=True, type="primary")
+
+        # ── Script SQL ─────────────────────────────────────────────────────
+        st.markdown(
+            '<div style="height:1px; background: rgba(167,139,250,0.15); margin: 20px 0;"></div>',
+            unsafe_allow_html=True,
+        )
+
+        def _s(key: str) -> str:
+            return _SQL_STRINGS[key][lang]
+
+        st.markdown(f'<p style="{_LABEL_STYLE} margin-bottom: 6px;">{_s("title")}</p>', unsafe_allow_html=True)
+        st.markdown(
+            f'<span style="font-size:0.72rem;color:#7b8ba8;line-height:1.4;">{_s("hint")}</span>',
+            unsafe_allow_html=True,
+        )
+
+        # Tooltip nativo do Streamlit (help=), em vez do "?" customizado em
+        # HTML/CSS: o customizado ficava cortado pelo container da sidebar
+        # e nunca aparecia de verdade ao passar o mouse.
+        sql_help_texto_md = _s("help_detail").replace("\n", "  \n")
+        dialeto_help_texto_md = _s("help_dialeto").replace("\n", "  \n")
+
+        dialect_choice = st.selectbox(
+            _s("dialect"),
+            options=["SQL Server", "PostgreSQL", "MySQL"],
+            key="sql_dialect",
+            help=dialeto_help_texto_md,
+        )
+        script_type = st.selectbox(
+            _s("tipo"),
+            options=[_s("opt_ddl"), _s("opt_ins"), _s("opt_full")],
+            key="sql_tipo",
+            help=sql_help_texto_md,
+        )
+
+        dialect_map = {"SQL Server": "sqlserver", "PostgreSQL": "postgresql", "MySQL": "mysql"}
+        dialect_key  = dialect_map[dialect_choice]
+
+        if script_type in (_s("opt_ins"), _s("opt_full")):
+            st.markdown(
+                f'<p style="font-size:0.70rem;color:#f59e0b;margin:4px 0 8px;">{_s("warn_ins")}</p>',
+                unsafe_allow_html=True,
+            )
+
+        if st.button(_s("btn"), use_container_width=True, key="btn_gerar_sql"):
+            if data_fim <= data_inicio:
+                msg_erro_data = "Corrija as datas antes de gerar." if lang == "pt" else "Fix the dates before generating."
+                st.error(msg_erro_data)
+                st.stop()
+
+            from generators.sql_generator import gerar_sql, gerar_sql_insert, gerar_sql_completo
+            from log_acesso import registrar_evento
+
+            fn          = SETORES[setor]
+            nome_setor  = setor.split(" ", 1)[1]
+
+            with st.spinner(_s("spin")):
+                tabelas_sql = fn(n_linhas, data_inicio, data_fim)
+
+                if script_type == _s("opt_ddl"):
+                    sql_content = gerar_sql(nome_setor, tabelas_sql, dialect_key)
+                    sufixo = "DDL"
+                elif script_type == _s("opt_ins"):
+                    sql_content = gerar_sql_insert(nome_setor, tabelas_sql, dialect_key)
+                    sufixo = "INSERT"
+                else:
+                    sql_content = gerar_sql_completo(nome_setor, tabelas_sql, dialect_key)
+                    sufixo = "COMPLETO"
+
+            registrar_evento("gerou_sql", setor=nome_setor, volume=n_linhas)
+
+            nome_limpo   = nome_setor.replace(" ", "_").replace("&", "e").replace("/", "_")
+            nome_arquivo = f"{sufixo}_{nome_limpo}_{dialect_key}.sql"
+            tamanho_kb   = len(sql_content.encode("utf-8")) / 1024
+
+            st.download_button(
+                label=f"📥 {nome_arquivo}  ({tamanho_kb:.0f} KB)",
+                data=sql_content.encode("utf-8"),
+                file_name=nome_arquivo,
+                mime="text/plain",
+                use_container_width=True,
+                key="dl_sql_file",
+                on_click=lambda: registrar_evento("baixou_sql", setor=nome_setor),
+            )
+
+            with st.expander(_s("preview"), expanded=True):
+                preview = sql_content[:3_000]
+                if len(sql_content) > 3_000:
+                    preview += f"\n\n{_s('trunc')}"
+                st.code(preview, language="sql")
+
+    return setor, data_inicio, data_fim, n_linhas, gerar
