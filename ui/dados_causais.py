@@ -3,13 +3,15 @@ ui/dados_causais.py: Aba "Dados Causais".
 
 Diferente do resto do gerador (que produz dados só ESTATISTICAMENTE
 plausíveis), aqui a relação causa-efeito entre duas variáveis é conhecida
-de propósito: o dado é gerado encadeando matematicamente a causa no
-efeito (com defasagem, confundidor e ruído configuráveis), e o "gabarito
-causal" com os parâmetros reais usados fica disponível pra conferência.
+de propósito, e é construída EM CIMA do setor que você já gerou na aba
+"Gerador de Setores": a coluna de causa usa os valores reais agregados
+por semana da base gerada; a coluna de efeito é simulada a partir da
+fórmula causal (com defasagem, confundidor e ruído configuráveis), pra
+manter o gabarito 100% confiável.
 
 Serve pra praticar inferência causal, teste A/B e marketing mix modeling
-com um cenário onde a resposta certa é conhecida de antemão, algo que
-datasets sintéticos comuns (inclusive o resto deste projeto) não oferecem.
+com um cenário onde a resposta certa é conhecida de antemão, em cima dos
+seus próprios dados gerados, não de um exemplo genérico desconectado.
 """
 import numpy as np
 import pandas as pd
@@ -18,158 +20,107 @@ import streamlit as st
 
 from log_acesso import registrar_evento
 
-CENARIOS_CAUSAIS = {
-    "marketing_vendas": {
-        "nome": "📢 Marketing → Vendas (com defasagem)",
-        "descricao": (
-            "Investimento em marketing causa aumento nas vendas, mas o efeito não é "
-            "imediato: leva algumas semanas até aparecer, e existe uma sazonalidade "
-            "que afeta as vendas por fora do marketing (um confundidor clássico)."
-        ),
-        "causa_nome": "Investimento em Marketing",
-        "causa_unidade": "R$",
-        "efeito_nome": "Vendas",
-        "efeito_unidade": "R$",
-        "direcao": 1,
-        "tem_confundidor": True,
-        "confundidor_nome": "Índice de Sazonalidade",
-        "efeito_padrao_pct": 15,
-        "defasagem_padrao": 2,
-        "granularidade": "semana",
-        "base_causa": 8000,
-        "escala_efeito": 3.0,
-    },
-    "preco_demanda": {
-        "nome": "🏷️ Preço → Demanda (elasticidade)",
-        "descricao": (
-            "Aumento de preço reduz a quantidade demandada (elasticidade-preço "
-            "clássica de microeconomia). O efeito é praticamente imediato, sem "
-            "defasagem relevante, e sem confundidor externo neste cenário."
-        ),
-        "causa_nome": "Preço do Produto",
-        "causa_unidade": "R$",
-        "efeito_nome": "Unidades Vendidas",
-        "efeito_unidade": "un",
-        "direcao": -1,
-        "tem_confundidor": False,
-        "confundidor_nome": None,
-        "efeito_padrao_pct": 20,
-        "defasagem_padrao": 0,
-        "granularidade": "dia",
-        "base_causa": 80,
-        "escala_efeito": 12.0,
-    },
-    "treinamento_produtividade": {
-        "nome": "🎓 Treinamento → Produtividade",
-        "descricao": (
-            "Horas de treinamento da equipe causam aumento de produtividade, mas "
-            "o aprendizado leva algumas semanas até virar prática. A rotatividade "
-            "da equipe (turnover) é um confundidor: afeta a produtividade por conta própria."
-        ),
-        "causa_nome": "Horas de Treinamento",
-        "causa_unidade": "h",
-        "efeito_nome": "Produtividade",
-        "efeito_unidade": "unidades/h",
-        "direcao": 1,
-        "tem_confundidor": True,
-        "confundidor_nome": "Taxa de Rotatividade (Turnover)",
-        "efeito_padrao_pct": 10,
-        "defasagem_padrao": 3,
-        "granularidade": "semana",
-        "base_causa": 20,
-        "escala_efeito": 2.5,
-    },
-    "manutencao_falhas": {
-        "nome": "🔧 Manutenção Preventiva → Redução de Falhas",
-        "descricao": (
-            "Mais horas de manutenção preventiva reduzem a taxa de falhas do "
-            "equipamento, com uma pequena defasagem até o efeito aparecer. "
-            "Sem confundidor relevante neste cenário."
-        ),
-        "causa_nome": "Horas de Manutenção Preventiva",
-        "causa_unidade": "h",
-        "efeito_nome": "Taxa de Falhas",
-        "efeito_unidade": "falhas/100 unidades",
-        "direcao": -1,
-        "tem_confundidor": False,
-        "confundidor_nome": None,
-        "efeito_padrao_pct": 25,
-        "defasagem_padrao": 1,
-        "granularidade": "semana",
-        "base_causa": 15,
-        "escala_efeito": 1.8,
-    },
-}
+
+def _detectar_coluna_data(df: pd.DataFrame) -> str | None:
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            return col
+    for col in df.columns:
+        if any(p in col.lower() for p in ["data", "date", "dt_"]):
+            return col
+    return None
 
 
-def gerar_dados_causais(
-    cenario_key: str, n_periodos: int, efeito_pct: float, defasagem: int,
-    ruido_pct: float, seed: int | None = None,
+def _colunas_numericas_validas(df: pd.DataFrame) -> list:
+    """
+    Colunas candidatas a causa/efeito: numéricas de verdade (excluindo
+    chave/FK, tipo id_*/sk_*) mais colunas booleanas (tratadas como
+    taxa 0/1, ex.: 'usou_personal'), o que amplia bastante quais setores
+    têm pelo menos 2 métricas utilizáveis nesse cenário.
+    """
+    numericas = df.select_dtypes(include="number").columns.tolist()
+    booleanas = df.select_dtypes(include="bool").columns.tolist()
+    candidatas = [c for c in numericas if not c.lower().startswith(("id_", "sk_"))]
+    candidatas += booleanas
+    return candidatas
+
+
+def gerar_cenario_causal_do_setor(
+    df_fato: pd.DataFrame, col_data: str, col_causa: str, col_efeito_label: str,
+    direcao: int, tem_confundidor: bool, efeito_pct: float, defasagem: int,
+    ruido_pct: float, nome_setor: str, fato_nome: str, seed: int | None = None,
 ) -> tuple[pd.DataFrame, dict]:
     """
-    Gera (df, gabarito) para o cenário causal escolhido. A variável causa
-    é um passeio aleatório com leve tendência; o efeito é calculado a
-    partir da causa DEFASADA (efeito[t] depende de causa[t - defasagem]),
-    mais a contribuição de um confundidor (quando existe) e ruído
-    aleatório por cima. O gabarito documenta os parâmetros reais usados.
+    Monta a série temporal real (agregada por semana) da coluna de causa
+    escolhida, a partir da base já gerada, e calcula um efeito SIMULADO
+    causalmente a partir dela (com defasagem, confundidor e ruído). O
+    gabarito documenta exatamente o que é real e o que é simulado.
     """
-    cfg = CENARIOS_CAUSAIS[cenario_key]
     rng = np.random.default_rng(seed)
 
-    base_causa = cfg["base_causa"]
-    tendencia = np.linspace(0, base_causa * 0.15, n_periodos)
-    passeio = np.cumsum(rng.normal(0, base_causa * 0.02, n_periodos))
-    causa = base_causa + tendencia + passeio
-    causa = np.clip(causa, base_causa * 0.25, None)
+    df = df_fato[[col_data, col_causa]].copy()
+    df[col_data] = pd.to_datetime(df[col_data], errors="coerce")
+    df = df.dropna(subset=[col_data])
+    if df.empty:
+        raise ValueError("Não foi possível interpretar a coluna de data dessa tabela fato.")
+
+    serie = df.set_index(col_data).resample("W")[col_causa].sum().reset_index()
+    serie.columns = ["data", "causa"]
+    n_periodos = len(serie)
+    if n_periodos < 6:
+        raise ValueError(
+            "Poucos períodos pra montar uma série temporal causal (gere a base com um "
+            "período mais longo, pelo menos 6 semanas)."
+        )
+
+    causa = serie["causa"].values.astype(float)
+    desvio = causa.std()
+    causa_normalizada = (causa - causa.mean()) / (desvio if desvio else 1)
 
     confundidor = None
-    if cfg["tem_confundidor"]:
-        ciclo = 52 if cfg["granularidade"] == "semana" else 365
-        confundidor = 1 + 0.15 * np.sin(2 * np.pi * np.arange(n_periodos) / ciclo)
+    if tem_confundidor:
+        confundidor = 1 + 0.15 * np.sin(2 * np.pi * np.arange(n_periodos) / 52)
 
-    causa_normalizada = (causa - causa.mean()) / (causa.std() if causa.std() else 1)
-    base_efeito = base_causa * cfg["escala_efeito"]
+    media_abs = float(np.abs(causa).mean())
+    base_efeito = media_abs * 4.0 if media_abs else 100.0
 
-    efeito = np.full(n_periodos, float(base_efeito))
+    efeito = np.full(n_periodos, base_efeito)
     for t in range(n_periodos):
         t_ref = max(0, t - defasagem)
-        contrib_causal = cfg["direcao"] * (efeito_pct / 100) * base_efeito * causa_normalizada[t_ref]
+        contrib_causal = direcao * (efeito_pct / 100) * base_efeito * causa_normalizada[t_ref]
         contrib_confundidor = (confundidor[t] - 1) * base_efeito * 0.5 if confundidor is not None else 0.0
         efeito[t] = base_efeito + contrib_causal + contrib_confundidor
 
     ruido_efeito = rng.normal(0, base_efeito * (ruido_pct / 100), n_periodos)
     efeito = np.clip(efeito + ruido_efeito, 0, None)
 
-    freq = "W" if cfg["granularidade"] == "semana" else "D"
-    datas = pd.date_range("2024-01-01", periods=n_periodos, freq=freq)
-
-    df = pd.DataFrame({
-        "data": datas,
-        cfg["causa_nome"]: causa.round(2),
-        cfg["efeito_nome"]: efeito.round(2),
+    nome_col_efeito = f"{col_efeito_label} (simulado)"
+    df_final = pd.DataFrame({
+        "data": serie["data"],
+        col_causa: causa.round(2),
+        nome_col_efeito: efeito.round(2),
     })
     if confundidor is not None:
-        df[cfg["confundidor_nome"]] = confundidor.round(4)
+        df_final["Índice de Sazonalidade"] = confundidor.round(4)
 
     gabarito = {
-        "cenario": cfg["nome"],
-        "relacao_causal": (
-            f"{cfg['causa_nome']} {'AUMENTA' if cfg['direcao'] > 0 else 'REDUZ'} "
-            f"{cfg['efeito_nome']}"
-        ),
+        "setor": nome_setor,
+        "tabela_fato": fato_nome,
+        "coluna_causa": f"{col_causa} (valores REAIS da base gerada, agregados por semana)",
+        "coluna_efeito": f"{nome_col_efeito} (valores 100% SIMULADOS pela fórmula causal)",
+        "relacao_causal": f"{col_causa} {'AUMENTA' if direcao > 0 else 'REDUZ'} {col_efeito_label}",
         "forca_do_efeito_pct": efeito_pct,
-        "defasagem_em_periodos": defasagem,
-        "granularidade": cfg["granularidade"],
-        "tem_confundidor": cfg["tem_confundidor"],
-        "nome_do_confundidor": cfg["confundidor_nome"] or "(nenhum neste cenário)",
+        "defasagem_em_semanas": defasagem,
+        "tem_confundidor": tem_confundidor,
         "intensidade_do_ruido_pct": ruido_pct,
         "aviso": (
-            "O efeito em cada período depende da CAUSA de 'defasagem_em_periodos' "
-            "períodos atrás, não da causa no mesmo período. Testar correlação sem "
-            "considerar essa defasagem vai subestimar (ou não encontrar) a relação real."
+            f"A coluna '{col_causa}' usa os valores reais agregados por semana da base de "
+            f"'{nome_setor}' que você gerou. Já a coluna '{nome_col_efeito}' não usa os "
+            f"valores reais de '{col_efeito_label}' na base original, ela é inteiramente "
+            f"recalculada pela fórmula causal, pra garantir que o gabarito seja confiável."
         ),
     }
-    return df, gabarito
+    return df_final, gabarito
 
 
 def _montar_gabarito_txt(gabarito: dict) -> str:
@@ -183,58 +134,94 @@ def render_dados_causais() -> None:
     st.markdown("## 🧬 Dados Causais")
     st.caption(
         "Diferente do resto do gerador (dados só estatisticamente plausíveis), aqui a "
-        "relação causa-efeito entre duas variáveis é conhecida de propósito, com "
-        "defasagem, confundidor e ruído configuráveis. Ideal para praticar inferência "
-        "causal, teste A/B e marketing mix modeling com o gabarito certo na mão."
+        "relação causa-efeito é conhecida de propósito, construída em cima do setor que "
+        "você já gerou. Ideal para praticar inferência causal, teste A/B e marketing mix "
+        "modeling com o gabarito certo na mão."
     )
 
-    cenario_key = st.selectbox(
-        "Cenário causal",
-        options=list(CENARIOS_CAUSAIS.keys()),
-        format_func=lambda k: CENARIOS_CAUSAIS[k]["nome"],
-    )
-    cfg = CENARIOS_CAUSAIS[cenario_key]
-    st.info(cfg["descricao"])
+    dados_gerados = st.session_state.get("ultima_geracao")
+    if not dados_gerados:
+        st.info(
+            "Gere uma base primeiro na aba '🏭 Gerador de Setores' (escolha um setor, defina "
+            "o período e clique em 'Gerar base agora'). O cenário causal é construído em "
+            "cima dela."
+        )
+        return
 
-    col1, col2, col3 = st.columns(3)
+    nome_setor = dados_gerados["nome"]
+    tabelas = dados_gerados["tabelas"]
+    fato_keys = [k for k in tabelas if k.startswith("Fato")]
+
+    if not fato_keys:
+        st.warning("Essa base não tem nenhuma tabela fato pra usar como cenário causal.")
+        return
+
+    fato_escolhido = (
+        st.selectbox("Tabela fato", fato_keys) if len(fato_keys) > 1 else fato_keys[0]
+    )
+    df_fato = tabelas[fato_escolhido]
+
+    col_data = _detectar_coluna_data(df_fato)
+    if not col_data:
+        st.warning(f"A tabela '{fato_escolhido}' não tem coluna de data pra montar uma série temporal.")
+        return
+
+    colunas_num = _colunas_numericas_validas(df_fato)
+    if len(colunas_num) < 2:
+        st.warning(
+            f"A tabela '{fato_escolhido}' precisa de pelo menos 2 colunas numéricas "
+            f"(fora chaves) pra montar causa e efeito."
+        )
+        return
+
+    st.success(f"Usando a base de **{nome_setor}** (tabela **{fato_escolhido}**) como cenário causal.")
+
+    col1, col2 = st.columns(2)
     with col1:
-        n_periodos = st.slider("Quantos períodos gerar?", 26, 156, 78)
+        col_causa = st.selectbox("Qual coluna é a CAUSA?", colunas_num, key="causal_col_causa")
     with col2:
-        efeito_pct = st.slider(
-            "Força do efeito causal (%)", 5, 60, cfg["efeito_padrao_pct"],
-            help="Quanto maior, mais forte a causa realmente empurra o efeito.",
+        opcoes_efeito = [c for c in colunas_num if c != col_causa]
+        col_efeito_label = st.selectbox(
+            "Qual coluna representa o EFEITO?", opcoes_efeito, key="causal_col_efeito",
+            help="Só o nome é usado como referência temática, o valor gerado é simulado (veja o gabarito).",
         )
+
+    direcao_texto = st.radio("A causa AUMENTA ou REDUZ o efeito?", ["Aumenta", "Reduz"], horizontal=True)
+    direcao = 1 if direcao_texto == "Aumenta" else -1
+
+    tem_confundidor = st.toggle("Incluir um confundidor (sazonalidade)?", value=True)
+
+    col3, col4, col5 = st.columns(3)
     with col3:
-        defasagem = st.slider(
-            f"Defasagem ({cfg['granularidade']}s)", 0, 8, cfg["defasagem_padrao"],
-            help="Quantos períodos depois da causa o efeito realmente aparece.",
-        )
+        efeito_pct = st.slider("Força do efeito causal (%)", 5, 60, 20)
+    with col4:
+        defasagem = st.slider("Defasagem (semanas)", 0, 8, 2)
+    with col5:
+        ruido_pct = st.slider("Intensidade do ruído (%)", 0, 50, 15)
 
-    ruido_pct = st.slider(
-        "Intensidade do ruído estatístico (%)", 0, 50, 15,
-        help="Quanto maior, mais difícil enxergar a relação causal no meio do barulho, "
-             "mais parecido com dado real.",
-    )
+    if st.button("🧬 Gerar cenário causal", type="primary", use_container_width=True, key="btn_gerar_causal"):
+        try:
+            df_causal, gabarito = gerar_cenario_causal_do_setor(
+                df_fato, col_data, col_causa, col_efeito_label, direcao, tem_confundidor,
+                efeito_pct, defasagem, ruido_pct, nome_setor, fato_escolhido,
+            )
+        except ValueError as e:
+            st.error(str(e))
+            return
 
-    if st.button("🧬 Gerar dados causais", type="primary", use_container_width=True, key="btn_gerar_causal"):
-        df, gabarito = gerar_dados_causais(cenario_key, n_periodos, efeito_pct, defasagem, ruido_pct)
-        st.session_state["causal_df"] = df
+        st.session_state["causal_df"] = df_causal
         st.session_state["causal_gabarito"] = gabarito
-        st.session_state["causal_cfg"] = cfg
-        registrar_evento("gerou_dados_causais", setor=cfg["nome"], volume=n_periodos, status="sucesso")
+        registrar_evento("gerou_dados_causais", setor=nome_setor, volume=len(df_causal), status="sucesso")
 
     if "causal_df" not in st.session_state:
         return
 
     df = st.session_state["causal_df"]
-    cfg_atual = st.session_state["causal_cfg"]
     gabarito = st.session_state["causal_gabarito"]
+    colunas_grafico = [c for c in df.columns if c != "data" and "Sazonalidade" not in c]
 
     st.markdown("### 📈 Causa e efeito ao longo do tempo")
-    fig = px.line(
-        df, x="data", y=[cfg_atual["causa_nome"], cfg_atual["efeito_nome"]],
-        labels={"value": "", "variable": "", "data": ""},
-    )
+    fig = px.line(df, x="data", y=colunas_grafico, labels={"value": "", "variable": "", "data": ""})
     st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("### 🔬 Amostra dos dados")
