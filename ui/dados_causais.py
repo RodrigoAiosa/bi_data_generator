@@ -178,26 +178,54 @@ def render_dados_causais() -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        col_causa = st.selectbox("Qual coluna é a CAUSA?", colunas_num, key="causal_col_causa")
+        col_causa = st.selectbox(
+            "Qual coluna é a CAUSA?", colunas_num, key="causal_col_causa",
+            help="A variável que, na sua hipótese, provoca a mudança na outra. Os valores "
+                 "usados são os REAIS da base que você gerou, agregados por semana.",
+        )
     with col2:
         opcoes_efeito = [c for c in colunas_num if c != col_causa]
         col_efeito_label = st.selectbox(
             "Qual coluna representa o EFEITO?", opcoes_efeito, key="causal_col_efeito",
-            help="Só o nome é usado como referência temática, o valor gerado é simulado (veja o gabarito).",
+            help="Só o nome é usado como referência temática: o valor gerado é 100% "
+                 "simulado pela fórmula causal (confira no gabarito depois de gerar).",
         )
 
-    direcao_texto = st.radio("A causa AUMENTA ou REDUZ o efeito?", ["Aumenta", "Reduz"], horizontal=True)
+    direcao_texto = st.radio(
+        "A causa AUMENTA ou REDUZ o efeito?", ["Aumenta", "Reduz"], horizontal=True,
+        help="Define a direção da relação: aumentar a causa também aumenta o efeito "
+             "(positiva, ex.: marketing → vendas), ou aumentar a causa reduz o efeito "
+             "(negativa, ex.: preço → demanda).",
+    )
     direcao = 1 if direcao_texto == "Aumenta" else -1
 
-    tem_confundidor = st.toggle("Incluir um confundidor (sazonalidade)?", value=True)
+    tem_confundidor = st.toggle(
+        "Incluir um confundidor (sazonalidade)?", value=True,
+        help="Um confundidor é uma terceira variável que afeta o efeito por fora da causa "
+             "escolhida (aqui, uma sazonalidade cíclica ao longo do ano). Ajuda a treinar a "
+             "diferença entre correlação espúria e causalidade real.",
+    )
 
     col3, col4, col5 = st.columns(3)
     with col3:
-        efeito_pct = st.slider("Força do efeito causal (%)", 5, 60, 20)
+        efeito_pct = st.slider(
+            "Força do efeito causal (%)", 5, 60, 20,
+            help="Quanto maior, mais forte a causa realmente empurra o efeito, tornando a "
+                 "relação mais fácil de detectar numa análise estatística.",
+        )
     with col4:
-        defasagem = st.slider("Defasagem (semanas)", 0, 8, 2)
+        defasagem = st.slider(
+            "Defasagem (semanas)", 0, 8, 2,
+            help="Quantas semanas depois da causa o efeito realmente aparece. Testar "
+                 "correlação sem considerar essa defasagem tende a esconder ou subestimar "
+                 "a relação real.",
+        )
     with col5:
-        ruido_pct = st.slider("Intensidade do ruído (%)", 0, 50, 15)
+        ruido_pct = st.slider(
+            "Intensidade do ruído (%)", 0, 50, 15,
+            help="Quanto maior, mais difícil enxergar a relação causal no meio do barulho "
+                 "estatístico, mais parecido com dado do mundo real.",
+        )
 
     if st.button("🧬 Gerar cenário causal", type="primary", use_container_width=True, key="btn_gerar_causal"):
         try:
