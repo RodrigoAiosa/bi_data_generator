@@ -201,6 +201,7 @@ html, body, .main, [data-testid="stAppViewContainer"] {
     width: 100%;
     height: 190px;
     box-sizing: border-box;
+    margin-bottom: 16px;
 }
 .stat-card:hover {
     transform: translateY(-4px);
