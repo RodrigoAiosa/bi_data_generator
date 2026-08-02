@@ -4,7 +4,7 @@ Gerador de **dados fictícios em modelo estrela** (fato + dimensões + calendár
 
 Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário, medidas DAX sugeridas, modelo TMDL pronto para o Power BI, dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
 
-O app principal tem **3 abas**: o Gerador de Setores (100 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente) e o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft).
+O app principal tem **4 abas**: o Gerador de Setores (100 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft) e o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou).
 
 > Aplicação construída em **Streamlit** e distribuída publicamente em:
 > 🔗 **https://rodrigoaiosa.streamlit.app**
@@ -26,6 +26,7 @@ O app principal tem **3 abas**: o Gerador de Setores (100 bases prontas), o Auto
 - [Modo anomalias, deriva temporal e case de negócio](#-modo-anomalias-deriva-temporal-e-case-de-negócio)
 - [Automatizar BI (suas próprias planilhas)](#-automatizar-bi-suas-próprias-planilhas)
 - [Simulador de Certificação PL-300](#-simulador-de-certificação-pl-300)
+- [Dados Causais (relação causa-efeito conhecida)](#-dados-causais-relação-causa-efeito-conhecida)
 - [Log de acesso e painel de uso](#-log-de-acesso-e-painel-de-uso)
 - [Internacionalização (PT/EN)](#-internacionalização-ptEN)
 - [Deploy no Streamlit Cloud](#-deploy-no-streamlit-cloud)
@@ -87,6 +88,7 @@ bi_data_generator/
 │   ├── resultado.py               # Métricas, preview de tabelas, medidas DAX, gabarito e download do ZIP
 │   ├── automatizar_bi.py           # Aba "Automatizar BI": upload de planilha, tipos, medidas e TMDL
 │   └── simulador_pl300.py           # Aba "Simulador PL-300": quiz de prática para a certificação
+│   └── dados_causais.py             # Aba "Dados Causais": relação causa-efeito conhecida, em cima do setor gerado
 │
 ├── styles/
 │   ├── css.py                   # CSS customizado injetado no Streamlit (tema Power BI: amarelo/preto)
@@ -160,7 +162,7 @@ streamlit run app.py
 
 ## 🖱 Como usar o app
 
-O app abre com **3 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI" e "🎓 Simulador PL-300".
+O app abre com **4 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300" e "🧬 Dados Causais".
 
 ### Aba 🏭 Gerador de Setores
 
@@ -178,6 +180,7 @@ O app abre com **3 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI" e "�
    - O **botão de download** do `.zip` completo.
 8. Baixe o **dicionário de dados** (Excel/CSV zipado) com a descrição de cada tabela e coluna.
 9. *(Opcional)* Na barra lateral, gere o **script SQL** (DDL, INSERT ou completo) no dialeto desejado.
+10. *(Opcional)* Se você já gerou um cenário na aba "🧬 Dados Causais" **antes** de clicar em "Baixar Base", o `.zip` também inclui o CSV causal e o gabarito (veja a seção dedicada).
 
 ### Aba 🤖 Automatizar BI
 
@@ -186,6 +189,10 @@ Veja a seção [Automatizar BI (suas próprias planilhas)](#-automatizar-bi-suas
 ### Aba 🎓 Simulador PL-300
 
 Veja a seção [Simulador de Certificação PL-300](#-simulador-de-certificação-pl-300) para o passo a passo completo.
+
+### Aba 🧬 Dados Causais
+
+Veja a seção [Dados Causais (relação causa-efeito conhecida)](#-dados-causais-relação-causa-efeito-conhecida) para o passo a passo completo.
 
 ---
 
@@ -444,6 +451,7 @@ Em setores onde uma fato referencia outra fato (ex.: despesas ou abastecimentos 
 - **Tema visual customizado** (`styles/css.py`), inspirado na paleta oficial do Power BI (amarelo e preto).
 - **Automatizar BI** (`ui/automatizar_bi.py`): envie sua própria planilha (.csv/.xlsx) e receba medidas DAX completas, tabela Calendario e modelo TMDL, gerados automaticamente a partir das colunas reais que você enviou.
 - **Simulador de Certificação PL-300** (`ui/simulador_pl300.py`): quiz de prática com perguntas originais nos 4 domínios oficiais do exame, com correção, nota por domínio, explicação e download do resultado em CSV para acompanhar a evolução ao longo do tempo.
+- **Dados Causais** (`ui/dados_causais.py`): gera uma relação causa-efeito conhecida de propósito (com defasagem, confundidor e ruído configuráveis) em cima do setor que você já gerou, com gabarito causal documentado.
 - **Log de acesso** (`log_acesso.py`): registra uso real do app numa planilha Google Sheets, com um painel de análise separado ([`dash_bi_data_generator`](https://github.com/RodrigoAiosa/dash_bi_data_generator)).
 
 ---
@@ -549,6 +557,34 @@ Este simulador não substitui o exame real nem o material oficial. Um expansor n
 - [Practice Assessment oficial (gratuito), no Microsoft Learn](https://learn.microsoft.com/en-us/credentials/certifications/data-analyst-associate/practice/assessment?assessment-type=practice&assessmentId=48&practice-assessment-type=certification)
 - [Guia de estudo oficial da prova](https://aka.ms/pl300-StudyGuide)
 - [Página da certificação PL-300](https://learn.microsoft.com/en-us/credentials/certifications/data-analyst-associate/)
+
+---
+
+## 🧬 Dados Causais (relação causa-efeito conhecida)
+
+Diferente do resto do gerador, onde os dados são só **estatisticamente plausíveis**, essa aba constrói uma relação de causa e efeito **conhecida de propósito**, em cima do setor que você já gerou. Serve para praticar inferência causal, teste A/B e marketing mix modeling com a resposta certa documentada, algo que datasets sintéticos comuns não oferecem.
+
+### Como funciona
+
+1. Gere uma base normalmente na aba "🏭 Gerador de Setores" primeiro (a aba "Dados Causais" avisa e pede isso, caso ainda não tenha sido feito).
+2. Escolha, entre as colunas numéricas reais da tabela fato daquele setor, **qual coluna é a CAUSA** e **qual coluna representa o EFEITO**.
+3. Defina se a causa **aumenta** ou **reduz** o efeito, se quer incluir um **confundidor** (uma sazonalidade cíclica que afeta o efeito por fora da causa escolhida), a **força do efeito causal** (%), a **defasagem** (quantas semanas depois a causa realmente aparece no efeito) e a **intensidade do ruído** estatístico.
+4. Clique em **"🧬 Gerar cenário causal"**.
+
+### O que é real e o que é simulado
+
+- A coluna de **causa** usa os **valores reais** da sua base, agregados por semana.
+- A coluna de **efeito** é **100% simulada** pela fórmula causal (defasagem + confundidor + ruído). Ela não usa os valores reais da coluna escolhida na base original, isso é necessário para garantir que o gabarito seja confiável.
+- Um expansor colapsado ("🔍 Ver gabarito causal") documenta a força do efeito, a defasagem exata, se há confundidor e a intensidade do ruído usados.
+
+### Validação
+
+Em testes com vários setores diferentes, a correlação medida **com a defasagem correta é sempre mais forte** do que sem considerar a defasagem (ex.: de 0,21 para 0,93 num teste real), confirmando que o mecanismo causal realmente se manifesta nos dados gerados, não é só uma promessa.
+
+### Downloads
+
+- Dentro da própria aba: **"📥 Baixar dados (.csv)"** e **"📥 Baixar gabarito causal (.txt)"**.
+- Se você já tiver gerado um cenário causal **antes** de clicar em "Baixar Base" na aba "Gerador de Setores", o `.zip` principal daquele setor também inclui automaticamente o CSV causal (nomeado `fato_<setor>_causais.csv`) e o `gabarito_causal.txt`.
 
 ---
 
