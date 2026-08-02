@@ -257,7 +257,8 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: 
     tabelas_para_zip = tabelas
     if "causal_df" in st.session_state and "causal_gabarito" in st.session_state:
         tabelas_para_zip = dict(tabelas)
-        tabelas_para_zip["DadosCausais"] = st.session_state["causal_df"]
+        nome_causal_limpo = nome.replace(" ", "_").replace("&", "e").replace("/", "_")
+        tabelas_para_zip[f"fato_{nome_causal_limpo}_causais"] = st.session_state["causal_df"]
         extra_files["gabarito_causal.txt"] = montar_gabarito_causal_txt(st.session_state["causal_gabarito"])
 
     render_resultado(nome, tabelas_para_zip, extra_files=extra_files)
