@@ -43,7 +43,7 @@ def _e_coluna_chave(col: str) -> bool:
 
 
 def _colunas_numericas_fato(fato: pd.DataFrame) -> list:
-    """Colunas numéricas 'de negócio' da fato — ignora chaves e colunas técnicas."""
+    """Colunas numéricas 'de negócio' da fato, ignora chaves e colunas técnicas."""
     colunas = []
     for c in fato.columns:
         if _e_coluna_chave(c):
@@ -140,7 +140,7 @@ def _medidas_de_uma_fato(
     setor: garantem que, quando duas fatos diferentes produziriam a MESMA
     medida (ex.: duas fatos com FK para a mesma dimensão, ou o mesmo nome de
     coluna de negócio), a segunda ocorrência ganhe um sufixo com o nome da
-    fato — evitando medidas duplicadas no modelo (erro no Power BI/TMDL).
+    fato, evitando medidas duplicadas no modelo (erro no Power BI/TMDL).
     """
     fato = dados_setor[fato_key]
     pk_propria = fato.columns[0] if len(fato.columns) else None
@@ -164,7 +164,7 @@ def _medidas_de_uma_fato(
     }
 
     # Resolve, uma única vez por coluna, o título "efetivo" (com ou sem
-    # sufixo de desambiguação) — usado de forma consistente nas 3 seções
+    # sufixo de desambiguação), usado de forma consistente nas 3 seções
     # abaixo (agregações, % participação e time intelligence), já que elas
     # se referenciam por nome dentro da MESMA fato.
     titulo_efetivo = {}
@@ -206,7 +206,7 @@ def _medidas_de_uma_fato(
     # ---- 2. Contagens ---------------------------------------------------------
     nome_registros = "Qtde de Registros"
     if multi_fato:
-        # "Qtde de Registros" é o mesmo literal para qualquer fato — em
+        # "Qtde de Registros" é o mesmo literal para qualquer fato, em
         # setores multi-fato SEMPRE colide, então sempre desambiguamos.
         nome_registros = f"Qtde de Registros ({sufixo})"
     medidas["🔢 Contagens"].append({
@@ -251,6 +251,7 @@ def _medidas_de_uma_fato(
             medidas["📅 Time Intelligence (MoM / YoY / YTD / MTD)"].extend([
                 {
                     "nome": f"{titulo} Mês Anterior",
+                    "titulo": titulo,
                     "formula": (
                         f"{titulo} Mês Anterior =\n"
                         f"CALCULATE(\n"
@@ -262,6 +263,7 @@ def _medidas_de_uma_fato(
                 },
                 {
                     "nome": f"{titulo} %MoM",
+                    "titulo": titulo,
                     "formula": (
                         f"{titulo} %MoM =\n"
                         f"DIVIDE(\n"
@@ -273,6 +275,7 @@ def _medidas_de_uma_fato(
                 },
                 {
                     "nome": f"{titulo} Ano Anterior",
+                    "titulo": titulo,
                     "formula": (
                         f"{titulo} Ano Anterior =\n"
                         f"CALCULATE(\n"
@@ -284,6 +287,7 @@ def _medidas_de_uma_fato(
                 },
                 {
                     "nome": f"{titulo} %YoY",
+                    "titulo": titulo,
                     "formula": (
                         f"{titulo} %YoY =\n"
                         f"DIVIDE(\n"
@@ -295,11 +299,13 @@ def _medidas_de_uma_fato(
                 },
                 {
                     "nome": f"{titulo} Acumulado no Ano (YTD)",
+                    "titulo": titulo,
                     "formula": f"{titulo} Acumulado no Ano (YTD) = TOTALYTD([Total {titulo}], dCalendario[Data])",
                     "descricao": f"Acumulado de {titulo} desde o início do ano até a data em contexto.",
                 },
                 {
                     "nome": f"{titulo} Acumulado no Mês (MTD)",
+                    "titulo": titulo,
                     "formula": f"{titulo} Acumulado no Mês (MTD) = TOTALMTD([Total {titulo}], dCalendario[Data])",
                     "descricao": f"Acumulado de {titulo} desde o início do mês até a data em contexto.",
                 },
@@ -315,7 +321,7 @@ def gerar_bateria_medidas(dados_setor: dict) -> dict:
     setores multi-fato).
 
     Em setores com mais de uma tabela fato, desambigua automaticamente
-    medidas que colidiriam (mesmo nome vindo de fatos diferentes — ex.: duas
+    medidas que colidiriam (mesmo nome vindo de fatos diferentes, ex.: duas
     fatos com FK para a mesma dimensão, ou colunas de negócio com o mesmo
     nome) acrescentando o nome da fato entre parênteses, evitando o erro de
     "measure duplicada" no Power BI/TMDL.
