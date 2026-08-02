@@ -123,7 +123,7 @@ def gerar_cenario_causal_do_setor(
     return df_final, gabarito
 
 
-def _montar_gabarito_txt(gabarito: dict) -> str:
+def montar_gabarito_causal_txt(gabarito: dict) -> str:
     linhas = ["GABARITO CAUSAL (não olhe antes de tentar sua própria análise)", ""]
     for chave, valor in gabarito.items():
         linhas.append(f"{chave}: {valor}")
@@ -271,7 +271,7 @@ def render_dados_causais() -> None:
     with col_dl2:
         st.download_button(
             "📥 Baixar gabarito causal (.txt)",
-            data=_montar_gabarito_txt(gabarito).encode("utf-8"),
+            data=montar_gabarito_causal_txt(gabarito).encode("utf-8"),
             file_name="gabarito_causal.txt",
             mime="text/plain",
             use_container_width=True,
