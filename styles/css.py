@@ -198,8 +198,8 @@ html, body, .main, [data-testid="stAppViewContainer"] {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    min-height: 190px;
+    width: 100%;
+    height: 190px;
     box-sizing: border-box;
 }
 .stat-card:hover {
@@ -230,7 +230,7 @@ html, body, .main, [data-testid="stAppViewContainer"] {
     -webkit-box-orient: vertical;
     overflow: hidden;
     width: 100%;
-    min-height: 2.4em;
+    height: 2.4em;
     align-items: center;
     justify-content: center;
 }
@@ -253,6 +253,11 @@ div[data-testid="column"]:has(.stat-card) > div {
 div[data-testid="column"]:has(.stat-card) [data-testid="stMarkdownContainer"] {
     display: flex;
     width: 100%;
+}
+/* Espaçamento consistente entre as linhas quando os cards quebram de linha */
+div[data-testid="stHorizontalBlock"]:has(.stat-card) {
+    row-gap: 16px !important;
+    flex-wrap: wrap !important;
 }
 
 /* ── SECTOR CARDS (flip 3D) ── */
