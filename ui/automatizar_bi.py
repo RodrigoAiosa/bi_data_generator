@@ -321,6 +321,7 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
                 medidas["📅 Time Intelligence (MoM / YoY / YTD / MTD)"].extend([
                     {
                         "nome": f"{titulo} Mês Anterior",
+                        "titulo": titulo,
                         "formula": (
                             f"{titulo} Mês Anterior =\n"
                             f"CALCULATE(\n"
@@ -332,6 +333,7 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
                     },
                     {
                         "nome": f"{titulo} %MoM",
+                        "titulo": titulo,
                         "formula": (
                             f"{titulo} %MoM =\n"
                             f"DIVIDE(\n"
@@ -343,6 +345,7 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
                     },
                     {
                         "nome": f"{titulo} Ano Anterior",
+                        "titulo": titulo,
                         "formula": (
                             f"{titulo} Ano Anterior =\n"
                             f"CALCULATE(\n"
@@ -354,6 +357,7 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
                     },
                     {
                         "nome": f"{titulo} %YoY",
+                        "titulo": titulo,
                         "formula": (
                             f"{titulo} %YoY =\n"
                             f"DIVIDE(\n"
@@ -365,11 +369,13 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
                     },
                     {
                         "nome": f"{titulo} Acumulado no Ano (YTD)",
+                        "titulo": titulo,
                         "formula": f"{titulo} Acumulado no Ano (YTD) = TOTALYTD([Total {titulo}], Calendario[Data])",
                         "descricao": f"Acumulado de {titulo} desde o início do ano até a data em contexto.",
                     },
                     {
                         "nome": f"{titulo} Acumulado no Mês (MTD)",
+                        "titulo": titulo,
                         "formula": f"{titulo} Acumulado no Mês (MTD) = TOTALMTD([Total {titulo}], Calendario[Data])",
                         "descricao": f"Acumulado de {titulo} desde o início do mês até a data em contexto.",
                     },
@@ -521,6 +527,8 @@ def _medidas_tmdl_bloco(medidas_por_tabela: dict) -> str:
             for m in lista:
                 nome = m["nome"]
                 formula = m["formula"]
+                titulo = m.get("titulo")
+                display_folder = f"{pasta_categoria}\\{titulo}" if titulo else pasta_categoria
                 corpo = formula.split("=", 1)[1].strip() if "=" in formula else formula
                 if "\n" in corpo:
                     linhas.append(f"\t\tmeasure '{nome}' = ```\n")
@@ -529,7 +537,7 @@ def _medidas_tmdl_bloco(medidas_por_tabela: dict) -> str:
                     linhas.append("\t\t\t```\n")
                 else:
                     linhas.append(f"\t\tmeasure '{nome}' = {corpo}\n")
-                linhas.append(f"\t\t\tdisplayFolder: {pasta_categoria}\n\n")
+                linhas.append(f"\t\t\tdisplayFolder: {display_folder}\n\n")
 
     linhas.append("\t\tpartition Medidas = m\n")
     linhas.append("\t\t\tmode: import\n")
