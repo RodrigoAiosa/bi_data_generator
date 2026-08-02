@@ -32,7 +32,7 @@ from ui import (
 )
 from ui.automatizar_bi import render_automatizar_bi
 from ui.simulador_pl300 import render_simulador_pl300
-from ui.dados_causais import render_dados_causais
+from ui.dados_causais import render_dados_causais, montar_gabarito_causal_txt
 
 st.set_page_config(**PAGE_CONFIG)
 
@@ -251,7 +251,16 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: 
     if gabarito_texto:
         extra_files["gabarito.txt"] = gabarito_texto
 
-    render_resultado(nome, tabelas, extra_files=extra_files)
+    # Se um cenário causal já foi gerado na aba "Dados Causais" pra essa
+    # mesma base, inclui ele também no ZIP principal: a tabela em si
+    # (vira um CSV a mais) e o gabarito causal como arquivo de texto.
+    tabelas_para_zip = tabelas
+    if "causal_df" in st.session_state and "causal_gabarito" in st.session_state:
+        tabelas_para_zip = dict(tabelas)
+        tabelas_para_zip["DadosCausais"] = st.session_state["causal_df"]
+        extra_files["gabarito_causal.txt"] = montar_gabarito_causal_txt(st.session_state["causal_gabarito"])
+
+    render_resultado(nome, tabelas_para_zip, extra_files=extra_files)
 
     # ── Gabarito (spoiler, só aparece se houver anomalia/drift ativos) ──────
     if gabarito:
