@@ -1,369 +1,278 @@
 """
-app.py: Entry point do BI Data Generator PRO.
+ui/dados_causais.py: Aba "Dados Causais".
 
-Execute com:
-    streamlit run app.py
+Diferente do resto do gerador (que produz dados só ESTATISTICAMENTE
+plausíveis), aqui a relação causa-efeito entre duas variáveis é conhecida
+de propósito, e é construída EM CIMA do setor que você já gerou na aba
+"Gerador de Setores": a coluna de causa usa os valores reais agregados
+por semana da base gerada; a coluna de efeito é simulada a partir da
+fórmula causal (com defasagem, confundidor e ruído configuráveis), pra
+manter o gabarito 100% confiável.
+
+Serve pra praticar inferência causal, teste A/B e marketing mix modeling
+com um cenário onde a resposta certa é conhecida de antemão, em cima dos
+seus próprios dados gerados, não de um exemplo genérico desconectado.
 """
-
-import random
-import time
-
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
-from config import PAGE_CONFIG, SETORES
-from generators.dicionario import gerar_dicionario
-from generators.case_negocio import gerar_case_negocio, detectar_kpi_label
-from generators.concept_drift import injetar_concept_drift
-from log_acesso import iniciar_sessao, registrar_evento
-from i18n import t
-from styles.css import inject_css
-try:
-    from styles.seo import inject_seo
-except Exception:
-    def inject_seo(lang: str = "pt") -> None:
-        pass  # seo.py não encontrado, SEO desabilitado
-from ui import (
-    render_estado_inicial,
-    render_hero,
-    render_resultado,
-    render_sidebar,
-)
-from ui.automatizar_bi import render_automatizar_bi
-from ui.simulador_pl300 import render_simulador_pl300
-from ui.dados_causais import render_dados_causais, montar_gabarito_causal_txt
-
-st.set_page_config(**PAGE_CONFIG)
-
-# ── Strings de anomalia e deriva temporal ────────────────────────────────────
-_ANOMALY_LABEL = {"pt": "🧪 Injetar anomalias nos dados", "en": "🧪 Inject anomalies into data"}
-_ANOMALY_HELP  = {
-    "pt": "Adiciona problemas reais: spike de churn, produto com margem negativa, sazonalidade extrema e outliers de valor. Ideal para praticar análise de causa raiz.",
-    "en": "Adds real-world issues: churn spike, negative-margin product, extreme seasonality and value outliers. Great for practicing root-cause analysis.",
-}
-_ANOMALY_BADGE = {
-    "pt": "⚠️ **Modo anomalia ativo**: dados contém problemas intencionais para análise de causa raiz.",
-    "en": "⚠️ **Anomaly mode active**: data contains intentional issues for root-cause analysis.",
-}
-_DRIFT_LABEL = {"pt": "🧬 Simular deriva temporal (concept drift)", "en": "🧬 Simulate temporal drift (concept drift)"}
-_DRIFT_HELP  = {
-    "pt": "Faz uma categoria ganhar participação aos poucos ao longo do período, sem evento único que explique. Ideal para praticar detecção de tendência/mudança de comportamento.",
-    "en": "Gradually shifts a category's share over the period, with no single event to explain it. Great for practicing trend and behavior-change detection.",
-}
-_DRIFT_BADGE = {
-    "pt": "🧬 **Deriva temporal ativa**: a participação de uma categoria muda gradualmente ao longo do período.",
-    "en": "🧬 **Temporal drift active**: one category's share shifts gradually over the period.",
-}
-_GABARITO_TITULO = {
-    "pt": "🔍 Ver gabarito (spoiler: revela onde estão as anomalias/deriva)",
-    "en": "🔍 View answer key (spoiler: reveals where the anomalies/drift are)",
-}
-_CASE_TITULO = {"pt": "📖 Seu case de negócio", "en": "📖 Your business case"}
-
-# ── Passos da barra de progresso ─────────────────────────────────────────────
-_STEPS_PT = ["Criando dimensões…", "Gerando tabela fato…", "Calculando métricas…", "Compactando ZIP…"]
-_STEPS_EN = ["Building dimensions…", "Generating fact table…", "Computing metrics…", "Compressing ZIP…"]
+from log_acesso import registrar_evento
 
 
-def _get_lang() -> str:
-    from i18n import get_lang
-    return get_lang()
+def _detectar_coluna_data(df: pd.DataFrame) -> str | None:
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            return col
+    for col in df.columns:
+        if any(p in col.lower() for p in ["data", "date", "dt_"]):
+            return col
+    return None
 
 
-def _fmt_num_br(v, decimals=2):
-    """Formata número no padrão brasileiro: ponto como milhar, vírgula como decimal."""
-    s = f"{v:,.{decimals}f}"
-    return s.translate(str.maketrans({",": "\x00", ".": ","})).replace("\x00", ".")
-
-
-# ── Injeção de anomalias ─────────────────────────────────────────────────────
-
-def _injetar_anomalias(tabelas: dict[str, pd.DataFrame]) -> tuple[dict[str, pd.DataFrame], list[dict]]:
+def _colunas_numericas_validas(df: pd.DataFrame) -> list:
     """
-    Injeta 4 tipos de anomalias nos dados para prática de análise de causa raiz:
-      1. Spike de churn / cancelamentos em um mês aleatório
-      2. Produto / item com margem negativa
-      3. Sazonalidade extrema (queda abrupta num trimestre)
-      4. Outliers de valor (registros com valores 10 a 30x acima da média)
-
-    Retorna as tabelas modificadas e o gabarito: uma lista com o que foi
-    alterado exatamente, para quem ensina conferir se a análise do aluno
-    encontrou o problema certo.
+    Colunas candidatas a causa/efeito: numéricas de verdade (excluindo
+    chave/FK, tipo id_*/sk_*) mais colunas booleanas (tratadas como
+    taxa 0/1, ex.: 'usou_personal'), o que amplia bastante quais setores
+    têm pelo menos 2 métricas utilizáveis nesse cenário.
     """
-    tabelas = {k: v.copy() for k, v in tabelas.items()}
-    gabarito: list[dict] = []
-
-    fato_key = next((k for k in tabelas if k.startswith("Fato")), None)
-    if fato_key is None:
-        return tabelas, gabarito
-
-    fato = tabelas[fato_key]
-    num_cols = fato.select_dtypes(include="number").columns.tolist()
-    date_cols = [c for c in fato.columns if "data" in c.lower() or "date" in c.lower()]
-    bool_cols = [c for c in fato.columns if fato[c].dtype == bool]
-    val_col   = next((c for c in num_cols if any(k in c for k in ["valor","receita","preco","total","mrr"])), num_cols[0] if num_cols else None)
-
-    # Garante dtype float na coluna de valor: evita erro do pandas ao atribuir
-    # multiplicadores fracionários (sazonalidade/outliers) numa coluna int64.
-    if val_col is not None and pd.api.types.is_integer_dtype(fato[val_col]):
-        fato[val_col] = fato[val_col].astype(float)
-
-    # 1. Spike de churn / cancelamentos num mês aleatório
-    if bool_cols and date_cols:
-        try:
-            date_col = date_cols[0]
-            fato[date_col] = pd.to_datetime(fato[date_col], errors="coerce")
-            meses = fato[date_col].dt.month.dropna().unique()
-            mes_spike = random.choice(list(meses))
-            mask = fato[date_col].dt.month == mes_spike
-            fato.loc[mask, bool_cols[0]] = True   # força cancelamento/churn no mês
-            gabarito.append({
-                "tipo": "Spike de Cancelamento/Churn",
-                "localizacao": f"Mês {int(mes_spike)} (coluna '{bool_cols[0]}', tabela {fato_key})",
-                "detalhe": f"Todos os registros de {fato_key} no mês {int(mes_spike)} tiveram '{bool_cols[0]}' forçado para True. {int(mask.sum())} linhas afetadas.",
-            })
-        except Exception:
-            pass
-
-    # 2. Produto / categoria com margem negativa
-    margem_cols = [c for c in num_cols if "margem" in c or "lucro" in c or "desconto" in c]
-    if margem_cols:
-        if pd.api.types.is_integer_dtype(fato[margem_cols[0]]):
-            fato[margem_cols[0]] = fato[margem_cols[0]].astype(float)
-        n_neg = max(1, int(len(fato) * 0.04))
-        idx = fato.sample(n_neg).index
-        media_original = fato[margem_cols[0]].mean()
-        fato.loc[idx, margem_cols[0]] = -abs(media_original) * np.random.uniform(1.1, 2.5, n_neg)
-        gabarito.append({
-            "tipo": "Margem/Lucro Negativo Artificial",
-            "localizacao": f"{n_neg} registros aleatórios (coluna '{margem_cols[0]}', tabela {fato_key})",
-            "detalhe": f"Valores de '{margem_cols[0]}' foram forçados para negativo (entre 1,1x e 2,5x a média original, em módulo). Média original antes da alteração: {_fmt_num_br(media_original)}.",
-        })
-
-    # 3. Sazonalidade extrema: queda de 70% num trimestre aleatório
-    if val_col and date_cols:
-        try:
-            date_col = date_cols[0]
-            trimestres = fato[date_col].dt.quarter.dropna().unique()
-            trim_queda = random.choice(list(trimestres))
-            mask = fato[date_col].dt.quarter == trim_queda
-            fato.loc[mask, val_col] = fato.loc[mask, val_col] * 0.30
-            gabarito.append({
-                "tipo": "Queda Artificial de Sazonalidade",
-                "localizacao": f"Trimestre Q{int(trim_queda)} (coluna '{val_col}', tabela {fato_key})",
-                "detalhe": f"Valores de '{val_col}' no Q{int(trim_queda)} foram reduzidos para 30% do valor original (queda de 70%). {int(mask.sum())} linhas afetadas.",
-            })
-        except Exception:
-            pass
-
-    # 4. Outliers de valor (1% dos registros com valores extremos)
-    if val_col:
-        n_out = max(1, int(len(fato) * 0.01))
-        idx = fato.sample(n_out).index
-        media = fato[val_col].mean()
-        fato.loc[idx, val_col] = media * np.random.uniform(10, 30, n_out)
-        gabarito.append({
-            "tipo": "Outliers de Valor",
-            "localizacao": f"{n_out} registros aleatórios (coluna '{val_col}', tabela {fato_key})",
-            "detalhe": f"Valores foram multiplicados por um fator entre 10x e 30x a média. Média original antes da alteração: {_fmt_num_br(media)}.",
-        })
-
-    tabelas[fato_key] = fato
-    return tabelas, gabarito
+    numericas = df.select_dtypes(include="number").columns.tolist()
+    booleanas = df.select_dtypes(include="bool").columns.tolist()
+    candidatas = [c for c in numericas if not c.lower().startswith(("id_", "sk_"))]
+    candidatas += booleanas
+    return candidatas
 
 
-# ── Barra de progresso ────────────────────────────────────────────────────────
+def gerar_cenario_causal_do_setor(
+    df_fato: pd.DataFrame, col_data: str, col_causa: str, col_efeito_label: str,
+    direcao: int, tem_confundidor: bool, efeito_pct: float, defasagem: int,
+    ruido_pct: float, nome_setor: str, fato_nome: str, seed: int | None = None,
+) -> tuple[pd.DataFrame, dict]:
+    """
+    Monta a série temporal real (agregada por semana) da coluna de causa
+    escolhida, a partir da base já gerada, e calcula um efeito SIMULADO
+    causalmente a partir dela (com defasagem, confundidor e ruído). O
+    gabarito documenta exatamente o que é real e o que é simulado.
+    """
+    rng = np.random.default_rng(seed)
 
-def _gerar_com_progresso(setor: str, n_linhas: int, data_inicio, data_fim, anomalia: bool, drift: bool) -> tuple[dict, list[dict]]:
-    """Gera os dados exibindo barra de progresso com etapas reais. Retorna (tabelas, gabarito)."""
-    lang   = _get_lang()
-    steps  = _STEPS_EN if lang == "en" else _STEPS_PT
-    fn     = SETORES[setor]
+    df = df_fato[[col_data, col_causa]].copy()
+    df[col_data] = pd.to_datetime(df[col_data], errors="coerce")
+    df = df.dropna(subset=[col_data])
+    if df.empty:
+        raise ValueError("Não foi possível interpretar a coluna de data dessa tabela fato.")
 
-    bar    = st.progress(0, text=steps[0])
-    status = st.empty()
+    serie = df.set_index(col_data).resample("W")[col_causa].sum().reset_index()
+    serie.columns = ["data", "causa"]
+    n_periodos = len(serie)
+    if n_periodos < 6:
+        raise ValueError(
+            "Poucos períodos pra montar uma série temporal causal (gere a base com um "
+            "período mais longo, pelo menos 6 semanas)."
+        )
 
-    # Etapa 1: dimensões (simulada antes da geração)
-    time.sleep(0.3)
-    bar.progress(20, text=steps[0])
+    causa = serie["causa"].values.astype(float)
+    desvio = causa.std()
+    causa_normalizada = (causa - causa.mean()) / (desvio if desvio else 1)
 
-    # Etapa 2: geração real
-    bar.progress(40, text=steps[1])
-    tabelas = fn(n_linhas, data_inicio, data_fim)
+    confundidor = None
+    if tem_confundidor:
+        confundidor = 1 + 0.15 * np.sin(2 * np.pi * np.arange(n_periodos) / 52)
 
-    # Etapa 3: anomalias / deriva temporal / métricas
-    bar.progress(70, text=steps[2])
-    gabarito: list[dict] = []
-    if anomalia:
-        tabelas, gab_anomalia = _injetar_anomalias(tabelas)
-        gabarito.extend(gab_anomalia)
-    if drift:
-        tabelas, gab_drift = injetar_concept_drift(tabelas)
-        gabarito.extend(gab_drift)
-    time.sleep(0.2)
+    media_abs = float(np.abs(causa).mean())
+    base_efeito = media_abs * 4.0 if media_abs else 100.0
 
-    # Etapa 4: compactação
-    bar.progress(90, text=steps[3])
-    time.sleep(0.2)
+    efeito = np.full(n_periodos, base_efeito)
+    for t in range(n_periodos):
+        t_ref = max(0, t - defasagem)
+        contrib_causal = direcao * (efeito_pct / 100) * base_efeito * causa_normalizada[t_ref]
+        contrib_confundidor = (confundidor[t] - 1) * base_efeito * 0.5 if confundidor is not None else 0.0
+        efeito[t] = base_efeito + contrib_causal + contrib_confundidor
 
-    bar.progress(100, text="✅ Concluído!" if lang == "pt" else "✅ Done!")
-    time.sleep(0.4)
-    bar.empty()
-    status.empty()
+    ruido_efeito = rng.normal(0, base_efeito * (ruido_pct / 100), n_periodos)
+    efeito = np.clip(efeito + ruido_efeito, 0, None)
 
-    return tabelas, gabarito
+    nome_col_efeito = f"{col_efeito_label} (simulado)"
+    df_final = pd.DataFrame({
+        "data": serie["data"],
+        col_causa: causa.round(2),
+        nome_col_efeito: efeito.round(2),
+    })
+    if confundidor is not None:
+        df_final["Índice de Sazonalidade"] = confundidor.round(4)
+
+    gabarito = {
+        "setor": nome_setor,
+        "tabela_fato": fato_nome,
+        "coluna_causa": f"{col_causa} (valores REAIS da base gerada, agregados por semana)",
+        "coluna_efeito": f"{nome_col_efeito} (valores 100% SIMULADOS pela fórmula causal)",
+        "relacao_causal": f"{col_causa} {'AUMENTA' if direcao > 0 else 'REDUZ'} {col_efeito_label}",
+        "forca_do_efeito_pct": efeito_pct,
+        "defasagem_em_semanas": defasagem,
+        "tem_confundidor": tem_confundidor,
+        "intensidade_do_ruido_pct": ruido_pct,
+        "aviso": (
+            f"A coluna '{col_causa}' usa os valores reais agregados por semana da base de "
+            f"'{nome_setor}' que você gerou. Já a coluna '{nome_col_efeito}' não usa os "
+            f"valores reais de '{col_efeito_label}' na base original, ela é inteiramente "
+            f"recalculada pela fórmula causal, pra garantir que o gabarito seja confiável."
+        ),
+    }
+    return df_final, gabarito
 
 
-# ── Formatação do gabarito em texto ──────────────────────────────────────────
-
-def _formatar_gabarito(gabarito: list[dict], lang: str) -> str:
-    if not gabarito:
-        return ""
-    titulo = "GABARITO: Anomalias e Deriva Temporal Injetadas" if lang == "pt" else "ANSWER KEY: Injected Anomalies and Concept Drift"
-    linhas = [titulo, "=" * len(titulo), ""]
-    for i, item in enumerate(gabarito, 1):
-        linhas.append(f"{i}. {item['tipo']}")
-        linhas.append(f"   {'Localização' if lang == 'pt' else 'Location'}: {item['localizacao']}")
-        linhas.append(f"   {'Detalhe' if lang == 'pt' else 'Detail'}: {item['detalhe']}")
-        linhas.append("")
+def montar_gabarito_causal_txt(gabarito: dict) -> str:
+    linhas = ["GABARITO CAUSAL (não olhe antes de tentar sua própria análise)", ""]
+    for chave, valor in gabarito.items():
+        linhas.append(f"{chave}: {valor}")
     return "\n".join(linhas)
 
 
-# ── Render resultado com dicionário ──────────────────────────────────────────
-
-def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: bool, gabarito: list[dict]) -> None:
-    lang = _get_lang()
-
-    if anomalia:
-        st.warning(_ANOMALY_BADGE[lang])
-    if drift:
-        st.warning(_DRIFT_BADGE[lang])
-
-    # ── Case de negócio ─────────────────────────────────────────────────────
-    kpi_label = detectar_kpi_label(tabelas)
-    case_texto = gerar_case_negocio(nome, kpi_label, lang=lang, anomalia_ativa=anomalia, drift_ativo=drift)
-    st.markdown(f'<h3 class="section-header-plain">{_CASE_TITULO[lang]}</h3>', unsafe_allow_html=True)
-    st.markdown(f'<div class="info-box">{case_texto}</div>', unsafe_allow_html=True)
-
-    extra_files = {"case_negocio.txt": case_texto}
-    gabarito_texto = _formatar_gabarito(gabarito, lang)
-    if gabarito_texto:
-        extra_files["gabarito.txt"] = gabarito_texto
-
-    # Se um cenário causal já foi gerado na aba "Dados Causais" pra essa
-    # mesma base, inclui ele também no ZIP principal: a tabela em si
-    # (vira um CSV a mais) e o gabarito causal como arquivo de texto.
-    tabelas_para_zip = tabelas
-    if "causal_df" in st.session_state and "causal_gabarito" in st.session_state:
-        tabelas_para_zip = dict(tabelas)
-        tabelas_para_zip["DadosCausais"] = st.session_state["causal_df"]
-        extra_files["gabarito_causal.txt"] = montar_gabarito_causal_txt(st.session_state["causal_gabarito"])
-
-    render_resultado(nome, tabelas_para_zip, extra_files=extra_files)
-
-    # ── Gabarito (spoiler, só aparece se houver anomalia/drift ativos) ──────
-    if gabarito:
-        with st.expander(_GABARITO_TITULO[lang], expanded=False):
-            for i, item in enumerate(gabarito, 1):
-                st.markdown(f"**{i}. {item['tipo']}**")
-                st.caption(f"{'Localização' if lang == 'pt' else 'Location'}: {item['localizacao']}")
-                st.markdown(item["detalhe"])
-                st.divider()
-
-    # ── Dicionário de dados ──────────────────────────────────────────────────
-    st.markdown("---")
-    label = "📖Dicionário de Dados" if lang == "pt" else "📖 Data Dictionary"
-    hint  = ("Baixe o dicionário Excel com descrição de cada tabela e coluna."
-             if lang == "pt" else
-             "Download the Excel dictionary with descriptions for each table and column.")
-
-    st.markdown(f"**{label}**: {hint}")
-
-    dict_bytes    = gerar_dicionario(nome, tabelas)
-    dict_filename = f"Dicionario_{nome.replace(' ', '_')}.zip"
-
-    st.download_button(
-        label=f"📥 {dict_filename}",
-        data=dict_bytes,
-        file_name=dict_filename,
-        mime="application/zip",
-        use_container_width=True,
-        on_click=lambda: registrar_evento("baixou_dicionario", setor=nome),
+def render_dados_causais() -> None:
+    st.markdown("## 🧬 Dados Causais")
+    st.caption(
+        "Diferente do resto do gerador (dados só estatisticamente plausíveis), aqui a "
+        "relação causa-efeito é conhecida de propósito, construída em cima do setor que "
+        "você já gerou. Ideal para praticar inferência causal, teste A/B e marketing mix "
+        "modeling com o gabarito certo na mão."
     )
 
+    dados_gerados = st.session_state.get("ultima_geracao")
+    if not dados_gerados:
+        st.info(
+            "Gere uma base primeiro na aba '🏭 Gerador de Setores' (escolha um setor, defina "
+            "o período e clique em 'Gerar base agora'). O cenário causal é construído em "
+            "cima dela."
+        )
+        return
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+    nome_setor = dados_gerados["nome"]
+    tabelas = dados_gerados["tabelas"]
+    fato_keys = [k for k in tabelas if k.startswith("Fato")]
 
-def main() -> None:
-    inject_css()
-    inject_seo(lang=_get_lang())
-    render_hero()
+    if not fato_keys:
+        st.warning("Essa base não tem nenhuma tabela fato pra usar como cenário causal.")
+        return
 
-    lang = _get_lang()
-    iniciar_sessao(lang)
-
-    setor, data_inicio, data_fim, n_linhas, gerar = render_sidebar()
-    nome = setor.split(" ", 1)[1]
-
-    # Toggles de anomalia e deriva temporal, abaixo do hero
-    anomalia = st.sidebar.toggle(
-        _ANOMALY_LABEL[lang],
-        value=False,
-        help=_ANOMALY_HELP[lang],
+    fato_escolhido = (
+        st.selectbox("Tabela fato", fato_keys) if len(fato_keys) > 1 else fato_keys[0]
     )
-    drift = st.sidebar.toggle(
-        _DRIFT_LABEL[lang],
-        value=False,
-        help=_DRIFT_HELP[lang],
+    df_fato = tabelas[fato_escolhido]
+
+    col_data = _detectar_coluna_data(df_fato)
+    if not col_data:
+        st.warning(f"A tabela '{fato_escolhido}' não tem coluna de data pra montar uma série temporal.")
+        return
+
+    colunas_num = _colunas_numericas_validas(df_fato)
+    if len(colunas_num) < 2:
+        st.warning(
+            f"A tabela '{fato_escolhido}' precisa de pelo menos 2 colunas numéricas "
+            f"(fora chaves) pra montar causa e efeito."
+        )
+        return
+
+    st.success(f"Usando a base de **{nome_setor}** (tabela **{fato_escolhido}**) como cenário causal.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        col_causa = st.selectbox(
+            "Qual coluna é a CAUSA?", colunas_num, key="causal_col_causa",
+            help="A variável que, na sua hipótese, provoca a mudança na outra. Os valores "
+                 "usados são os REAIS da base que você gerou, agregados por semana.",
+        )
+    with col2:
+        opcoes_efeito = [c for c in colunas_num if c != col_causa]
+        col_efeito_label = st.selectbox(
+            "Qual coluna representa o EFEITO?", opcoes_efeito, key="causal_col_efeito",
+            help="Só o nome é usado como referência temática: o valor gerado é 100% "
+                 "simulado pela fórmula causal (confira no gabarito depois de gerar).",
+        )
+
+    direcao_texto = st.radio(
+        "A causa AUMENTA ou REDUZ o efeito?", ["Aumenta", "Reduz"], horizontal=True,
+        help="Define a direção da relação: aumentar a causa também aumenta o efeito "
+             "(positiva, ex.: marketing → vendas), ou aumentar a causa reduz o efeito "
+             "(negativa, ex.: preço → demanda).",
+    )
+    direcao = 1 if direcao_texto == "Aumenta" else -1
+
+    tem_confundidor = st.toggle(
+        "Incluir um confundidor (sazonalidade)?", value=True,
+        help="Um confundidor é uma terceira variável que afeta o efeito por fora da causa "
+             "escolhida (aqui, uma sazonalidade cíclica ao longo do ano). Ajuda a treinar a "
+             "diferença entre correlação espúria e causalidade real.",
     )
 
-    tab_gerador, tab_automatizar, tab_pl300, tab_causal = st.tabs(
-        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais"]
-    )
+    col3, col4, col5 = st.columns(3)
+    with col3:
+        efeito_pct = st.slider(
+            "Força do efeito causal (%)", 5, 60, 20,
+            help="Quanto maior, mais forte a causa realmente empurra o efeito, tornando a "
+                 "relação mais fácil de detectar numa análise estatística.",
+        )
+    with col4:
+        defasagem = st.slider(
+            "Defasagem (semanas)", 0, 8, 2,
+            help="Quantas semanas depois da causa o efeito realmente aparece. Testar "
+                 "correlação sem considerar essa defasagem tende a esconder ou subestimar "
+                 "a relação real.",
+        )
+    with col5:
+        ruido_pct = st.slider(
+            "Intensidade do ruído (%)", 0, 50, 15,
+            help="Quanto maior, mais difícil enxergar a relação causal no meio do barulho "
+                 "estatístico, mais parecido com dado do mundo real.",
+        )
 
-    with tab_gerador:
-        if gerar:
-            if data_fim <= data_inicio:
-                st.error(t("date_error_stop"))
-                st.stop()
+    if st.button("🧬 Gerar cenário causal", type="primary", use_container_width=True, key="btn_gerar_causal"):
+        try:
+            df_causal, gabarito = gerar_cenario_causal_do_setor(
+                df_fato, col_data, col_causa, col_efeito_label, direcao, tem_confundidor,
+                efeito_pct, defasagem, ruido_pct, nome_setor, fato_escolhido,
+            )
+        except ValueError as e:
+            st.error(str(e))
+            return
 
-            try:
-                tabelas, gabarito = _gerar_com_progresso(setor, n_linhas, data_inicio, data_fim, anomalia, drift)
-            except Exception as e:
-                registrar_evento("gerou_base", setor=nome, volume=n_linhas,
-                                  anomalia=anomalia, drift=drift, status="erro", erro=str(e))
-                raise
+        st.session_state["causal_df"] = df_causal
+        st.session_state["causal_gabarito"] = gabarito
+        registrar_evento("gerou_dados_causais", setor=nome_setor, volume=len(df_causal), status="sucesso")
 
-            registrar_evento("gerou_base", setor=nome, volume=n_linhas,
-                              anomalia=anomalia, drift=drift, status="sucesso")
+    if "causal_df" not in st.session_state:
+        return
 
-            # Guarda o resultado em session_state: cliques em botões de download
-            # (que disparam um novo rerun do script) não podem perder a tela de
-            # resultado nem gerar dados diferentes dos que já foram baixados.
-            st.session_state["ultima_geracao"] = {
-                "nome": nome,
-                "tabelas": tabelas,
-                "anomalia": anomalia,
-                "drift": drift,
-                "gabarito": gabarito,
-            }
+    df = st.session_state["causal_df"]
+    gabarito = st.session_state["causal_gabarito"]
+    colunas_grafico = [c for c in df.columns if c != "data" and "Sazonalidade" not in c]
 
-        if "ultima_geracao" in st.session_state:
-            dados = st.session_state["ultima_geracao"]
-            _render_resultado_completo(dados["nome"], dados["tabelas"], dados["anomalia"], dados["drift"], dados["gabarito"])
-        else:
-            render_estado_inicial()
+    st.markdown("### 📈 Causa e efeito ao longo do tempo")
+    fig = px.line(df, x="data", y=colunas_grafico, labels={"value": "", "variable": "", "data": ""})
+    st.plotly_chart(fig, use_container_width=True)
 
-    with tab_automatizar:
-        render_automatizar_bi()
+    st.markdown("### 🔬 Amostra dos dados")
+    st.dataframe(df.head(10), use_container_width=True)
 
-    with tab_pl300:
-        render_simulador_pl300()
+    with st.expander("🔍 Ver gabarito causal (spoiler, tente sua análise antes de abrir)"):
+        for chave, valor in gabarito.items():
+            st.markdown(f"**{chave}**: {valor}")
 
-    with tab_causal:
-        render_dados_causais()
-
-
-if __name__ == "__main__":
-    main()
+    col_dl1, col_dl2 = st.columns(2)
+    with col_dl1:
+        st.download_button(
+            "📥 Baixar dados (.csv)",
+            data=df.to_csv(index=False).encode("utf-8"),
+            file_name="dados_causais.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+    with col_dl2:
+        st.download_button(
+            "📥 Baixar gabarito causal (.txt)",
+            data=montar_gabarito_causal_txt(gabarito).encode("utf-8"),
+            file_name="gabarito_causal.txt",
+            mime="text/plain",
+            use_container_width=True,
+        )
