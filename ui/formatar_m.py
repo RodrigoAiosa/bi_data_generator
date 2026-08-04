@@ -7,17 +7,44 @@ linha, expressões longas quebradas por profundidade de parênteses/
 colchetes/chaves, identificadores entre aspas (#"Nome do Passo")
 preservados. Implementação própria (não usa nenhum serviço externo).
 """
+import random
+
 import streamlit as st
 
 from generators.m_formatter import formatar_m
 from log_acesso import registrar_evento
 
-_EXEMPLO = (
+_EXEMPLOS = [
     'let Source = Csv.Document(File.Contents("C:\\Dados\\arquivo.csv"),'
     '[Delimiter=",", Encoding=65001]), #"Changed Type" = '
     'Table.TransformColumnTypes(Source,{{"Coluna1", Int64.Type}}) '
-    'in #"Changed Type"'
-)
+    'in #"Changed Type"',
+
+    'let Source = Table.NestedJoin(Vendas, {"id_cliente"}, Clientes, {"id_cliente"}, '
+    '"Clientes", JoinKind.LeftOuter), #"Expanded Clientes" = '
+    'Table.ExpandTableColumn(Source, "Clientes", {"nome"}) in #"Expanded Clientes"',
+
+    'let Fonte = Excel.Workbook(File.Contents("C:\\Dados\\vendas.xlsx"), null, true), '
+    '#"Planilha1_Sheet" = Fonte{[Item="Planilha1",Kind="Sheet"]}[Data], '
+    '#"Cabeçalhos Promovidos" = Table.PromoteHeaders(#"Planilha1_Sheet", [PromoteAllScalars=true]) '
+    'in #"Cabeçalhos Promovidos"',
+
+    'let Origem = Table.SelectRows(Vendas, each [valor_total] > 100 and [status] = "Aprovado"), '
+    '#"Colunas Removidas" = Table.RemoveColumns(Origem,{"observacao", "id_interno"}) '
+    'in #"Colunas Removidas"',
+
+    'let Source = Table.Group(Vendas, {"id_cliente"}, {{"Total", each List.Sum([valor_total]), '
+    'type nullable number}}) in Source',
+]
+
+
+def _sortear_exemplo() -> str:
+    """Sorteia um exemplo, evitando repetir o mesmo que acabou de ser usado."""
+    ultimo = st.session_state.get("_m_ultimo_exemplo")
+    candidatos = [e for e in _EXEMPLOS if e != ultimo] or _EXEMPLOS
+    escolhido = random.choice(candidatos)
+    st.session_state["_m_ultimo_exemplo"] = escolhido
+    return escolhido
 
 
 def render_formatar_m() -> None:
@@ -29,13 +56,13 @@ def render_formatar_m() -> None:
     )
 
     if st.session_state.get("_m_inserir_exemplo"):
-        st.session_state["formatar_m_entrada"] = _EXEMPLO
+        st.session_state["formatar_m_entrada"] = _sortear_exemplo()
         st.session_state["_m_inserir_exemplo"] = False
 
     m_bruto = st.text_area(
         "Cole o código M aqui",
         height=180,
-        placeholder=_EXEMPLO,
+        placeholder=_EXEMPLOS[0],
         key="formatar_m_entrada",
     )
 
