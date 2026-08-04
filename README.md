@@ -598,7 +598,7 @@ Em testes com vários setores diferentes, a correlação medida **com a defasage
 
 ## 📐 Formatar DAX
 
-Cola uma expressão ou medida DAX bagunçada (sem espaço, tudo numa linha só) e recebe ela formatada, no mesmo espírito do [daxformatter.com](https://www.daxformatter.com/): cada argumento de função numa linha própria quando a expressão é longa ou tem múltiplos argumentos, `VAR`/`RETURN` cada um na sua linha, espaçamento consistente ao redor de operadores.
+Cola uma expressão ou medida DAX bagunçada (sem espaço, tudo numa linha só) e recebe ela formatada, cada argumento de função numa linha própria quando a expressão é longa ou tem múltiplos argumentos, `VAR`/`RETURN` cada um na sua linha, espaçamento consistente ao redor de operadores.
 
 É uma **implementação própria** (`generators/dax_formatter.py`), não chama nem depende do daxformatter.com: um tokenizador reconhece funções, colunas/medidas (`Tabela[Coluna]`, `[Medida]`), operadores, `VAR`/`RETURN` e strings, e um motor de renderização decide, pela profundidade de parênteses, quando quebrar cada argumento numa linha própria.
 
