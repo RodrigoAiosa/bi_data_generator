@@ -4,7 +4,7 @@ Gerador de **dados fictícios em modelo estrela** (fato + dimensões + calendár
 
 Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário, medidas DAX sugeridas, modelo TMDL pronto para o Power BI, dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
 
-O app principal tem **5 abas**: o Gerador de Setores (100 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou) e o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada).
+O app principal tem **6 abas**: o Gerador de Setores (100 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada) e o Formatar M (o mesmo princípio, mas para código Power Query).
 
 > Aplicação construída em **Streamlit** e distribuída publicamente em:
 > 🔗 **https://rodrigoaiosa.streamlit.app**
@@ -28,6 +28,7 @@ O app principal tem **5 abas**: o Gerador de Setores (100 bases prontas), o Auto
 - [Simulador de Certificação PL-300](#-simulador-de-certificação-pl-300)
 - [Dados Causais (relação causa-efeito conhecida)](#-dados-causais-relação-causa-efeito-conhecida)
 - [Formatar DAX](#-formatar-dax)
+- [Formatar M](#-formatar-m)
 - [Log de acesso e painel de uso](#-log-de-acesso-e-painel-de-uso)
 - [Internacionalização (PT/EN)](#-internacionalização-ptEN)
 - [Deploy no Streamlit Cloud](#-deploy-no-streamlit-cloud)
@@ -80,6 +81,7 @@ bi_data_generator/
 │   ├── case_negocio.py         # Gera o case de negócio fictício que acompanha cada base
 │   ├── concept_drift.py        # Injeta deriva temporal (concept drift) genérica na tabela fato
 │   ├── dax_formatter.py         # Motor de formatação de expressões DAX (tokenizador + quebra de linha)
+│   ├── m_formatter.py           # Motor de formatação de código M / Power Query (mesmo princípio, adaptado)
 │   ├── varejo.py, financeiro.py, saude.py, ecommerce.py, ... (um arquivo por setor)
 │   └── ...
 │
@@ -92,6 +94,7 @@ bi_data_generator/
 │   └── simulador_pl300.py           # Aba "Simulador PL-300": quiz de prática para a certificação
 │   └── dados_causais.py             # Aba "Dados Causais": relação causa-efeito conhecida, em cima do setor gerado
 │   └── formatar_dax.py              # Aba "Formatar DAX": cola uma expressão bagunçada e recebe ela formatada
+│   └── formatar_m.py                # Aba "Formatar M": mesmo princípio, pra código Power Query
 │
 ├── styles/
 │   ├── css.py                   # CSS customizado injetado no Streamlit (tema Power BI: amarelo/preto)
@@ -165,7 +168,7 @@ streamlit run app.py
 
 ## 🖱 Como usar o app
 
-O app abre com **5 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais" e "📐 Formatar DAX".
+O app abre com **6 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX" e "🔧 Formatar M".
 
 ### Aba 🏭 Gerador de Setores
 
@@ -200,6 +203,10 @@ Veja a seção [Dados Causais (relação causa-efeito conhecida)](#-dados-causai
 ### Aba 📐 Formatar DAX
 
 Veja a seção [Formatar DAX](#-formatar-dax) para o passo a passo completo.
+
+### Aba 🔧 Formatar M
+
+Veja a seção [Formatar M](#-formatar-m) para o passo a passo completo.
 
 ---
 
@@ -460,6 +467,7 @@ Em setores onde uma fato referencia outra fato (ex.: despesas ou abastecimentos 
 - **Simulador de Certificação PL-300** (`ui/simulador_pl300.py`): quiz de prática com perguntas originais nos 4 domínios oficiais do exame, com correção, nota por domínio, explicação e download do resultado em CSV para acompanhar a evolução ao longo do tempo.
 - **Dados Causais** (`ui/dados_causais.py`): gera uma relação causa-efeito conhecida de propósito (com defasagem, confundidor e ruído configuráveis) em cima do setor que você já gerou, com gabarito causal documentado.
 - **Formatar DAX** (`ui/formatar_dax.py` + `generators/dax_formatter.py`): cola uma expressão ou medida DAX bagunçada e recebe ela formatada, com quebra de linha por profundidade de parênteses e espaçamento consistente, no mesmo espírito do daxformatter.com.
+- **Formatar M** (`ui/formatar_m.py` + `generators/m_formatter.py`): mesmo princípio do formatador de DAX, adaptado pra sintaxe do Power Query (`let...in`, record, lista).
 - **Log de acesso** (`log_acesso.py`): registra uso real do app numa planilha Google Sheets, com um painel de análise separado ([`dash_bi_data_generator`](https://github.com/RodrigoAiosa/dash_bi_data_generator)).
 
 ---
@@ -604,7 +612,7 @@ Cola uma expressão ou medida DAX bagunçada (sem espaço, tudo numa linha só) 
 
 ### Como usar
 
-1. Cole a expressão DAX no campo de texto (ou clique em **"💡 Usar exemplo"** para testar sem ter uma medida em mãos).
+1. Cole a expressão DAX no campo de texto (ou clique em **"💡 Usar exemplo"** para testar sem ter uma medida em mãos, um exemplo diferente é sorteado a cada clique, entre 7 opções, sem repetir o do clique anterior).
 2. Clique em **"📐 Formatar"**.
 3. O resultado aparece formatado, com indentação e quebra de linha, pronto para copiar direto do bloco de código.
 4. Baixe o resultado em `.dax` se quiser guardar.
@@ -615,6 +623,28 @@ Cola uma expressão ou medida DAX bagunçada (sem espaço, tudo numa linha só) 
 - Uma medida completa no formato `Nome da Medida = expressão`;
 - Expressões com `VAR`/`RETURN`;
 - Nomes de medida, coluna e tabela com acentuação (ex.: "Preço Médio", "Mês Anterior").
+
+---
+
+## 🔧 Formatar M
+
+Cola um código M (Power Query) bagunçado, tudo numa linha só, e recebe ele formatado: bloco `let ... in ...` com cada passo em sua própria linha, expressões longas quebradas por profundidade de parênteses/colchetes/chaves, identificadores entre aspas (`#"Nome do Passo"`) preservados.
+
+É uma **implementação própria** (`generators/m_formatter.py` + `ui/formatar_m.py`), reaproveitando o mesmo princípio do formatador de DAX (tokenizar e quebrar por profundidade), adaptado pra sintaxe própria do M: suporta os 3 tipos de agrupamento (`()` chamada de função, `{}` lista, `[]` record).
+
+### Como usar
+
+1. Cole o código M no campo de texto (ou clique em **"💡 Usar exemplo"**, um exemplo diferente é sorteado a cada clique, entre 5 opções, sem repetir o do clique anterior).
+2. Clique em **"🔧 Formatar"**.
+3. O resultado aparece formatado, pronto para copiar direto do bloco de código.
+4. Baixe o resultado em `.m` se quiser guardar.
+
+### O que o formatador aceita
+
+- Um bloco completo `let ... in ...`, com qualquer número de passos;
+- Uma expressão solta, sem `let`/`in` (ex.: `Table.SelectRows(Source, each [Coluna] > 100)`);
+- Identificadores entre aspas com espaço no nome (ex.: `#"Changed Type"`, `#"Expanded Clientes"`);
+- Nomes de coluna e passo com acentuação (ex.: `[Preço]`, `"Preço Médio"`).
 
 ---
 
