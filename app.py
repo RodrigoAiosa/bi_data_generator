@@ -33,6 +33,7 @@ from ui import (
 from ui.automatizar_bi import render_automatizar_bi
 from ui.simulador_pl300 import render_simulador_pl300
 from ui.dados_causais import render_dados_causais, montar_gabarito_causal_txt
+from ui.formatar_dax import render_formatar_dax
 
 st.set_page_config(**PAGE_CONFIG)
 
@@ -319,8 +320,8 @@ def main() -> None:
         help=_DRIFT_HELP[lang],
     )
 
-    tab_gerador, tab_automatizar, tab_pl300, tab_causal = st.tabs(
-        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais"]
+    tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_dax = st.tabs(
+        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX"]
     )
 
     with tab_gerador:
@@ -364,6 +365,9 @@ def main() -> None:
 
     with tab_causal:
         render_dados_causais()
+
+    with tab_dax:
+        render_formatar_dax()
 
 
 if __name__ == "__main__":
