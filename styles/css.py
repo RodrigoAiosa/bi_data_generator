@@ -540,6 +540,17 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     width: fit-content !important;
     gap: 6px !important;
 }
+/* ── Sugestão de próximo passo entre abas ── */
+.sugestao-proximo-passo {
+    background: rgba(242,200,17,0.08);
+    border: 1px solid rgba(242,200,17,0.35);
+    border-radius: 10px;
+    padding: 0.8rem 1.1rem;
+    margin: 1rem 0;
+    font-size: 0.92rem;
+    color: #EEEEEE;
+    line-height: 1.5;
+}
 
 </style>
 """
