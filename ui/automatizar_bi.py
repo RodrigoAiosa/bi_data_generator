@@ -23,6 +23,7 @@ import streamlit as st
 from generators.medidas import _titulo
 from generators.tmdl_generator import _tabela_tmdl, _e_chave, _coluna_e_data
 from generators.helpers import to_zip
+from ui.sugestao_proximo_passo import sugerir
 
 OPCOES_TIPO = [
     "Detectar automaticamente",
@@ -799,3 +800,9 @@ def render_automatizar_bi() -> None:
                 "O modelo completo traz os CSVs de cada tabela + model.tmdl (tabelas, "
                 "relacionamentos e medidas), pronto para importar no Power BI/Tabular Editor."
             )
+
+        sugerir(
+            "Alguma das medidas geradas ficou com uma fórmula difícil de ler? "
+            "Cola ela na aba **📐 Formatar DAX** e recebe formatada, com indentação e "
+            "quebra de linha."
+        )
