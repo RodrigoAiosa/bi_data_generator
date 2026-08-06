@@ -14,6 +14,7 @@ import streamlit as st
 
 from generators.dax_formatter import formatar_dax
 from log_acesso import registrar_evento
+from ui.sugestao_proximo_passo import sugerir
 
 _EXEMPLOS = [
     "Valor Lance Mês Anterior=CALCULATE([Total Valor Lance],DATEADD(dCalendario[Data],-1,MONTH))",
@@ -88,4 +89,9 @@ def render_formatar_dax() -> None:
             file_name="medida_formatada.dax",
             mime="text/plain",
             use_container_width=True,
+        )
+
+        sugerir(
+            "Também precisa arrumar uma consulta Power Query bagunçada? "
+            "A aba **🔧 Formatar M** faz o mesmo tipo de formatação, só que pra código M."
         )
