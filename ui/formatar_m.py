@@ -13,6 +13,7 @@ import streamlit as st
 
 from generators.m_formatter import formatar_m
 from log_acesso import registrar_evento
+from ui.sugestao_proximo_passo import sugerir
 
 _EXEMPLOS = [
     'let Source = Csv.Document(File.Contents("C:\\Dados\\arquivo.csv"),'
@@ -100,4 +101,9 @@ def render_formatar_m() -> None:
             file_name="consulta_formatada.m",
             mime="text/plain",
             use_container_width=True,
+        )
+
+        sugerir(
+            "Também tem alguma medida DAX bagunçada pra arrumar? "
+            "A aba **📐 Formatar DAX** faz o mesmo tipo de formatação, só que pra DAX."
         )
