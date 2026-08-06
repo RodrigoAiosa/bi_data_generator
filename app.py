@@ -35,7 +35,6 @@ from ui.simulador_pl300 import render_simulador_pl300
 from ui.dados_causais import render_dados_causais, montar_gabarito_causal_txt
 from ui.formatar_dax import render_formatar_dax
 from ui.formatar_m import render_formatar_m
-from ui.tour_guiado import exibir_tour_se_primeira_visita
 from ui.sugestao_proximo_passo import sugerir
 
 st.set_page_config(**PAGE_CONFIG)
@@ -310,7 +309,6 @@ def main() -> None:
     inject_css()
     inject_seo(lang=_get_lang())
     render_hero()
-    exibir_tour_se_primeira_visita()
 
     lang = _get_lang()
     iniciar_sessao(lang)
