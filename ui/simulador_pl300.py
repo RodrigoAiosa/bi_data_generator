@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 import streamlit as st
 
 from log_acesso import registrar_evento
+from ui.sugestao_proximo_passo import sugerir
 
 LINK_PRACTICE_OFICIAL = (
     "https://learn.microsoft.com/en-us/credentials/certifications/data-analyst-associate/"
@@ -398,3 +399,9 @@ def render_simulador_pl300() -> None:
                 st.markdown(f"**Sua resposta:** {resposta if resposta else '_(não respondida)_'}")
                 st.markdown(f"**Resposta correta:** {correta_texto}")
                 st.markdown(f"**Explicação:** {p['explicacao']}")
+
+        if "ultima_geracao" not in st.session_state:
+            sugerir(
+                "Quer perguntas usando dados reais como contexto? Gere uma base na aba "
+                "**🏭 Gerador de Setores** primeiro e sorteie um novo simulado depois."
+            )
