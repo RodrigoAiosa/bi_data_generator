@@ -19,6 +19,7 @@ import plotly.express as px
 import streamlit as st
 
 from log_acesso import registrar_evento
+from ui.sugestao_proximo_passo import sugerir
 
 
 def _detectar_coluna_data(df: pd.DataFrame) -> str | None:
@@ -276,3 +277,9 @@ def render_dados_causais() -> None:
             mime="text/plain",
             use_container_width=True,
         )
+
+    sugerir(
+        "Quer treinar a leitura desse tipo de relação causal na prática? "
+        "A aba **🎓 Simulador PL-300** tem perguntas que usam a base que você gerou "
+        "como contexto."
+    )
