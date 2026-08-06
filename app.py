@@ -36,6 +36,7 @@ from ui.dados_causais import render_dados_causais, montar_gabarito_causal_txt
 from ui.formatar_dax import render_formatar_dax
 from ui.formatar_m import render_formatar_m
 from ui.tour_guiado import exibir_tour_se_primeira_visita
+from ui.sugestao_proximo_passo import sugerir
 
 st.set_page_config(**PAGE_CONFIG)
 
@@ -294,6 +295,12 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: 
         mime="application/zip",
         use_container_width=True,
         on_click=lambda: registrar_evento("baixou_dicionario", setor=nome),
+    )
+
+    sugerir(
+        f"Já que você gerou a base de **{nome}**, que tal ir na aba **🧬 Dados Causais** "
+        f"pra simular uma relação de causa e efeito em cima dela, ou na aba **🎓 Simulador PL-300** "
+        f"pra praticar perguntas de certificação usando esse setor como contexto?"
     )
 
 
