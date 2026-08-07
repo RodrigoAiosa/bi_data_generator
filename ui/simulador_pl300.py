@@ -279,7 +279,7 @@ def _montar_banco_perguntas() -> list:
     return _banco_perguntas_fixas() + _banco_perguntas_contextuais()
 
 
-def _montar_csv_resultado(perguntas: list, acertos: int, total: int, pct: float) -> bytes:
+def _montar_csv_resultado(perguntas: list, acertos: int, total: int, pct: float, data_hora_str: str) -> bytes:
     """
     Monta o CSV do resultado da prova: uma linha por pergunta respondida,
     no formato data_hora;pergunta;resposta_aluno;resposta_correta;
@@ -288,7 +288,6 @@ def _montar_csv_resultado(perguntas: list, acertos: int, total: int, pct: float)
     tentativa (útil para juntar vários arquivos depois e acompanhar
     a evolução ao longo do tempo).
     """
-    agora = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m-%d %H:%M:%S")
     total_erros = total - acertos
 
     def _limpar(texto: str) -> str:
@@ -299,11 +298,99 @@ def _montar_csv_resultado(perguntas: list, acertos: int, total: int, pct: float)
         resposta = st.session_state["pl300_respostas"].get(i) or "(não respondida)"
         correta_texto = p["opcoes"][p["correta"]]
         linhas.append(
-            f"{agora};{_limpar(p['pergunta'])};{_limpar(resposta)};{_limpar(correta_texto)};"
+            f"{data_hora_str};{_limpar(p['pergunta'])};{_limpar(resposta)};{_limpar(correta_texto)};"
             f"{acertos};{total_erros};{pct:.1f}"
         )
 
     return ("\n".join(linhas)).encode("utf-8-sig")
+
+
+def _parsear_csv_historico(conteudo: bytes) -> list:
+    """
+    Lê um CSV de resultado (baixado numa sessão anterior) e devolve uma
+    lista de tentativas ÚNICAS (uma por data_hora, já que o CSV tem uma
+    linha por pergunta, com o resultado geral repetido em toda linha da
+    mesma tentativa). Usado pra reimportar histórico de sessões passadas,
+    já que o app não tem login pra guardar isso automaticamente.
+    """
+    try:
+        texto = conteudo.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return []
+
+    linhas = [l for l in texto.strip().split("\n") if l.strip()]
+    if len(linhas) < 2:
+        return []
+
+    tentativas = {}
+    for linha in linhas[1:]:
+        campos = linha.split(";")
+        if len(campos) < 7:
+            continue
+        data_hora, _pergunta, _resp_aluno, _resp_correta, total_acertos, total_erros, pct = campos[:7]
+        if data_hora in tentativas:
+            continue
+        try:
+            acertos = int(total_acertos)
+            erros = int(total_erros)
+            pct_valor = float(pct)
+        except ValueError:
+            continue
+        tentativas[data_hora] = {"data_hora": data_hora, "acertos": acertos, "total": acertos + erros, "pct": pct_valor}
+
+    return list(tentativas.values())
+
+
+def _render_progresso_pessoal() -> None:
+    """
+    Mostra um resumo do progresso pessoal (sem ranking nem comparação com
+    outras pessoas): simulados feitos nesta sessão + simulados importados
+    de arquivos .csv baixados em sessões anteriores.
+    """
+    st.markdown("### 🏆 Seu progresso")
+
+    with st.expander("📤 Importar histórico de sessões anteriores (.csv)", expanded=False):
+        st.caption(
+            "Envie um ou mais arquivos `resultado_pl300_*.csv` que você já baixou antes, "
+            "pra juntar com o progresso desta sessão. Como o app não tem login, esse é o "
+            "jeito de acompanhar sua evolução entre visitas diferentes."
+        )
+        arquivos_importados = st.file_uploader(
+            "Arquivos de resultado (.csv)", type=["csv"], accept_multiple_files=True,
+            key="pl300_upload_historico",
+        )
+        if arquivos_importados:
+            importadas = []
+            for arquivo in arquivos_importados:
+                importadas.extend(_parsear_csv_historico(arquivo.read()))
+            st.session_state["pl300_historico_importado"] = importadas
+            if importadas:
+                st.success(f"{len(importadas)} tentativa(s) importada(s) com sucesso.")
+
+    historico_sessao = st.session_state.get("pl300_historico_sessao", [])
+    historico_importado = st.session_state.get("pl300_historico_importado", [])
+    historico_completo = historico_importado + historico_sessao
+
+    if not historico_completo:
+        st.caption("Faça e corrija seu primeiro simulado pra começar a ver seu progresso aqui.")
+        return
+
+    historico_completo = sorted(historico_completo, key=lambda t: t["data_hora"])
+    percentuais = [t["pct"] for t in historico_completo]
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Simulados no histórico", len(historico_completo))
+    with col2:
+        st.metric("Melhor nota", f"{max(percentuais):.0f}%")
+    with col3:
+        st.metric("Média geral", f"{sum(percentuais) / len(percentuais):.0f}%")
+
+    if len(historico_completo) >= 2:
+        st.line_chart(
+            {"Nota (%)": percentuais},
+            x_label="Tentativas (da mais antiga pra mais recente)",
+        )
 
 
 def render_simulador_pl300() -> None:
@@ -352,6 +439,21 @@ def render_simulador_pl300() -> None:
 
     if enviado:
         st.session_state["pl300_corrigido"] = True
+        st.session_state["pl300_data_correcao"] = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m-%d %H:%M:%S")
+
+        acertos_calc = 0
+        for i, p in enumerate(perguntas):
+            resposta = st.session_state["pl300_respostas"].get(i)
+            if resposta == p["opcoes"][p["correta"]]:
+                acertos_calc += 1
+        total_calc = len(perguntas)
+        pct_calc = (acertos_calc / total_calc * 100) if total_calc else 0
+
+        historico_sessao = st.session_state.setdefault("pl300_historico_sessao", [])
+        historico_sessao.append({
+            "data_hora": st.session_state["pl300_data_correcao"],
+            "acertos": acertos_calc, "total": total_calc, "pct": pct_calc,
+        })
 
     if st.session_state.get("pl300_corrigido"):
         acertos = 0
@@ -368,6 +470,7 @@ def render_simulador_pl300() -> None:
 
         total = len(perguntas)
         pct = (acertos / total * 100) if total else 0
+        data_hora_correcao = st.session_state["pl300_data_correcao"]
         st.markdown(f"### 🏁 Resultado: {acertos}/{total} ({pct:.0f}%)")
 
         cols = st.columns(len(DOMINIOS))
@@ -376,11 +479,11 @@ def render_simulador_pl300() -> None:
             with col:
                 st.metric(dominio, f"{acertos_d}/{total_d}" if total_d else "-")
 
-        csv_resultado = _montar_csv_resultado(perguntas, acertos, total, pct)
+        csv_resultado = _montar_csv_resultado(perguntas, acertos, total, pct, data_hora_correcao)
         st.download_button(
             "📥 Baixar resultado desta prova (.csv)",
             data=csv_resultado,
-            file_name=f"resultado_pl300_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            file_name=f"resultado_pl300_{data_hora_correcao.replace(' ', '_').replace(':', '')}.csv",
             mime="text/csv",
             use_container_width=True,
         )
@@ -399,6 +502,9 @@ def render_simulador_pl300() -> None:
                 st.markdown(f"**Sua resposta:** {resposta if resposta else '_(não respondida)_'}")
                 st.markdown(f"**Resposta correta:** {correta_texto}")
                 st.markdown(f"**Explicação:** {p['explicacao']}")
+
+        st.markdown("---")
+        _render_progresso_pessoal()
 
         if "ultima_geracao" not in st.session_state:
             sugerir(
