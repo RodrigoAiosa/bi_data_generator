@@ -465,7 +465,7 @@ def _relacionamentos_genericos(tabelas: dict) -> list:
     blocos = []
     contador = 1
     vistos = set()
-    pai_tabela = {}
+    pai_tabela: dict = {}  # nome_from -> lista de TODAS as tabelas pra quem tem FK (não só a última)
 
     for nome_from, df in tabelas.items():
         pk_propria = df.columns[0] if len(df.columns) else None
@@ -484,7 +484,7 @@ def _relacionamentos_genericos(tabelas: dict) -> list:
 
             inativo = _fecha_ciclo(nome_from, nome_to)
             if not inativo and nome_to != "Calendario":
-                pai_tabela[nome_from] = nome_to
+                pai_tabela.setdefault(nome_from, []).append(nome_to)
 
             linhas = [
                 f"\trelationship rel_{contador}\n",
@@ -497,12 +497,26 @@ def _relacionamentos_genericos(tabelas: dict) -> list:
             blocos.append("".join(linhas))
             contador += 1
 
-    def _raiz_tabela(nome):
-        visto = set()
-        while nome in pai_tabela and nome not in visto:
-            visto.add(nome)
-            nome = pai_tabela[nome]
-        return nome
+    def _algum_ancestral_tem_coluna_data(nome: str, tem_coluna_data: dict, visitado: set | None = None) -> bool:
+        """
+        Percorre TODOS os pais (FK) de 'nome', recursivamente, procurando
+        algum ancestral que já tenha sua própria coluna de data (e portanto
+        seu próprio caminho até a Calendario). Usado pra decidir se o
+        relacionamento DIRETO dessa tabela com a Calendario deve ficar
+        inativo, evitando caminho ambíguo (ex.: FatoX -> Calendario E
+        FatoX -> DimY -> Calendario ao mesmo tempo).
+        """
+        if visitado is None:
+            visitado = set()
+        if nome in visitado:
+            return False
+        visitado.add(nome)
+        for pai in pai_tabela.get(nome, []):
+            if tem_coluna_data.get(pai, False):
+                return True
+            if _algum_ancestral_tem_coluna_data(pai, tem_coluna_data, visitado):
+                return True
+        return False
 
     if "Calendario" in tabelas:
         tem_coluna_data = {
@@ -521,8 +535,7 @@ def _relacionamentos_genericos(tabelas: dict) -> list:
                 continue
             vistos.add(chave)
 
-            raiz = _raiz_tabela(nome_from)
-            inativo = raiz != nome_from and tem_coluna_data.get(raiz, False)
+            inativo = _algum_ancestral_tem_coluna_data(nome_from, tem_coluna_data)
 
             linhas = [
                 f"\trelationship rel_{contador}\n",
