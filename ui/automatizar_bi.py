@@ -246,9 +246,18 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
     quando a tabela tiver coluna de data (e a Calendario existir), Time
     Intelligence completo (MoM/YoY/YTD/MTD), o mesmo menu de medidas
     usado nos 100 setores prontos, só que sem exigir o padrão Fato/Dim.
+
+    Quando há mais de uma tabela, todo nome de medida recebe um sufixo
+    "(Nome da Tabela)" pra evitar duas medidas com o mesmo nome (ex.:
+    "Qtde de Registros" repetido em toda tabela), o que o Power BI/TMDL
+    recusa ao importar (erro de "objects cannot be merged"). O sufixo
+    também é propagado pras referências internas das medidas de Time
+    Intelligence, que citam outras medidas pelo nome dentro da fórmula.
     """
+    multi_tabela = len(tabelas) > 1
     resultado = {}
     for nome_tabela, df in tabelas.items():
+        sufixo = f" ({nome_tabela})" if multi_tabela else ""
         tipos = tipos_por_tabela.get(nome_tabela, {})
         col_data = tem_calendario.get(nome_tabela)
         medidas = {
@@ -258,9 +267,10 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
             "📅 Time Intelligence (MoM / YoY / YTD / MTD)": [],
         }
 
+        nome_registros = f"Qtde de Registros{sufixo}"
         medidas["🔢 Contagens"].append({
-            "nome": "Qtde de Registros",
-            "formula": f"Qtde de Registros = COUNTROWS('{nome_tabela}')",
+            "nome": nome_registros,
+            "formula": f"{nome_registros} = COUNTROWS('{nome_tabela}')",
             "descricao": f"Quantidade de linhas da tabela '{nome_tabela}' no contexto atual.",
         })
 
@@ -275,32 +285,38 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
 
             if tipo == "Chave/ID":
                 titulo = _titulo(col)
+                nome_distinta = f"Qtde Distinta de {titulo}{sufixo}"
                 medidas["🔢 Contagens"].append({
-                    "nome": f"Qtde Distinta de {titulo}",
-                    "formula": f"Qtde Distinta de {titulo} = DISTINCTCOUNT('{nome_tabela}'[{col}])",
+                    "nome": nome_distinta,
+                    "formula": f"{nome_distinta} = DISTINCTCOUNT('{nome_tabela}'[{col}])",
                     "descricao": f"Número de valores distintos de '{col}' presentes na tabela.",
                 })
 
             elif tipo in ("Número inteiro", "Número decimal") or eh_numerica_automatica:
                 colunas_numericas.append(col)
                 titulo = _titulo(col)
+                nome_total = f"Total {titulo}{sufixo}"
+                nome_media = f"Média {titulo}{sufixo}"
+                nome_minimo = f"Mínimo {titulo}{sufixo}"
+                nome_maximo = f"Máximo {titulo}{sufixo}"
+                nome_pct = f"% do Total {titulo}{sufixo}"
                 medidas["🧮 Agregações Básicas"].extend([
-                    {"nome": f"Total {titulo}", "formula": f"Total {titulo} = SUM('{nome_tabela}'[{col}])",
+                    {"nome": nome_total, "formula": f"{nome_total} = SUM('{nome_tabela}'[{col}])",
                      "descricao": f"Soma de '{nome_tabela}'[{col}] no contexto de filtro atual."},
-                    {"nome": f"Média {titulo}", "formula": f"Média {titulo} = AVERAGE('{nome_tabela}'[{col}])",
+                    {"nome": nome_media, "formula": f"{nome_media} = AVERAGE('{nome_tabela}'[{col}])",
                      "descricao": f"Média de '{nome_tabela}'[{col}] no contexto de filtro atual."},
-                    {"nome": f"Mínimo {titulo}", "formula": f"Mínimo {titulo} = MIN('{nome_tabela}'[{col}])",
+                    {"nome": nome_minimo, "formula": f"{nome_minimo} = MIN('{nome_tabela}'[{col}])",
                      "descricao": f"Menor valor de '{nome_tabela}'[{col}] no contexto atual."},
-                    {"nome": f"Máximo {titulo}", "formula": f"Máximo {titulo} = MAX('{nome_tabela}'[{col}])",
+                    {"nome": nome_maximo, "formula": f"{nome_maximo} = MAX('{nome_tabela}'[{col}])",
                      "descricao": f"Maior valor de '{nome_tabela}'[{col}] no contexto atual."},
                 ])
                 medidas["📊 Percentual de Participação"].append({
-                    "nome": f"% do Total {titulo}",
+                    "nome": nome_pct,
                     "formula": (
-                        f"% do Total {titulo} =\n"
+                        f"{nome_pct} =\n"
                         f"DIVIDE(\n"
-                        f"    [Total {titulo}],\n"
-                        f"    CALCULATE([Total {titulo}], ALL('{nome_tabela}'))\n"
+                        f"    [{nome_total}],\n"
+                        f"    CALCULATE([{nome_total}], ALL('{nome_tabela}'))\n"
                         f")"
                     ),
                     "descricao": f"Participação percentual do contexto atual sobre o total geral de {titulo}.",
@@ -308,10 +324,12 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
 
             elif tipo in ("Data", "Data e hora"):
                 titulo = _titulo(col)
+                nome_data_min = f"{titulo} Mínima{sufixo}"
+                nome_data_max = f"{titulo} Máxima{sufixo}"
                 medidas["🧮 Agregações Básicas"].extend([
-                    {"nome": f"{titulo} Mínima", "formula": f"{titulo} Mínima = MIN('{nome_tabela}'[{col}])",
+                    {"nome": nome_data_min, "formula": f"{nome_data_min} = MIN('{nome_tabela}'[{col}])",
                      "descricao": f"Data mais antiga em '{nome_tabela}'[{col}]."},
-                    {"nome": f"{titulo} Máxima", "formula": f"{titulo} Máxima = MAX('{nome_tabela}'[{col}])",
+                    {"nome": nome_data_max, "formula": f"{nome_data_max} = MAX('{nome_tabela}'[{col}])",
                      "descricao": f"Data mais recente em '{nome_tabela}'[{col}]."},
                 ])
 
@@ -319,65 +337,73 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
         if col_data and colunas_numericas:
             for col in colunas_numericas:
                 titulo = _titulo(col)
+                nome_total = f"Total {titulo}{sufixo}"
+                nome_mes_anterior = f"{titulo} Mês Anterior{sufixo}"
+                nome_mom = f"{titulo} %MoM{sufixo}"
+                nome_ano_anterior = f"{titulo} Ano Anterior{sufixo}"
+                nome_yoy = f"{titulo} %YoY{sufixo}"
+                nome_ytd = f"{titulo} Acumulado no Ano (YTD){sufixo}"
+                nome_mtd = f"{titulo} Acumulado no Mês (MTD){sufixo}"
+
                 medidas["📅 Time Intelligence (MoM / YoY / YTD / MTD)"].extend([
                     {
-                        "nome": f"{titulo} Mês Anterior",
+                        "nome": nome_mes_anterior,
                         "titulo": titulo,
                         "formula": (
-                            f"{titulo} Mês Anterior =\n"
+                            f"{nome_mes_anterior} =\n"
                             f"CALCULATE(\n"
-                            f"    [Total {titulo}],\n"
+                            f"    [{nome_total}],\n"
                             f"    DATEADD(Calendario[Data], -1, MONTH)\n"
                             f")"
                         ),
                         "descricao": f"Valor de {titulo} no mesmo período do mês anterior.",
                     },
                     {
-                        "nome": f"{titulo} %MoM",
+                        "nome": nome_mom,
                         "titulo": titulo,
                         "formula": (
-                            f"{titulo} %MoM =\n"
+                            f"{nome_mom} =\n"
                             f"DIVIDE(\n"
-                            f"    [Total {titulo}] - [{titulo} Mês Anterior],\n"
-                            f"    [{titulo} Mês Anterior]\n"
+                            f"    [{nome_total}] - [{nome_mes_anterior}],\n"
+                            f"    [{nome_mes_anterior}]\n"
                             f")"
                         ),
                         "descricao": f"Variação percentual de {titulo} frente ao mês anterior (Month over Month).",
                     },
                     {
-                        "nome": f"{titulo} Ano Anterior",
+                        "nome": nome_ano_anterior,
                         "titulo": titulo,
                         "formula": (
-                            f"{titulo} Ano Anterior =\n"
+                            f"{nome_ano_anterior} =\n"
                             f"CALCULATE(\n"
-                            f"    [Total {titulo}],\n"
+                            f"    [{nome_total}],\n"
                             f"    SAMEPERIODLASTYEAR(Calendario[Data])\n"
                             f")"
                         ),
                         "descricao": f"Valor de {titulo} no mesmo período do ano anterior.",
                     },
                     {
-                        "nome": f"{titulo} %YoY",
+                        "nome": nome_yoy,
                         "titulo": titulo,
                         "formula": (
-                            f"{titulo} %YoY =\n"
+                            f"{nome_yoy} =\n"
                             f"DIVIDE(\n"
-                            f"    [Total {titulo}] - [{titulo} Ano Anterior],\n"
-                            f"    [{titulo} Ano Anterior]\n"
+                            f"    [{nome_total}] - [{nome_ano_anterior}],\n"
+                            f"    [{nome_ano_anterior}]\n"
                             f")"
                         ),
                         "descricao": f"Variação percentual de {titulo} frente ao mesmo período do ano anterior (Year over Year).",
                     },
                     {
-                        "nome": f"{titulo} Acumulado no Ano (YTD)",
+                        "nome": nome_ytd,
                         "titulo": titulo,
-                        "formula": f"{titulo} Acumulado no Ano (YTD) = TOTALYTD([Total {titulo}], Calendario[Data])",
+                        "formula": f"{nome_ytd} = TOTALYTD([{nome_total}], Calendario[Data])",
                         "descricao": f"Acumulado de {titulo} desde o início do ano até a data em contexto.",
                     },
                     {
-                        "nome": f"{titulo} Acumulado no Mês (MTD)",
+                        "nome": nome_mtd,
                         "titulo": titulo,
-                        "formula": f"{titulo} Acumulado no Mês (MTD) = TOTALMTD([Total {titulo}], Calendario[Data])",
+                        "formula": f"{nome_mtd} = TOTALMTD([{nome_total}], Calendario[Data])",
                         "descricao": f"Acumulado de {titulo} desde o início do mês até a data em contexto.",
                     },
                 ])
