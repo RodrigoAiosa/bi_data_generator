@@ -301,17 +301,18 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
                 nome_maximo = f"Máximo {titulo}{sufixo}"
                 nome_pct = f"% do Total {titulo}{sufixo}"
                 medidas["🧮 Agregações Básicas"].extend([
-                    {"nome": nome_total, "formula": f"{nome_total} = SUM('{nome_tabela}'[{col}])",
+                    {"nome": nome_total, "titulo": titulo, "formula": f"{nome_total} = SUM('{nome_tabela}'[{col}])",
                      "descricao": f"Soma de '{nome_tabela}'[{col}] no contexto de filtro atual."},
-                    {"nome": nome_media, "formula": f"{nome_media} = AVERAGE('{nome_tabela}'[{col}])",
+                    {"nome": nome_media, "titulo": titulo, "formula": f"{nome_media} = AVERAGE('{nome_tabela}'[{col}])",
                      "descricao": f"Média de '{nome_tabela}'[{col}] no contexto de filtro atual."},
-                    {"nome": nome_minimo, "formula": f"{nome_minimo} = MIN('{nome_tabela}'[{col}])",
+                    {"nome": nome_minimo, "titulo": titulo, "formula": f"{nome_minimo} = MIN('{nome_tabela}'[{col}])",
                      "descricao": f"Menor valor de '{nome_tabela}'[{col}] no contexto atual."},
-                    {"nome": nome_maximo, "formula": f"{nome_maximo} = MAX('{nome_tabela}'[{col}])",
+                    {"nome": nome_maximo, "titulo": titulo, "formula": f"{nome_maximo} = MAX('{nome_tabela}'[{col}])",
                      "descricao": f"Maior valor de '{nome_tabela}'[{col}] no contexto atual."},
                 ])
                 medidas["📊 Percentual de Participação"].append({
                     "nome": nome_pct,
+                    "titulo": titulo,
                     "formula": (
                         f"{nome_pct} =\n"
                         f"DIVIDE(\n"
@@ -327,9 +328,9 @@ def _gerar_medidas_genericas(tabelas: dict, tipos_por_tabela: dict, tem_calendar
                 nome_data_min = f"{titulo} Mínima{sufixo}"
                 nome_data_max = f"{titulo} Máxima{sufixo}"
                 medidas["🧮 Agregações Básicas"].extend([
-                    {"nome": nome_data_min, "formula": f"{nome_data_min} = MIN('{nome_tabela}'[{col}])",
+                    {"nome": nome_data_min, "titulo": titulo, "formula": f"{nome_data_min} = MIN('{nome_tabela}'[{col}])",
                      "descricao": f"Data mais antiga em '{nome_tabela}'[{col}]."},
-                    {"nome": nome_data_max, "formula": f"{nome_data_max} = MAX('{nome_tabela}'[{col}])",
+                    {"nome": nome_data_max, "titulo": titulo, "formula": f"{nome_data_max} = MAX('{nome_tabela}'[{col}])",
                      "descricao": f"Data mais recente em '{nome_tabela}'[{col}]."},
                 ])
 
