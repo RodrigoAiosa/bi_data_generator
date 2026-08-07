@@ -29,6 +29,7 @@ O app principal tem **6 abas**: o Gerador de Setores (100 bases prontas), o Auto
 - [Dados Causais (relação causa-efeito conhecida)](#-dados-causais-relação-causa-efeito-conhecida)
 - [Formatar DAX](#-formatar-dax)
 - [Formatar M](#-formatar-m)
+- [Sugestão de próximo passo entre abas](#-sugestão-de-próximo-passo-entre-abas)
 - [Log de acesso e painel de uso](#-log-de-acesso-e-painel-de-uso)
 - [Internacionalização (PT/EN)](#-internacionalização-ptEN)
 - [Deploy no Streamlit Cloud](#-deploy-no-streamlit-cloud)
@@ -95,6 +96,7 @@ bi_data_generator/
 │   └── dados_causais.py             # Aba "Dados Causais": relação causa-efeito conhecida, em cima do setor gerado
 │   └── formatar_dax.py              # Aba "Formatar DAX": cola uma expressão bagunçada e recebe ela formatada
 │   └── formatar_m.py                # Aba "Formatar M": mesmo princípio, pra código Power Query
+│   └── sugestao_proximo_passo.py    # Sugestão discreta de próxima ferramenta a usar, entre as 6 abas
 │
 ├── styles/
 │   ├── css.py                   # CSS customizado injetado no Streamlit (tema Power BI: amarelo/preto)
@@ -445,6 +447,12 @@ Em setores onde uma fato referencia outra fato (ex.: despesas ou abastecimentos 
 
 ---
 
+## 🔗 Sugestão de próximo passo entre abas
+
+Depois de concluir uma ação relevante em qualquer uma das 6 abas (gerar uma base, gerar medidas no Automatizar BI, corrigir um simulado, gerar um cenário causal, formatar um DAX ou um M), aparece uma sugestão discreta apontando para a próxima aba que provavelmente faz sentido usar em seguida, conectando as ferramentas em vez de tratá-las como produtos isolados. Nunca interrompe o fluxo principal, sempre some quando não se aplica mais (ex.: a sugestão de gerar uma base primeiro só aparece no Simulador PL-300 se você ainda não tiver gerado nenhuma).
+
+---
+
 ## ✨ Recursos principais
 
 - **100 setores de negócio** com dados contextualmente coerentes (nomes, categorias, faixas de valores e distribuições plausíveis para cada indústria).
@@ -468,6 +476,8 @@ Em setores onde uma fato referencia outra fato (ex.: despesas ou abastecimentos 
 - **Dados Causais** (`ui/dados_causais.py`): gera uma relação causa-efeito conhecida de propósito (com defasagem, confundidor e ruído configuráveis) em cima do setor que você já gerou, com gabarito causal documentado.
 - **Formatar DAX** (`ui/formatar_dax.py` + `generators/dax_formatter.py`): cola uma expressão ou medida DAX bagunçada e recebe ela formatada, com quebra de linha por profundidade de parênteses e espaçamento consistente, no mesmo espírito do daxformatter.com.
 - **Formatar M** (`ui/formatar_m.py` + `generators/m_formatter.py`): mesmo princípio do formatador de DAX, adaptado pra sintaxe do Power Query (`let...in`, record, lista).
+- **Progresso pessoal no Simulador PL-300** (sem ranking): painel com melhor nota, média geral e gráfico de evolução, combinando o histórico da sessão atual com arquivos `.csv` de tentativas anteriores reimportados, sem precisar de login.
+- **Sugestão de próximo passo entre abas** (`ui/sugestao_proximo_passo.py`): depois de uma ação concluída em qualquer aba, uma sugestão discreta aponta pra próxima ferramenta que provavelmente faz sentido usar.
 - **Log de acesso** (`log_acesso.py`): registra uso real do app numa planilha Google Sheets, com um painel de análise separado ([`dash_bi_data_generator`](https://github.com/RodrigoAiosa/dash_bi_data_generator)).
 
 ---
@@ -553,18 +563,22 @@ Algumas perguntas usam a base que você acabou de gerar na aba do Gerador de Set
 
 1. Escolha quantas perguntas quer no simulado (5/10/15/20) e clique em **"🎲 Sortear novo simulado"**.
 2. Responda todas as perguntas no formulário.
-3. Clique em **"✅ Corrigir simulado"** para ver a nota geral, o desempenho por domínio, e a revisão pergunta a pergunta com explicação.
+3. Clique em **"✅ Corrigir simulado"** para ver a nota geral, o desempenho por domínio, a revisão pergunta a pergunta com explicação, e o painel **"🏆 Seu progresso"**.
 4. Baixe o **"📥 Baixar resultado desta prova (.csv)"**.
 
-### Acompanhando a evolução ao longo do tempo
+### 🏆 Seu progresso (sem ranking, sem comparação com ninguém)
 
-Cada prova corrigida gera um CSV com uma linha por pergunta respondida, no formato:
+Depois de corrigir qualquer simulado, aparece um painel de progresso pessoal: quantos simulados você já fez, sua melhor nota, sua média geral, e um gráfico da evolução ao longo do tempo. É só sobre o seu próprio progresso, sem posição em fila nem comparação com outras pessoas.
+
+Cada simulado corrigido na sessão atual entra automaticamente nesse histórico. Como o app não tem login, o jeito de juntar o progresso de visitas diferentes é reenviando os arquivos de resultado que você já baixou antes: dentro do próprio painel de progresso tem um expansor **"📤 Importar histórico de sessões anteriores"**, onde você sobe um ou mais `.csv` de tentativas passadas e o app junta tudo numa visão só. O controle do histórico fica com você, no seu computador, não em nenhum banco de dados.
+
+Cada prova corrigida também continua gerando o CSV individual, no formato:
 
 ```
 data_hora;pergunta;resposta_aluno;resposta_correta;total_acertos;total_erros;%total_acerto
 ```
 
-O `data_hora` (fuso de Brasília) marca o momento exato daquela tentativa, e os campos `total_acertos`/`total_erros`/`%total_acerto` se repetem em toda linha do arquivo, representando o resultado geral daquela prova. Guardando o arquivo baixado a cada nova tentativa e empilhando as linhas de vários arquivos numa mesma planilha (ex.: colar um embaixo do outro no Excel/Google Sheets), dá para montar o próprio histórico de evolução ao longo do tempo, sem depender de nenhuma conta ou login.
+O `data_hora` (fuso de Brasília) marca o momento exato daquela tentativa, e os campos `total_acertos`/`total_erros`/`%total_acerto` se repetem em toda linha do arquivo, representando o resultado geral daquela prova.
 
 ### Fontes oficiais (recomendado usar junto)
 
