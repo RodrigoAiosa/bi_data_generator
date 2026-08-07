@@ -541,10 +541,18 @@ def _relacionamentos_genericos(tabelas: dict) -> list:
 def _medidas_tmdl_bloco(medidas_por_tabela: dict) -> str:
     """Monta a tabela 'Medidas' em formato TMDL a partir do dicionário de
     medidas já gerado pelo Automatizar BI (mesmo formato usado pelo
-    gerador principal, para o arquivo abrir igual no Power BI/Tabular Editor)."""
+    gerador principal, para o arquivo abrir igual no Power BI/Tabular Editor).
+
+    Como rede de segurança final, garante que nenhum nome de medida se
+    repita: se por qualquer motivo duas medidas chegarem aqui com o mesmo
+    nome, a segunda (e as seguintes) recebem um sufixo numérico (" (2)",
+    " (3)"...), evitando o erro do Power BI/Tabular Editor de "TMDL
+    objects cannot be merged" por nome de medida duplicado.
+    """
     if not medidas_por_tabela:
         return ""
 
+    nomes_usados: dict = {}
     linhas = ["\ttable Medidas\n\n"]
     for _nome_tabela, categorias in medidas_por_tabela.items():
         for categoria, lista in categorias.items():
@@ -553,6 +561,12 @@ def _medidas_tmdl_bloco(medidas_por_tabela: dict) -> str:
             pasta_categoria = categoria.split(" ", 1)[1] if " " in categoria else categoria
             for m in lista:
                 nome = m["nome"]
+                if nome in nomes_usados:
+                    nomes_usados[nome] += 1
+                    nome = f"{nome} ({nomes_usados[nome]})"
+                else:
+                    nomes_usados[nome] = 1
+
                 formula = m["formula"]
                 titulo = m.get("titulo")
                 display_folder = f"{pasta_categoria}\\{titulo}" if titulo else pasta_categoria
