@@ -466,7 +466,6 @@ def _relacionamentos_genericos(tabelas: dict) -> list:
     blocos = []
     contador = 1
     vistos = set()
-    pai_tabela: dict = {}  # nome_from -> lista de TODAS as tabelas pra quem tem FK (não só a última)
 
     for nome_from, df in tabelas.items():
         pk_propria = df.columns[0] if len(df.columns) else None
@@ -484,8 +483,6 @@ def _relacionamentos_genericos(tabelas: dict) -> list:
             vistos.add(chave)
 
             inativo = _fecha_ciclo(nome_from, nome_to)
-            if not inativo and nome_to != "Calendario":
-                pai_tabela.setdefault(nome_from, []).append(nome_to)
 
             linhas = [
                 f"\trelationship rel_{contador}\n",
@@ -498,32 +495,14 @@ def _relacionamentos_genericos(tabelas: dict) -> list:
             blocos.append("".join(linhas))
             contador += 1
 
-    def _algum_ancestral_tem_coluna_data(nome: str, tem_coluna_data: dict, visitado: set | None = None) -> bool:
-        """
-        Percorre TODOS os pais (FK) de 'nome', recursivamente, procurando
-        algum ancestral que já tenha sua própria coluna de data (e portanto
-        seu próprio caminho até a Calendario). Usado pra decidir se o
-        relacionamento DIRETO dessa tabela com a Calendario deve ficar
-        inativo, evitando caminho ambíguo (ex.: FatoX -> Calendario E
-        FatoX -> DimY -> Calendario ao mesmo tempo).
-        """
-        if visitado is None:
-            visitado = set()
-        if nome in visitado:
-            return False
-        visitado.add(nome)
-        for pai in pai_tabela.get(nome, []):
-            if tem_coluna_data.get(pai, False):
-                return True
-            if _algum_ancestral_tem_coluna_data(pai, tem_coluna_data, visitado):
-                return True
-        return False
-
+    # Vincula cada tabela com coluna de data à Calendario, usando o MESMO
+    # union-find das chaves estrangeiras acima: se essa tabela já está
+    # conectada à Calendario por algum caminho de FK (direto ou através de
+    # outras tabelas), o novo link fica inativo. Isso garante que TODO o
+    # grafo de relacionamentos (FKs + Calendario) forme uma única árvore,
+    # sem nenhum caminho duplicado em lugar nenhum do modelo, mesmo em
+    # esquemas onde fatos se referenciam entre si (não só fato->dimensão).
     if "Calendario" in tabelas:
-        tem_coluna_data = {
-            nome: any(_coluna_e_data(c, df[c]) for c in df.columns)
-            for nome, df in tabelas.items() if nome != "Calendario"
-        }
         for nome_from, df in tabelas.items():
             if nome_from == "Calendario":
                 continue
@@ -536,7 +515,7 @@ def _relacionamentos_genericos(tabelas: dict) -> list:
                 continue
             vistos.add(chave)
 
-            inativo = _algum_ancestral_tem_coluna_data(nome_from, tem_coluna_data)
+            inativo = _fecha_ciclo(nome_from, "Calendario")
 
             linhas = [
                 f"\trelationship rel_{contador}\n",
