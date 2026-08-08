@@ -471,7 +471,7 @@ Depois de concluir uma ação relevante em qualquer uma das 6 abas (gerar uma ba
 - **Deriva temporal (concept drift)**: simula uma categoria ganhando participação gradualmente ao longo do período, para praticar detecção de tendência e mudança de comportamento.
 - **Interface bilíngue** PT-BR / EN, com toggle na barra lateral.
 - **Tema visual customizado** (`styles/css.py`), inspirado na paleta oficial do Power BI (amarelo e preto).
-- **Automatizar BI** (`ui/automatizar_bi.py`): envie sua própria planilha (.csv/.xlsx) e receba medidas DAX completas, tabela Calendario e modelo TMDL, gerados automaticamente a partir das colunas reais que você enviou.
+- **Automatizar BI** (`ui/automatizar_bi.py`): envie sua própria planilha (.csv/.xlsx) e receba medidas DAX completas, tabela Calendario e modelo TMDL, gerados automaticamente a partir das colunas reais que você enviou; planilhas com o mesmo conjunto de colunas (ex.: uma aba por mês) são consolidadas automaticamente numa única tabela.
 - **Simulador de Certificação PL-300** (`ui/simulador_pl300.py`): quiz de prática com perguntas originais nos 4 domínios oficiais do exame, com correção, nota por domínio, explicação e download do resultado em CSV para acompanhar a evolução ao longo do tempo.
 - **Dados Causais** (`ui/dados_causais.py`): gera uma relação causa-efeito conhecida de propósito (com defasagem, confundidor e ruído configuráveis) em cima do setor que você já gerou, com gabarito causal documentado.
 - **Formatar DAX** (`ui/formatar_dax.py` + `generators/dax_formatter.py`): cola uma expressão ou medida DAX bagunçada e recebe ela formatada, com quebra de linha por profundidade de parênteses e espaçamento consistente, no mesmo espírito do daxformatter.com.
@@ -533,7 +533,7 @@ A segunda aba do app aplica o mesmo motor de medidas DAX e modelo TMDL usado nos
 
 ### Passo a passo
 
-1. Envie um ou mais arquivos **.csv** ou **.xlsx** (um Excel com várias abas vira várias tabelas separadas automaticamente).
+1. Envie um ou mais arquivos **.csv** ou **.xlsx** (um Excel com várias abas vira várias tabelas separadas automaticamente; planilhas com exatamente as mesmas colunas são consolidadas automaticamente numa só, veja [Consolidação automática de planilhas idênticas](#consolidação-automática-de-planilhas-idênticas)).
 2. Cada tabela aparece num expansor com preview das 10 primeiras linhas e um combobox por coluna, já com um **tipo sugerido automaticamente** (Texto, Número inteiro/decimal, Data, Data e hora, Verdadeiro/Falso, Chave/ID), que você pode ajustar.
 3. Clique em **"🧮 Gerar medidas DAX"**. O motor gera:
    - **Perguntas de negócio** montadas a partir das colunas reais que você enviou (não são um exemplo fictício);
@@ -545,6 +545,15 @@ A segunda aba do app aplica o mesmo motor de medidas DAX e modelo TMDL usado nos
 ### Reparos automáticos
 
 Alguns arquivos exportados de forma errada chegam com todas as colunas despejadas como texto corrido numa única coluna (o cabeçalho vira o nome de uma única coluna cheia de vírgulas). O Automatizar BI detecta esse padrão e **desmembra automaticamente** de volta em colunas de verdade, avisando na tela quando isso acontece. Também corrige automaticamente acentuação quebrada (texto UTF-8 lido como Latin-1, tipo "CobranÃ§a" em vez de "Cobrança").
+
+### Consolidação automática de planilhas idênticas
+
+Se você envia várias planilhas com **exatamente o mesmo conjunto de colunas** (independente da ordem), como um Excel com uma aba por mês (`Jan`, `Fev`, `Mar`...) ou vários CSVs regionais com a mesma estrutura, o Automatizar BI detecta isso e **consolida tudo numa única tabela**, empilhando as linhas.
+
+- O nome da tabela consolidada usa o prefixo comum entre os nomes originais (ex.: `Vendas_Jan` + `Vendas_Fev` + `Vendas_Mar` → `Vendas_Consolidado`), ou um nome genérico se não achar um prefixo útil.
+- Uma coluna extra `_planilha_origem` é adicionada, guardando de qual planilha original cada linha veio, mantendo rastreabilidade.
+- Planilhas sem nenhuma outra com o mesmo conjunto de colunas ficam exatamente como estavam, sem nenhuma mudança.
+- Um aviso aparece na tela informando o que foi consolidado e quantas linhas a tabela final tem.
 
 ---
 
