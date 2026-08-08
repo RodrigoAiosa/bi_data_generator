@@ -17,6 +17,8 @@ exportados de forma errada:
 - Acentuação quebrada (texto UTF-8 lido como Latin-1, tipo "CobranÃ§a"
   em vez de "Cobrança").
 """
+import os
+
 import pandas as pd
 import streamlit as st
 
@@ -193,6 +195,74 @@ def _ler_arquivos(arquivos) -> tuple[dict, list]:
                     avisos.append(chave)
                 tabelas[chave] = _corrigir_mojibake_df(df)
     return tabelas, avisos
+
+
+def _nome_tabela_consolidada(nomes_originais: list) -> str:
+    """
+    Acha um nome pra tabela consolidada: usa o prefixo comum entre os
+    nomes originais (ex.: 'Vendas_Jan', 'Vendas_Fev' -> 'Vendas'), ou cai
+    pra um nome genérico se não achar prefixo comum útil.
+    """
+    prefixo = os.path.commonprefix(nomes_originais).rstrip("_- ")
+    if len(prefixo) >= 3:
+        return f"{prefixo}_Consolidado"
+    return "TabelaConsolidada"
+
+
+def _consolidar_planilhas_identicas(tabelas: dict) -> tuple[dict, list]:
+    """
+    Detecta tabelas com exatamente o MESMO CONJUNTO de colunas (mesmo
+    nome, independente da ordem) e consolida todas elas numa única
+    tabela fato, empilhando as linhas (pd.concat). É o caso comum de
+    receber várias planilhas mensais/regionais com a mesma estrutura
+    (ex.: 'Vendas_Jan', 'Vendas_Fev', 'Vendas_Mar').
+
+    Tabelas sem nenhuma outra com o mesmo conjunto de colunas ficam
+    exatamente como estavam, sem nenhuma mudança. Cada tabela
+    consolidada ganha uma coluna extra '_planilha_origem', indicando de
+    qual planilha original aquela linha veio, pra manter rastreabilidade.
+
+    Devolve (novo_dict_de_tabelas, lista_de_avisos_pra_mostrar_na_tela).
+    """
+    grupos: dict = {}
+    for nome, df in tabelas.items():
+        assinatura = frozenset(df.columns)
+        grupos.setdefault(assinatura, []).append((nome, df))
+
+    resultado: dict = {}
+    avisos: list = []
+    nomes_usados: set = set(tabelas.keys())
+
+    for lista in grupos.values():
+        if len(lista) == 1:
+            nome, df = lista[0]
+            resultado[nome] = df
+            continue
+
+        nomes_originais = [nome for nome, _ in lista]
+        nome_consolidado = _nome_tabela_consolidada(nomes_originais)
+        if nome_consolidado in nomes_usados:
+            sufixo = 2
+            while f"{nome_consolidado}_{sufixo}" in nomes_usados:
+                sufixo += 1
+            nome_consolidado = f"{nome_consolidado}_{sufixo}"
+        nomes_usados.add(nome_consolidado)
+
+        partes = []
+        for nome, df in lista:
+            parte = df.copy()
+            parte["_planilha_origem"] = nome
+            partes.append(parte)
+        df_consolidado = pd.concat(partes, ignore_index=True)
+
+        resultado[nome_consolidado] = df_consolidado
+        avisos.append(
+            f"{len(lista)} planilhas com colunas idênticas ({', '.join(nomes_originais)}) "
+            f"foram consolidadas automaticamente na tabela '{nome_consolidado}' "
+            f"({len(df_consolidado)} linhas no total)."
+        )
+
+    return resultado, avisos
 
 
 def _coluna_data_da_tabela(df: pd.DataFrame, tipos: dict) -> str | None:
@@ -710,6 +780,10 @@ def render_automatizar_bi() -> None:
     if not tabelas:
         st.warning("Nenhuma tabela foi identificada nos arquivos enviados.")
         return
+
+    tabelas, avisos_consolidacao = _consolidar_planilhas_identicas(tabelas)
+    for aviso in avisos_consolidacao:
+        st.info(f"🔗 {aviso}")
 
     st.success(f"{len(tabelas)} tabela(s) carregada(s): {', '.join(tabelas.keys())}")
 
