@@ -36,6 +36,7 @@ from ui.dados_causais import render_dados_causais, montar_gabarito_causal_txt
 from ui.formatar_dax import render_formatar_dax
 from ui.formatar_m import render_formatar_m
 from ui.sugestao_proximo_passo import sugerir
+from ui.auditor_modelo import render_auditor_modelo
 
 st.set_page_config(**PAGE_CONFIG)
 
@@ -328,8 +329,8 @@ def main() -> None:
         help=_DRIFT_HELP[lang],
     )
 
-    tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_dax, tab_m = st.tabs(
-        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M"]
+    tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_dax, tab_m, tab_auditor = st.tabs(
+        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo"]
     )
 
     with tab_gerador:
@@ -379,6 +380,9 @@ def main() -> None:
 
     with tab_m:
         render_formatar_m()
+
+    with tab_auditor:
+        render_auditor_modelo()
 
 
 if __name__ == "__main__":
