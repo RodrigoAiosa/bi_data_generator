@@ -49,7 +49,7 @@ SLIDER_DEFAULT = 5000
 SLIDER_STEP = 100
 
 # ═══════════════════════════════════════════════════════════════
-# Dicionário de setores disponíveis (55 setores) — ordem alfabética
+# Dicionário de setores disponíveis (100 setores) — ordem alfabética
 # ═══════════════════════════════════════════════════════════════
 SETORES = {
     "🏋️ Academia & Fitness":          gerar_academia,
@@ -155,7 +155,7 @@ SETORES = {
 }
 
 # ═══════════════════════════════════════════════════════════════
-# Informações para os flip-cards da tela inicial (55 setores) — ordem alfabética
+# Informações para os flip-cards da tela inicial (100 setores) — ordem alfabética
 # ═══════════════════════════════════════════════════════════════
 SETORES_INFO = [
     ("🏋️", "Academia & Fitness",         "Check-ins, alunos, instrutores, pagamentos e avaliações físicas"),
