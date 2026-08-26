@@ -71,7 +71,11 @@ def gerar_varejo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     datas    = rand_dates(start, end, n)
     qtds     = rng.integers(1, 20, n)
     produtos = random.choices(dim_produto["id_produto"].tolist(), k=n)
-    precos   = [dim_produto.loc[dim_produto["id_produto"] == p, "preco_unit"].values[0] for p in produtos]
+    # Lookup via dict (O(1) por linha) em vez de filtrar dim_produto inteira
+    # a cada uma das n linhas (O(n × len(dim_produto))), que ficava muito
+    # lento com volumes grandes (ex.: ~17s para n=100000).
+    preco_por_produto = dim_produto.set_index("id_produto")["preco_unit"].to_dict()
+    precos   = [preco_por_produto[p] for p in produtos]
     # Arredonda o desconto ANTES de usá-lo, e reaproveita esse mesmo valor
     # arredondado tanto na coluna "desconto" quanto no cálculo de "valor_total".
     # (Antes, a coluna exibida vinha de descontos.round(3) — que não muta o

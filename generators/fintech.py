@@ -200,14 +200,25 @@ def gerar_fintech(n_linhas: int, start_date, end_date) -> dict[str, pd.DataFrame
     # Selecionar chaves estrangeiras
     usuario_keys = np.random.choice(dim_usuario["sk_usuario"], n_linhas)
     
-    # Selecionar cartão válido para o usuário (apenas cartões ativos)
+    # Selecionar cartão válido para o usuário (apenas cartões ativos).
+    # Antes, cada uma das n_linhas iterações filtrava dim_cartao inteira
+    # (O(n × len(dim_cartao))), o que ficava muito lento com volumes
+    # grandes (ex.: ~43s para n=100000). Agora pré-computamos uma única
+    # vez um dict {sk_usuario: [cartões ativos]} e fazemos lookup O(1).
+    cartoes_ativos_por_usuario = (
+        dim_cartao[dim_cartao["ativo"] == True]
+        .groupby("sk_usuario")["sk_cartao"]
+        .apply(list)
+        .to_dict()
+    )
+    todos_cartoes = dim_cartao["sk_cartao"].to_numpy()
     cartao_keys = []
     for uk in usuario_keys:
-        cartoes_usuario = dim_cartao[(dim_cartao["sk_usuario"] == uk) & (dim_cartao["ativo"] == True)]["sk_cartao"].tolist()
+        cartoes_usuario = cartoes_ativos_por_usuario.get(uk)
         if cartoes_usuario:
             cartao_keys.append(np.random.choice(cartoes_usuario))
         else:
-            cartao_keys.append(np.random.choice(dim_cartao["sk_cartao"]))
+            cartao_keys.append(np.random.choice(todos_cartoes))
     
     comerciante_keys = np.random.choice(dim_comerciante["sk_comerciante"], n_linhas)
     dispositivo_keys = np.random.choice(dim_dispositivo["sk_dispositivo"], n_linhas)
