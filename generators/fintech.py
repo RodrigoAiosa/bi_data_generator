@@ -197,21 +197,33 @@ def gerar_fintech(n_linhas: int, start_date, end_date) -> dict[str, pd.DataFrame
             # Fallback: usar meia-noite
             data_hora.append(datetime.combine(datas_transacao[i], datetime.min.time()))
     
-    # Selecionar chaves estrangeiras
-    usuario_keys = np.random.choice(dim_usuario["sk_usuario"], n_linhas)
-    
-    # Selecionar cartão válido para o usuário (apenas cartões ativos).
-    # Antes, cada uma das n_linhas iterações filtrava dim_cartao inteira
-    # (O(n × len(dim_cartao))), o que ficava muito lento com volumes
-    # grandes (ex.: ~43s para n=100000). Agora pré-computamos uma única
-    # vez um dict {sk_usuario: [cartões ativos]} e fazemos lookup O(1).
+    # Pré-computa, uma única vez, o dict {sk_usuario: [cartões ativos]}.
     cartoes_ativos_por_usuario = (
         dim_cartao[dim_cartao["ativo"] == True]
         .groupby("sk_usuario")["sk_cartao"]
         .apply(list)
         .to_dict()
     )
+
+    # QA-006: dim_cartao é montada com np.random.choice(usuario_ids, n_cartoes),
+    # uma amostragem que NÃO garante pelo menos um cartão por usuário — na
+    # prática, ~29% dos usuários acabavam sem nenhum cartão (nem ativo, nem
+    # inativo). O código antigo sorteava um usuário qualquer para a transação
+    # e, se ele não tivesse cartão ativo, "emprestava" um cartão aleatório de
+    # outro usuário — ou seja, ~31% das transações tinham sk_cartao
+    # pertencente a um sk_usuario diferente do da própria transação.
+    # Correção: restringir o sorteio de usuario_keys apenas a usuários que
+    # de fato têm pelo menos um cartão ativo, já que uma transação de cartão
+    # não pode existir sem o dono ter um cartão. Mantém um fallback (com todos
+    # os usuários/cartões) só para o caso extremo de nenhum usuário ter
+    # cartão ativo algum.
+    usuarios_com_cartao_ativo = np.array(list(cartoes_ativos_por_usuario.keys()))
     todos_cartoes = dim_cartao["sk_cartao"].to_numpy()
+    if len(usuarios_com_cartao_ativo) > 0:
+        usuario_keys = np.random.choice(usuarios_com_cartao_ativo, n_linhas)
+    else:
+        usuario_keys = np.random.choice(dim_usuario["sk_usuario"], n_linhas)
+
     cartao_keys = []
     for uk in usuario_keys:
         cartoes_usuario = cartoes_ativos_por_usuario.get(uk)
