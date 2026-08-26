@@ -497,12 +497,18 @@ def gerar_sql_completo(
     batch_size: int = 500,
 ) -> str:
     """
-    Gera script SQL completo: DDL (CREATE TABLE) + DML (INSERT INTO).
-    Ideal para criar e popular o banco de uma vez só.
+    Gera script SQL completo: DDL (CREATE TABLE) + DML (INSERT INTO) +
+    Views de Relatórios Gerenciais (KPIs, evolução mensal/anual, %MoM/%YoY,
+    distribuição por categoria e ranking por dimensão).
+    Ideal para criar, popular e já deixar o banco pronto para consulta gerencial.
     """
-    ddl    = gerar_sql(nome_setor, tabelas, dialect)
-    dml    = gerar_sql_insert(nome_setor, tabelas, dialect, batch_size)
-    sep    = "-" * 70
-    header = f"-- {sep}\n-- SCRIPT COMPLETO: DDL + INSERT DATA\n-- {sep}\n\n"
-    divider = f"\n\n-- {sep}\n-- INSERT DATA\n-- {sep}\n\n"
-    return header + ddl + divider + dml
+    from .relatorios_gerenciais import gerar_relatorios_gerenciais
+
+    ddl        = gerar_sql(nome_setor, tabelas, dialect)
+    dml        = gerar_sql_insert(nome_setor, tabelas, dialect, batch_size)
+    relatorios = gerar_relatorios_gerenciais(nome_setor, tabelas, dialect)
+    sep     = "-" * 70
+    header  = f"-- {sep}\n-- SCRIPT COMPLETO: DDL + INSERT DATA + RELATÓRIOS GERENCIAIS\n-- {sep}\n\n"
+    div_dml = f"\n\n-- {sep}\n-- INSERT DATA\n-- {sep}\n\n"
+    div_rel = f"\n\n-- {sep}\n-- RELATÓRIOS GERENCIAIS (VIEWS)\n-- {sep}\n\n"
+    return header + ddl + div_dml + dml + div_rel + relatorios

@@ -24,9 +24,15 @@ _SQL_STRINGS = {
             "💾 INSERT INTO (dados)\n"
             "Popula as tabelas com os dados gerados. Usa o volume definido no slider. "
             "Gera blocos de 500 linhas por INSERT.\n\n"
-            "📦 Completo (DDL + INSERT)\n"
-            "Combina os dois scripts num único arquivo. "
-            "Cole no SSMS, DBeaver ou psql e execute para recriar o banco completo."
+            "📦 Completo (DDL + INSERT + Relatórios)\n"
+            "Combina os três em um único arquivo: estrutura, dados e views de relatórios "
+            "gerenciais (KPIs, evolução mensal/anual, %MoM/%YoY, distribuição por categoria "
+            "e ranking por dimensão). Cole no SSMS, DBeaver ou psql e execute para recriar "
+            "o banco completo, já pronto para consulta gerencial.\n\n"
+            "📊 Somente Relatórios Gerenciais (Views)\n"
+            "Gera apenas as views de relatórios (sem CREATE TABLE nem INSERT). Use quando as "
+            "tabelas e os dados já existem no banco e você só quer adicionar as views de "
+            "análise gerencial."
         ),
         "en": (
             "📋 CREATE TABLE (DDL)\n"
@@ -35,9 +41,15 @@ _SQL_STRINGS = {
             "💾 INSERT INTO (data)\n"
             "Populates tables with generated data. Uses the volume set in the slider. "
             "Generates blocks of 500 rows per INSERT.\n\n"
-            "📦 Full (DDL + INSERT)\n"
-            "Combines both scripts into a single file. "
-            "Paste into SSMS, DBeaver or psql and run to recreate the full database."
+            "📦 Full (DDL + INSERT + Reports)\n"
+            "Combines all three into a single file: structure, data and managerial report "
+            "views (KPIs, monthly/yearly evolution, %MoM/%YoY, category breakdowns and "
+            "dimension rankings). Paste into SSMS, DBeaver or psql and run to recreate the "
+            "full database, already ready for managerial queries.\n\n"
+            "📊 Managerial Reports Only (Views)\n"
+            "Generates only the report views (no CREATE TABLE or INSERT). Use this when the "
+            "tables and data already exist in the database and you just want to add the "
+            "managerial analysis views."
         ),
     },
     "help_dialeto": {
@@ -68,7 +80,9 @@ _SQL_STRINGS = {
     "tipo":     {"pt": "Tipo de script",           "en": "Script type"},
     "opt_ddl":  {"pt": "CREATE TABLE (DDL)",       "en": "CREATE TABLE (DDL)"},
     "opt_ins":  {"pt": "INSERT INTO (dados)",      "en": "INSERT INTO (data)"},
-    "opt_full": {"pt": "Completo (DDL + INSERT)",  "en": "Full (DDL + INSERT)"},
+    "opt_full": {"pt": "Completo (DDL + INSERT + Relatórios)",  "en": "Full (DDL + INSERT + Reports)"},
+    "opt_rel":  {"pt": "📊 Somente Relatórios Gerenciais (Views)",
+                 "en": "📊 Managerial Reports Only (Views)"},
     "btn":      {"pt": "⬇️ Gerar & Baixar SQL",   "en": "⬇️ Generate & Download SQL"},
     "spin":     {"pt": "Gerando script SQL…",      "en": "Generating SQL script…"},
     "preview":  {"pt": "👁️ Preview SQL",           "en": "👁️ SQL Preview"},
@@ -219,7 +233,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
         )
         script_type = st.selectbox(
             _s("tipo"),
-            options=[_s("opt_ddl"), _s("opt_ins"), _s("opt_full")],
+            options=[_s("opt_ddl"), _s("opt_ins"), _s("opt_full"), _s("opt_rel")],
             key="sql_tipo",
             help=sql_help_texto_md,
         )
@@ -240,6 +254,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
                 st.stop()
 
             from generators.sql_generator import gerar_sql, gerar_sql_insert, gerar_sql_completo
+            from generators.relatorios_gerenciais import gerar_relatorios_gerenciais
             from log_acesso import registrar_evento
 
             fn          = SETORES[setor]
@@ -254,6 +269,9 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
                 elif script_type == _s("opt_ins"):
                     sql_content = gerar_sql_insert(nome_setor, tabelas_sql, dialect_key)
                     sufixo = "INSERT"
+                elif script_type == _s("opt_rel"):
+                    sql_content = gerar_relatorios_gerenciais(nome_setor, tabelas_sql, dialect_key)
+                    sufixo = "RELATORIOS"
                 else:
                     sql_content = gerar_sql_completo(nome_setor, tabelas_sql, dialect_key)
                     sufixo = "COMPLETO"
