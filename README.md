@@ -22,7 +22,7 @@ O app principal tem **6 abas**: o Gerador de Setores (100 bases prontas), o Auto
 - [Quantidade de medidas DAX por setor](#-quantidade-de-medidas-dax-geradas-por-setor)
 - [Modelo de dados gerado (Star Schema)](#-modelo-de-dados-gerado-star-schema)
 - [Recursos principais](#-recursos-principais)
-- [Exportação SQL (DDL / INSERT)](#-exportação-sql-ddl--insert)
+- [Exportação SQL (DDL / INSERT / Relatórios Gerenciais)](#-exportação-sql-ddl--insert--relatórios-gerenciais)
 - [Modo anomalias, deriva temporal e case de negócio](#-modo-anomalias-deriva-temporal-e-case-de-negócio)
 - [Automatizar BI (suas próprias planilhas)](#-automatizar-bi-suas-próprias-planilhas)
 - [Simulador de Certificação PL-300](#-simulador-de-certificação-pl-300)
@@ -466,7 +466,7 @@ Depois de concluir uma ação relevante em qualquer uma das 6 abas (gerar uma ba
 - **Case de negócio automático** (`generators/case_negocio.py`): cada base vem com um parágrafo de contexto fictício, adaptado ao setor e ao modo ativo (anomalia, deriva temporal ou nenhum dos dois), transformando a geração num exercício com objetivo real.
 - **Gabarito de anomalias e deriva temporal**: quando algum desses modos está ativo, um expansor colapsado (tipo spoiler) revela exatamente o que foi alterado e onde, útil para quem ensina conferir se a análise encontrou o problema certo.
 - **Exportação em ZIP**: todas as tabelas em CSV, mais `model.tmdl`, `case_negocio.txt` e (quando aplicável) `gabarito.txt`, compactados em um único arquivo pronto para importar no Power BI, Tableau, Excel ou Python.
-- **Exportação SQL** (DDL/INSERT/completo) em múltiplos dialetos, veja a seção dedicada abaixo.
+- **Exportação SQL** (DDL/INSERT/completo) em múltiplos dialetos, com views de **Relatórios Gerenciais** (KPIs, evolução mensal/anual, %MoM/%YoY, distribuição por categoria e ranking por dimensão) deduzidas automaticamente para qualquer setor, veja a seção dedicada abaixo.
 - **Modo anomalias**: injeta problemas propositais nos dados para prática de análise de causa raiz.
 - **Deriva temporal (concept drift)**: simula uma categoria ganhando participação gradualmente ao longo do período, para praticar detecção de tendência e mudança de comportamento.
 - **Interface bilíngue** PT-BR / EN, com toggle na barra lateral.
@@ -482,7 +482,7 @@ Depois de concluir uma ação relevante em qualquer uma das 6 abas (gerar uma ba
 
 ---
 
-## 🗄 Exportação SQL (DDL / INSERT)
+## 🗄 Exportação SQL (DDL / INSERT / Relatórios Gerenciais)
 
 Além do ZIP de CSVs, a barra lateral do app principal permite gerar diretamente um script SQL para o setor selecionado (`generators/sql_generator.py`), com suporte a:
 
@@ -490,9 +490,25 @@ Além do ZIP de CSVs, a barra lateral do app principal permite gerar diretamente
 - **Tipos de script**:
   - 📋 **CREATE TABLE (DDL)**: apenas a estrutura das tabelas, com tipos inferidos, chaves primárias (`id_`/`sk_`) e índices sugeridos. Ideal para criar o banco do zero.
   - 💾 **INSERT INTO (dados)**: popula as tabelas com os dados gerados, no volume definido no slider, em blocos de 500 linhas por `INSERT`.
-  - 📦 **Completo (DDL + INSERT)**: os dois combinados em um único arquivo, pronto para colar no SSMS, DBeaver ou `psql` e recriar o banco inteiro.
+  - 📦 **Completo (DDL + INSERT + Relatórios)**: os três combinados em um único arquivo — estrutura, dados e views de relatórios gerenciais — pronto para colar no SSMS, DBeaver ou `psql` e recriar o banco inteiro já pronto para consulta gerencial.
+  - 📊 **Somente Relatórios Gerenciais (Views)**: gera apenas as views, para quem já tem as tabelas e os dados criados no banco e só quer adicionar a camada de análise gerencial.
 - **Overrides de tamanho de coluna** para campos conhecidos (CPF, CNPJ, CNH, placa, UF, e-mail, telefone, CEP, URL, descrição, observação, endereço etc.), evitando `VARCHAR` genérico demais.
 - **Preview do script** direto na interface antes do download (com truncamento visual para scripts muito longos).
+
+### 📊 Relatórios Gerenciais (Views)
+
+Ao gerar o script **Completo** ou a opção **Somente Relatórios Gerenciais**, o app cria automaticamente (`generators/relatorios_gerenciais.py`) um conjunto de *views* SQL de análise gerencial para **qualquer um dos 100 setores** — sem depender de conhecimento manual do schema de cada um. A lógica introspecciona as tabelas `Fato*`/`Dim*`/`dCalendario` e as colunas reais geradas (nome, tipo e cardinalidade) para deduzir:
+
+| View | O que mostra |
+|---|---|
+| `vw_KPIsGerenciais_<Setor>` | Painel executivo — contagens das dimensões + soma/média das principais medidas numéricas |
+| `vw_EvolucaoMensal_<Setor>` | Série mensal de volume e medidas (quando há coluna de data ligada ao `dCalendario`) |
+| `vw_EvolucaoAnual_<Setor>` | Mesma evolução, agregada por ano |
+| `vw_IndicadoresMoMYoY_<Setor>` | Variação percentual mês a mês (MoM) e ano a ano (YoY), via `LAG(1)`/`LAG(12)` |
+| `vw_<Setor>Por_<categoria>` | Distribuição por até 2 colunas categóricas detectadas (canal, tipo, status etc.) |
+| `vw_RankingTop20_<Dimensão>` | Ranking das 20 principais entidades relacionadas por FK (vendedor, profissional, cliente etc.), priorizando dimensões do tipo "prestador/performer" quando existirem |
+
+Funciona nos 3 dialetos (SQL Server, PostgreSQL, MySQL). Como as views são deduzidas automaticamente a partir de heurísticas de nome/tipo de coluna, vale sempre revisar antes de usar em produção — especialmente a coluna escolhida como medida principal e a coluna de data usada para as séries temporais.
 
 ---
 
