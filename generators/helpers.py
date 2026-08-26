@@ -13,6 +13,29 @@ import pandas as pd
 rng = np.random.default_rng()
 
 
+# ── Validação defensiva de parâmetros ────────────────────────────────────────
+def validar_parametros_geracao(n: int, start: date, end: date) -> None:
+    """
+    Valida os parâmetros básicos que todo gerador de setor recebe (n, start, end).
+
+    QA-003: chamado diretamente (fora do fluxo normal da UI, que já impede
+    esses casos via o slider com mínimo 100 e a checagem `data_fim <= data_inicio`
+    em app.py), n<=0 ou start>=end causavam exceções técnicas e pouco claras
+    vindas do NumPy/pandas (ex.: "ValueError: negative dimensions are not
+    allowed" ou "ValueError: high <= 0"). Esta função dá uma mensagem de erro
+    clara e específica assim que o parâmetro inválido chega, antes de qualquer
+    processamento.
+    """
+    if n <= 0:
+        raise ValueError(
+            f"O volume de linhas (n) precisa ser maior que zero. Recebido: {n}."
+        )
+    if start >= end:
+        raise ValueError(
+            f"A data inicial ({start}) precisa ser anterior à data final ({end})."
+        )
+
+
 # ── IDs sequenciais ──────────────────────────────────────────────────────────
 def new_ids(n: int, prefix: str = "") -> list[int]:
     return list(range(1, n + 1))

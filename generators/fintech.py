@@ -46,6 +46,16 @@ def gerar_fintech(n_linhas: int, start_date, end_date) -> dict[str, pd.DataFrame
         # Datas padrão em caso de erro
         start = datetime.now() - timedelta(days=365)
         end = datetime.now()
+
+    # QA-003: n_linhas e datas com formato inválido já tinham fallback acima,
+    # mas start >= end não era verificado e quebrava mais adiante com uma
+    # exceção técnica pouco clara (ex.: "ValueError: high <= 0" vindo do
+    # NumPy, dentro de rand_dates). Aqui aplicamos o mesmo tipo de fallback
+    # silencioso já usado para os demais parâmetros inválidos desta função,
+    # para manter o comportamento consistente com o resto da validação acima.
+    if start >= end:
+        start = datetime.now() - timedelta(days=365)
+        end = datetime.now()
     
     # ========== DIMENSÕES ==========
     

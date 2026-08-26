@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, validar_parametros_geracao
 
 fake = Faker("pt_BR")
 
@@ -21,6 +21,7 @@ REGIOES = {
 
 
 def gerar_varejo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
+    validar_parametros_geracao(n, start, end)
     n_clientes   = min(n, 5000)
     n_produtos   = min(500, n // 5 + 50)
     n_vendedores = 50
