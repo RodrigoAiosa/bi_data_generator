@@ -72,7 +72,14 @@ def gerar_varejo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     qtds     = rng.integers(1, 20, n)
     produtos = random.choices(dim_produto["id_produto"].tolist(), k=n)
     precos   = [dim_produto.loc[dim_produto["id_produto"] == p, "preco_unit"].values[0] for p in produtos]
-    descontos = rng.uniform(0, 0.3, n)
+    # Arredonda o desconto ANTES de usá-lo, e reaproveita esse mesmo valor
+    # arredondado tanto na coluna "desconto" quanto no cálculo de "valor_total".
+    # (Antes, a coluna exibida vinha de descontos.round(3) — que não muta o
+    # array original — enquanto valor_total usava o "descontos" sem
+    # arredondar, fazendo quantidade*valor_unit*(1-desconto) nunca bater
+    # com valor_total.)
+    descontos = rng.uniform(0, 0.3, n).round(3)
+    valor_unit_arred = [round(p, 2) for p in precos]
 
     fato = pd.DataFrame({
         "id_venda":    new_ids(n),
@@ -82,9 +89,9 @@ def gerar_varejo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "id_vendedor": random.choices(dim_vendedor["id_vendedor"].tolist(), k=n),
         "id_filial":   random.choices(dim_filial["id_filial"].tolist(), k=n),
         "quantidade":  qtds,
-        "valor_unit":  [round(p, 2) for p in precos],
-        "desconto":    descontos.round(3),
-        "valor_total": [round(q * p * (1 - d), 2) for q, p, d in zip(qtds, precos, descontos)],
+        "valor_unit":  valor_unit_arred,
+        "desconto":    descontos,
+        "valor_total": [round(q * p * (1 - d), 2) for q, p, d in zip(qtds, valor_unit_arred, descontos)],
         "canal":       random.choices(["Loja", "Online", "Telefone"], k=n),
     })
 
