@@ -774,7 +774,14 @@ def render_automatizar_bi() -> None:
     try:
         tabelas, avisos_reparo = _ler_arquivos(arquivos)
     except Exception as e:
-        st.error(f"Não foi possível ler um dos arquivos enviados. Detalhe: {e}")
+        st.error(
+            "Não foi possível ler um dos arquivos enviados. Verifique se ele não está "
+            "corrompido, vazio, protegido por senha, ou com uma extensão diferente do "
+            "conteúdo real (por exemplo, um arquivo .csv salvo com extensão .xlsx), e "
+            "tente novamente."
+        )
+        with st.expander("Detalhe técnico do erro"):
+            st.caption(f"{type(e).__name__}: {e}")
         return
 
     if not tabelas:
