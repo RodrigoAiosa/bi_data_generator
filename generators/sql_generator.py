@@ -61,8 +61,12 @@ def _infer_sql_type(col: str, dtype: str, dialect: str) -> str:
     if parece_data_pelo_nome and dtype not in ("int64", "int32", "float64", "float32", "bool"):
         return "DATE"
 
-    # IDs inteiros
-    if col_lower.startswith(("id_", "sk_")):
+    # IDs inteiros — só quando o dtype real já é inteiro. Nem toda coluna
+    # id_/sk_ neste projeto é uma chave substituta numérica: sk_quarto
+    # ("12_Q002"), sk_rota ("ROTA034") e id_plano_atual ("Starter") são
+    # texto de verdade. Forçar INT nelas quebrava o INSERT com erro de
+    # conversão de string para número.
+    if col_lower.startswith(("id_", "sk_")) and dtype in ("int64", "int32"):
         if dialect == "sqlserver":
             return "INT"
         if dialect == "postgresql":
@@ -75,35 +79,53 @@ def _infer_sql_type(col: str, dtype: str, dialect: str) -> str:
             return "DECIMAL(8,2)"
         return "NUMERIC(8,2)"
 
-    # Valores monetários grandes
-    if any(p in col_lower for p in ["valor", "preco", "custo", "receita", "lucro", "orcamento",
-                                     "honorario", "salario", "taxa", "frete", "desconto"]):
+    # Valores monetários grandes — só quando a coluna já é numérica de
+    # verdade. Sem essa guarda, colunas de TEXTO cujo nome contém uma dessas
+    # substrings (ex.: "modelo_receita", "tipo_taxa", "fonte_receita",
+    # "tipo_custo" — categorias de negócio, não valores) eram forçadas para
+    # DECIMAL(18,2), quebrando o INSERT com erro de conversão.
+    if dtype in ("int64", "int32", "float64", "float32") and any(
+        p in col_lower for p in ["valor", "preco", "custo", "receita", "lucro", "orcamento",
+                                  "honorario", "salario", "taxa", "frete", "desconto"]
+    ):
         if dialect == "sqlserver":
             return "DECIMAL(18,2)"
         if dialect == "postgresql":
             return "NUMERIC(18,2)"
         return "DECIMAL(18,2)"
 
-    # Overrides de VARCHAR por nome
-    for key, size in _VARCHAR_OVERRIDES.items():
-        if key in col_lower:
-            if dialect == "sqlserver":
-                return f"NVARCHAR({size})"
-            return f"VARCHAR({size})"
+    # Overrides de VARCHAR por nome — só se a coluna NÃO for realmente
+    # numérica/booleana. Sem essa guarda, qualquer coluna numérica cujo nome
+    # contenha uma dessas substrings (ex.: "pontos_cnh", que contém "cnh")
+    # era forçada para NVARCHAR mesmo sendo int64 de verdade — o que não
+    # quebrava o INSERT (o valor "3" também é um NVARCHAR válido), mas
+    # quebrava qualquer agregação numérica (SUM/AVG) feita depois em cima
+    # dessa coluna, como nas views de Relatórios Gerenciais.
+    if dtype not in ("int64", "int32", "float64", "float32", "bool"):
+        for key, size in _VARCHAR_OVERRIDES.items():
+            if key in col_lower:
+                if dialect == "sqlserver":
+                    return f"NVARCHAR({size})"
+                return f"VARCHAR({size})"
 
     return _DTYPE_SQL.get(dtype, _DTYPE_SQL["object"])[dialect]
 
 
-def _is_pk(col: str) -> bool:
+def _is_not_null(col: str, serie: pd.Series | None = None) -> bool:
     col_lower = col.lower()
-    # Primeira coluna que começa com id_ ou sk_ é PK
-    return col_lower.startswith(("id_", "sk_"))
-
-
-def _is_not_null(col: str) -> bool:
-    col_lower = col.lower()
-    return any(col_lower.startswith(p) or p in col_lower
-               for p in _NOT_NULL_PATTERNS)
+    parece_not_null = any(col_lower.startswith(p) or p in col_lower
+                           for p in _NOT_NULL_PATTERNS)
+    if not parece_not_null:
+        return False
+    # Mesmo quando o NOME sugere NOT NULL, os dados reais têm a palavra
+    # final: colunas como id_drone (nem todo equipamento tem drone),
+    # data_entrega (pedido pode não ter sido entregue ainda) ou
+    # data_demissao (funcionário pode continuar ativo) legitimamente têm
+    # nulos — forçar NOT NULL nelas quebrava o INSERT em qualquer linha
+    # com valor nulo.
+    if serie is not None and serie.isnull().any():
+        return False
+    return True
 
 
 def _table_comment(tname: str) -> str:
@@ -188,6 +210,21 @@ def gerar_sql(nome_setor: str, tabelas: dict[str, pd.DataFrame], dialect: str = 
         lines.append(f"-- {sep}")
 
         pk_col = None
+        pk_cols_composite = None
+        id_sk_cols = [c for c in tdf.columns if c.lower().startswith(("id_", "sk_"))]
+        if id_sk_cols:
+            primeiro = id_sk_cols[0]
+            if tdf[primeiro].is_unique:
+                pk_col = primeiro
+            elif len(id_sk_cols) > 1 and not tdf[id_sk_cols].duplicated().any():
+                # Tabela ponte N:N (ex.: BridgeConteudoArtista): a primeira
+                # coluna id_/sk_ se repete de propósito, mas a COMBINAÇÃO de
+                # todas as colunas id_/sk_ é única — usa chave composta em
+                # vez de forçar PK inválida na primeira coluna sozinha.
+                pk_cols_composite = id_sk_cols
+            # Se nem a coluna isolada nem a combinação forem únicas, não
+            # força nenhuma PK (evita CONSTRAINT que quebraria no CREATE
+            # TABLE por violação de unicidade nos dados reais).
 
         if dialect == "sqlserver":
             lines.append(f"CREATE TABLE [dbo].[{tname}] (")
@@ -197,16 +234,11 @@ def gerar_sql(nome_setor: str, tabelas: dict[str, pd.DataFrame], dialect: str = 
             lines.append(f"CREATE TABLE `{tname}` (")
 
         col_defs = []
-        pk_candidates = []
 
         for col in tdf.columns:
             dtype_str = str(tdf[col].dtype)
             sql_type  = _infer_sql_type(col, dtype_str, dialect)
-            not_null  = "NOT NULL" if _is_not_null(col) else "NULL"
-
-            if _is_pk(col) and pk_col is None:
-                pk_col = col
-                pk_candidates.append(col)
+            not_null  = "NOT NULL" if _is_not_null(col, tdf[col]) else "NULL"
 
             if dialect == "sqlserver":
                 col_defs.append(f"    [{col}] {sql_type} {not_null}")
@@ -223,6 +255,16 @@ def gerar_sql(nome_setor: str, tabelas: dict[str, pd.DataFrame], dialect: str = 
                 col_defs.append(f"    CONSTRAINT pk_{tname.lower()} PRIMARY KEY ({pk_col})")
             else:
                 col_defs.append(f"    PRIMARY KEY (`{pk_col}`)")
+        elif pk_cols_composite:
+            if dialect == "sqlserver":
+                cols_str = ", ".join(f"[{c}]" for c in pk_cols_composite)
+                col_defs.append(f"    CONSTRAINT [PK_{tname}] PRIMARY KEY ({cols_str})")
+            elif dialect == "postgresql":
+                cols_str = ", ".join(pk_cols_composite)
+                col_defs.append(f"    CONSTRAINT pk_{tname.lower()} PRIMARY KEY ({cols_str})")
+            else:
+                cols_str = ", ".join(f"`{c}`" for c in pk_cols_composite)
+                col_defs.append(f"    PRIMARY KEY ({cols_str})")
 
         lines.append(",\n".join(col_defs))
 
