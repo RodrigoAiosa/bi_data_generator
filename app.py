@@ -65,6 +65,44 @@ _GABARITO_TITULO = {
 }
 _CASE_TITULO = {"pt": "📖 Seu case de negócio", "en": "📖 Your business case"}
 
+# ── Guia das abas (mostrado expandido só na primeira visita da sessão) ──────
+_TABS_GUIA_TITULO = {
+    "pt": "❓ O que cada aba faz?",
+    "en": "❓ What does each tab do?",
+}
+_TABS_GUIA_TEXTO = {
+    "pt": (
+        "- 🏭 **Gerador de Setores** — gera uma base de BI sintética e pronta pra uso, "
+        "escolhendo entre 100 setores (varejo, fintech, saúde, RH etc.), com modelo star schema, "
+        "medidas DAX e exportação em CSV/ZIP ou SQL.\n"
+        "- 🤖 **Automatizar BI** — envie suas próprias planilhas (.csv/.xlsx) e receba as medidas "
+        "DAX geradas automaticamente pra elas, sem precisar usar os dados sintéticos do gerador.\n"
+        "- 🎓 **Simulador PL-300** — pratique perguntas originais no estilo da certificação "
+        "Microsoft Power BI Data Analyst Associate (PL-300), organizadas pelos 4 domínios oficiais.\n"
+        "- 🧬 **Dados Causais** — simula uma relação de causa e efeito conhecida de propósito em "
+        "cima do setor que você já gerou, ideal pra praticar inferência causal e teste A/B.\n"
+        "- 📐 **Formatar DAX** — cole uma medida DAX bagunçada numa linha só e receba ela formatada.\n"
+        "- 🔧 **Formatar M** — mesma ideia, mas para código M (Power Query).\n"
+        "- 🩺 **Auditor de Modelo** — cole o TMDL de um modelo Power BI seu de verdade e receba uma "
+        "nota de qualidade com achados acionáveis (medida duplicada, divisão sem `DIVIDE()` etc.)."
+    ),
+    "en": (
+        "- 🏭 **Sector Generator** — generates a ready-to-use synthetic BI dataset, choosing from "
+        "100 sectors (retail, fintech, healthcare, HR, etc.), with a star schema model, DAX "
+        "measures and CSV/ZIP or SQL export.\n"
+        "- 🤖 **Automate BI** — upload your own spreadsheets (.csv/.xlsx) and get DAX measures "
+        "generated automatically for them, no need to use the generator's synthetic data.\n"
+        "- 🎓 **PL-300 Simulator** — practice original questions in the style of the Microsoft "
+        "Power BI Data Analyst Associate (PL-300) certification, organized by its 4 official domains.\n"
+        "- 🧬 **Causal Data** — simulates a cause-and-effect relationship built on purpose on top of "
+        "the sector you already generated, great for practicing causal inference and A/B testing.\n"
+        "- 📐 **Format DAX** — paste a messy one-line DAX measure and get it formatted.\n"
+        "- 🔧 **Format M** — same idea, but for M code (Power Query).\n"
+        "- 🩺 **Model Auditor** — paste the TMDL of one of your real Power BI models and get a "
+        "quality score with actionable findings (duplicate measure, division without `DIVIDE()`, etc.)."
+    ),
+}
+
 # ── Passos da barra de progresso ─────────────────────────────────────────────
 _STEPS_PT = ["Criando dimensões…", "Gerando tabela fato…", "Calculando métricas…", "Compactando ZIP…"]
 _STEPS_EN = ["Building dimensions…", "Generating fact table…", "Computing metrics…", "Compressing ZIP…"]
@@ -347,6 +385,14 @@ def main() -> None:
         value=False,
         help=_DRIFT_HELP[lang],
     )
+
+    # Guia explicando o que cada aba faz — expandido automaticamente só na
+    # primeira visita desta sessão (via session_state); depois fica
+    # disponível recolhido, sem precisar clicar em cada aba pra descobrir.
+    tabs_ja_visto = st.session_state.get("tabs_guia_visto", False)
+    with st.expander(_TABS_GUIA_TITULO[lang], expanded=not tabs_ja_visto):
+        st.markdown(_TABS_GUIA_TEXTO[lang])
+    st.session_state["tabs_guia_visto"] = True
 
     tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_dax, tab_m, tab_auditor = st.tabs(
         ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo"]
