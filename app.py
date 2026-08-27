@@ -215,13 +215,20 @@ def _injetar_anomalias(tabelas: dict[str, pd.DataFrame]) -> tuple[dict[str, pd.D
     return tabelas, gabarito
 
 
+# ── Cache da geração bruta (pré-anomalia/deriva) ────────────────────────────
+# Implementação em ui/cache_utils.py — compartilhada com o botão de SQL da
+# sidebar, para reaproveitar a mesma geração quando setor/volume/datas não
+# mudaram, evitando regenerar do zero ao alternar de aba ou ligar/desligar
+# anomalia/deriva.
+from ui.cache_utils import gerar_bruto_com_cache as _gerar_bruto_com_cache
+
+
 # ── Barra de progresso ────────────────────────────────────────────────────────
 
 def _gerar_com_progresso(setor: str, n_linhas: int, data_inicio, data_fim, anomalia: bool, drift: bool) -> tuple[dict, list[dict]]:
     """Gera os dados exibindo barra de progresso com etapas e tempo REAL medido. Retorna (tabelas, gabarito)."""
     lang   = _get_lang()
     steps  = _STEPS_EN if lang == "en" else _STEPS_PT
-    fn     = SETORES[setor]
 
     t_inicio = time.perf_counter()
     bar    = st.progress(5, text=steps[0])
@@ -238,10 +245,11 @@ def _gerar_com_progresso(setor: str, n_linhas: int, data_inicio, data_fim, anoma
         )
         status.caption(aviso)
 
-    # Etapa 1: geração real das tabelas (a etapa que de fato consome tempo)
+    # Etapa 1: geração real das tabelas (a etapa que de fato consome tempo) —
+    # reaproveita o cache se setor/volume/datas forem os mesmos da última vez.
     bar.progress(20, text=steps[1])
     t_geracao_ini = time.perf_counter()
-    tabelas = fn(n_linhas, data_inicio, data_fim)
+    tabelas = _gerar_bruto_com_cache(setor, n_linhas, data_inicio, data_fim)
     t_geracao = time.perf_counter() - t_geracao_ini
 
     # Etapa 2: anomalias / deriva temporal / métricas

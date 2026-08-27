@@ -257,8 +257,8 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
             from generators.sql_generator import gerar_sql, gerar_sql_insert, gerar_sql_completo
             from generators.relatorios_gerenciais import gerar_relatorios_gerenciais
             from log_acesso import registrar_evento
+            from ui.cache_utils import gerar_bruto_com_cache
 
-            fn          = SETORES[setor]
             nome_setor  = setor.split(" ", 1)[1]
 
             if n_linhas >= 20_000:
@@ -272,7 +272,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
             t_inicio_sql = time.perf_counter()
             try:
                 with st.spinner(_s("spin")):
-                    tabelas_sql = fn(n_linhas, data_inicio, data_fim)
+                    tabelas_sql = gerar_bruto_com_cache(setor, n_linhas, data_inicio, data_fim)
 
                     if script_type == _s("opt_ddl"):
                         sql_content = gerar_sql(nome_setor, tabelas_sql, dialect_key)
