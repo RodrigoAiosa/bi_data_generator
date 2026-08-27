@@ -1,6 +1,7 @@
 """ui/sidebar.py: Sidebar completa com toggle de idioma, pesquisa e SQL DDL/INSERT."""
 
 from datetime import date
+import time
 
 import streamlit as st
 
@@ -260,27 +261,59 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
             fn          = SETORES[setor]
             nome_setor  = setor.split(" ", 1)[1]
 
-            with st.spinner(_s("spin")):
-                tabelas_sql = fn(n_linhas, data_inicio, data_fim)
+            if n_linhas >= 20_000:
+                aviso_vol = (
+                    f"ℹ️ Volume grande selecionado ({n_linhas:,} linhas) — pode levar alguns segundos."
+                    if lang == "pt" else
+                    f"ℹ️ Large volume selected ({n_linhas:,} rows) — this may take a few seconds."
+                )
+                st.caption(aviso_vol)
 
-                if script_type == _s("opt_ddl"):
-                    sql_content = gerar_sql(nome_setor, tabelas_sql, dialect_key)
-                    sufixo = "DDL"
-                elif script_type == _s("opt_ins"):
-                    sql_content = gerar_sql_insert(nome_setor, tabelas_sql, dialect_key)
-                    sufixo = "INSERT"
-                elif script_type == _s("opt_rel"):
-                    sql_content = gerar_relatorios_gerenciais(nome_setor, tabelas_sql, dialect_key)
-                    sufixo = "RELATORIOS"
-                else:
-                    sql_content = gerar_sql_completo(nome_setor, tabelas_sql, dialect_key)
-                    sufixo = "COMPLETO"
+            t_inicio_sql = time.perf_counter()
+            try:
+                with st.spinner(_s("spin")):
+                    tabelas_sql = fn(n_linhas, data_inicio, data_fim)
+
+                    if script_type == _s("opt_ddl"):
+                        sql_content = gerar_sql(nome_setor, tabelas_sql, dialect_key)
+                        sufixo = "DDL"
+                    elif script_type == _s("opt_ins"):
+                        sql_content = gerar_sql_insert(nome_setor, tabelas_sql, dialect_key)
+                        sufixo = "INSERT"
+                    elif script_type == _s("opt_rel"):
+                        sql_content = gerar_relatorios_gerenciais(nome_setor, tabelas_sql, dialect_key)
+                        sufixo = "RELATORIOS"
+                    else:
+                        sql_content = gerar_sql_completo(nome_setor, tabelas_sql, dialect_key)
+                        sufixo = "COMPLETO"
+            except Exception as e:
+                registrar_evento("gerou_sql", setor=nome_setor, volume=n_linhas, status="erro", erro=str(e))
+                msg_erro_sql = (
+                    "Não foi possível gerar o script SQL com os parâmetros escolhidos. "
+                    "Tente ajustar o volume de linhas, o período de datas ou o tipo de script."
+                    if lang == "pt" else
+                    "Could not generate the SQL script with the chosen parameters. "
+                    "Try adjusting the row volume, the date range, or the script type."
+                )
+                st.error(msg_erro_sql)
+                with st.expander("Detalhe técnico" if lang == "pt" else "Technical detail"):
+                    st.caption(f"{type(e).__name__}: {e}")
+                st.stop()
+
+            t_total_sql = time.perf_counter() - t_inicio_sql
 
             registrar_evento("gerou_sql", setor=nome_setor, volume=n_linhas)
 
             nome_limpo   = nome_setor.replace(" ", "_").replace("&", "e").replace("/", "_")
             nome_arquivo = f"{sufixo}_{nome_limpo}_{dialect_key}.sql"
             tamanho_kb   = len(sql_content.encode("utf-8")) / 1024
+
+            msg_tempo = (
+                f"✅ Gerado em {t_total_sql:.1f}s"
+                if lang == "pt" else
+                f"✅ Generated in {t_total_sql:.1f}s"
+            )
+            st.caption(msg_tempo)
 
             st.download_button(
                 label=f"📥 {nome_arquivo}  ({tamanho_kb:.0f} KB)",

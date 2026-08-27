@@ -180,23 +180,33 @@ def _injetar_anomalias(tabelas: dict[str, pd.DataFrame]) -> tuple[dict[str, pd.D
 # ── Barra de progresso ────────────────────────────────────────────────────────
 
 def _gerar_com_progresso(setor: str, n_linhas: int, data_inicio, data_fim, anomalia: bool, drift: bool) -> tuple[dict, list[dict]]:
-    """Gera os dados exibindo barra de progresso com etapas reais. Retorna (tabelas, gabarito)."""
+    """Gera os dados exibindo barra de progresso com etapas e tempo REAL medido. Retorna (tabelas, gabarito)."""
     lang   = _get_lang()
     steps  = _STEPS_EN if lang == "en" else _STEPS_PT
     fn     = SETORES[setor]
 
-    bar    = st.progress(0, text=steps[0])
+    t_inicio = time.perf_counter()
+    bar    = st.progress(5, text=steps[0])
     status = st.empty()
 
-    # Etapa 1: dimensões (simulada antes da geração)
-    time.sleep(0.3)
-    bar.progress(20, text=steps[0])
+    # Aviso só quando o volume é grande o suficiente para a espera ser perceptível
+    # (evita alarmar o usuário à toa nos volumes pequenos/médios, que são quase
+    # instantâneos após a otimização de performance dos geradores).
+    if n_linhas >= 20_000:
+        aviso = (
+            f"ℹ️ Volume grande selecionado ({n_linhas:,} linhas) — a geração pode levar alguns segundos."
+            if lang == "pt" else
+            f"ℹ️ Large volume selected ({n_linhas:,} rows) — generation may take a few seconds."
+        )
+        status.caption(aviso)
 
-    # Etapa 2: geração real
-    bar.progress(40, text=steps[1])
+    # Etapa 1: geração real das tabelas (a etapa que de fato consome tempo)
+    bar.progress(20, text=steps[1])
+    t_geracao_ini = time.perf_counter()
     tabelas = fn(n_linhas, data_inicio, data_fim)
+    t_geracao = time.perf_counter() - t_geracao_ini
 
-    # Etapa 3: anomalias / deriva temporal / métricas
+    # Etapa 2: anomalias / deriva temporal / métricas
     bar.progress(70, text=steps[2])
     gabarito: list[dict] = []
     if anomalia:
@@ -205,15 +215,24 @@ def _gerar_com_progresso(setor: str, n_linhas: int, data_inicio, data_fim, anoma
     if drift:
         tabelas, gab_drift = injetar_concept_drift(tabelas)
         gabarito.extend(gab_drift)
-    time.sleep(0.2)
 
-    # Etapa 4: compactação
-    bar.progress(90, text=steps[3])
-    time.sleep(0.2)
+    # Etapa 3: compactação / finalização
+    bar.progress(92, text=steps[3])
 
-    bar.progress(100, text="✅ Concluído!" if lang == "pt" else "✅ Done!")
+    t_total = time.perf_counter() - t_inicio
+    msg_final = (
+        f"✅ Concluído em {t_total:.1f}s ({sum(len(df) for df in tabelas.values()):,} linhas no total)"
+        if lang == "pt" else
+        f"✅ Done in {t_total:.1f}s ({sum(len(df) for df in tabelas.values()):,} total rows)"
+    )
+    bar.progress(100, text=msg_final)
     time.sleep(0.4)
     bar.empty()
+    status.empty()
+    # Diferente da barra (efêmera), esta legenda de tempo fica visível
+    # permanentemente junto com o resultado, para o usuário conseguir
+    # de fato ler quanto tempo a geração levou.
+    st.caption(msg_final)
     status.empty()
 
     return tabelas, gabarito
@@ -344,7 +363,17 @@ def main() -> None:
             except Exception as e:
                 registrar_evento("gerou_base", setor=nome, volume=n_linhas,
                                   anomalia=anomalia, drift=drift, status="erro", erro=str(e))
-                raise
+                msg_erro = (
+                    "Não foi possível gerar os dados deste setor com os parâmetros escolhidos. "
+                    "Tente ajustar o volume de linhas ou o período de datas."
+                    if lang == "pt" else
+                    "Could not generate data for this sector with the chosen parameters. "
+                    "Try adjusting the row volume or the date range."
+                )
+                st.error(msg_erro)
+                with st.expander("Detalhe técnico" if lang == "pt" else "Technical detail"):
+                    st.caption(f"{type(e).__name__}: {e}")
+                st.stop()
 
             registrar_evento("gerou_base", setor=nome, volume=n_linhas,
                               anomalia=anomalia, drift=drift, status="sucesso")
