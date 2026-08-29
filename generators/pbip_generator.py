@@ -53,13 +53,21 @@ def _expressions_tmdl() -> str:
 
 
 def _model_tmdl(nomes_tabelas: list[str]) -> str:
+    # Nota: chegamos a incluir aqui uma anotação 'PBI_QueryOrder' com um valor
+    # em formato de array (estilo JSON) logo antes das linhas 'ref table' —
+    # o Power BI Desktop recusou o arquivo com "TMDL Format Error: Unexpected
+    # line type: ReferenceObject!" bem na primeira linha 'ref table' seguinte,
+    # o que indica que o valor daquela anotação não estava no formato que o
+    # parser de anotação TMDL espera (provavelmente precisaria ser uma string
+    # com as aspas internas escapadas, não um array cru) e isso desalinhava a
+    # leitura das linhas seguintes. Como é só um hint cosmético de ordenação
+    # (não afeta o funcionamento do modelo), removemos em vez de arriscar
+    # adivinhar o escaping exato.
     linhas = [
         "model Model",
         "\tculture: pt-BR",
         "\tdiscourageImplicitMeasures",
         "\tsourceQueryCulture: pt-BR",
-        "",
-        f'\tannotation PBI_QueryOrder = {list(nomes_tabelas)!r}'.replace("'", '"'),
         "",
     ]
     for nome in nomes_tabelas:
