@@ -58,7 +58,8 @@ def _cartao_tabela(nome_tabela: str, df, cor_header: str, cor_borda: str, pk_col
     for col in df.columns:
         icone = "🔑 " if col == pk_col else ""
         linhas_html.append(
-            f'<TR><TD PORT="{_html_escape(col)}" ALIGN="LEFT">{icone}{_html_escape(col)}</TD></TR>'
+            f'<TR><TD PORT="{_html_escape(col)}" ALIGN="LEFT" BGCOLOR="#2B2B2B">'
+            f'<FONT COLOR="white">{icone}{_html_escape(col)}</FONT></TD></TR>'
         )
     corpo = "".join(linhas_html)
     return (
