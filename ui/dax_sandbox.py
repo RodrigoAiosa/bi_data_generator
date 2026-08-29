@@ -39,34 +39,93 @@ def _detectar_fk(tabela_fato: str, tabela_dim: str, tabelas: dict) -> tuple[str,
     return None
 
 
+def _html_escape(texto: str) -> str:
+    return (
+        str(texto)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+
+
+def _cartao_tabela(nome_tabela: str, df, cor_header: str, cor_borda: str, pk_col: str | None) -> str:
+    """Monta o label HTML (Graphviz) de uma tabela como 'cartão': cabeçalho com o
+    nome da tabela e uma linha por coluna — no mesmo espírito do Model View do
+    Power BI Desktop."""
+    linhas_html = [
+        f'<TR><TD BGCOLOR="{cor_header}" ALIGN="CENTER"><B>{_html_escape(nome_tabela)}</B></TD></TR>'
+    ]
+    for col in df.columns:
+        icone = "🔑 " if col == pk_col else ""
+        linhas_html.append(
+            f'<TR><TD PORT="{_html_escape(col)}" ALIGN="LEFT">{icone}{_html_escape(col)}</TD></TR>'
+        )
+    corpo = "".join(linhas_html)
+    return (
+        f'<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" '
+        f'COLOR="{cor_borda}">{corpo}</TABLE>>'
+    )
+
+
 def _montar_dot(tabelas: dict) -> str:
-    """Monta o diagrama DOT (Graphviz) do modelo estrela: Fato no centro, Dims ao redor."""
+    """Monta o diagrama DOT (Graphviz) do modelo, no estilo Model View do Power
+    BI Desktop: cada tabela é um cartão listando suas colunas, e as linhas de
+    relacionamento ligam exatamente a coluna de origem à coluna de destino,
+    com marcadores de cardinalidade (1 : *)."""
     fato_tables = [t for t in tabelas if t.startswith("Fato")]
     dim_tables = [t for t in tabelas if t.startswith("Dim")]
-    tem_calendario = any(t.startswith("dCal") for t in tabelas)
+    cal_tables = [t for t in tabelas if t.startswith("dCal")]
+    outras_tables = [t for t in tabelas if t not in fato_tables and t not in dim_tables and t not in cal_tables]
 
     linhas = [
         "digraph G {",
-        '  rankdir=TB; bgcolor="transparent";',
-        '  node [shape=box, style="rounded,filled", fontname="Arial", fontsize=11];',
+        '  rankdir=LR; bgcolor="transparent"; nodesep=0.6; ranksep=0.9;',
+        '  node [shape=plaintext, fontname="Arial", fontsize=10];',
+        '  edge [fontname="Arial", fontsize=8, color="#666666", fontcolor="#666666"];',
     ]
+
     for t in fato_tables:
-        linhas.append(f'  "{t}" [fillcolor="#FFD966", color="#BF9000"];')
+        pk = tabelas[t].columns[0]
+        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#FFD966", "#BF9000", pk)}];')
     for t in dim_tables:
-        linhas.append(f'  "{t}" [fillcolor="#A9D18E", color="#548235"];')
-    if tem_calendario:
-        linhas.append('  "dCalendario" [fillcolor="#9DC3E6", color="#2E75B6"];')
+        pk = tabelas[t].columns[0]
+        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#A9D18E", "#548235", pk)}];')
+    for t in cal_tables:
+        pk = tabelas[t].columns[0]
+        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#9DC3E6", "#2E75B6", pk)}];')
+    for t in outras_tables:
+        pk = tabelas[t].columns[0]
+        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#D9D9D9", "#808080", pk)}];')
 
     for fato_nome in fato_tables:
         for dim_nome in dim_tables:
             fk = _detectar_fk(fato_nome, dim_nome, tabelas)
             if fk:
                 fk_col, pk_dim = fk
-                linhas.append(f'  "{fato_nome}" -> "{dim_nome}" [label="  {fk_col}", fontsize=9];')
-        if tem_calendario:
+                linhas.append(
+                    f'  "{fato_nome}":"{fk_col}":e -> "{dim_nome}":"{pk_dim}":w '
+                    f'[arrowhead=none, taillabel="*", headlabel="1", labeldistance=1.8];'
+                )
+        for cal_nome in cal_tables:
+            cal_pk = tabelas[cal_nome].columns[0]
             date_cols = [c for c in tabelas[fato_nome].columns if "data" in c.lower()]
             if date_cols:
-                linhas.append(f'  "{fato_nome}" -> "dCalendario" [label="  {date_cols[0]}", fontsize=9, style=dashed];')
+                linhas.append(
+                    f'  "{fato_nome}":"{date_cols[0]}":e -> "{cal_nome}":"{cal_pk}":w '
+                    f'[arrowhead=none, style=dashed, taillabel="*", headlabel="1", labeldistance=1.8];'
+                )
+
+    # Tabelas ponte (N:N) e quaisquer outras que não sejam Fato/Dim/Calendário:
+    # conecta com as dimensões relacionadas (ex.: BridgeConteudoArtista -> DimConteudo, DimArtista).
+    for outras_nome in outras_tables:
+        for dim_nome in dim_tables:
+            fk = _detectar_fk(outras_nome, dim_nome, tabelas)
+            if fk:
+                fk_col, pk_dim = fk
+                linhas.append(
+                    f'  "{outras_nome}":"{fk_col}":e -> "{dim_nome}":"{pk_dim}":w '
+                    f'[arrowhead=none, taillabel="*", headlabel="1", labeldistance=1.8];'
+                )
 
     linhas.append("}")
     return "\n".join(linhas)
