@@ -29,6 +29,7 @@ O app principal tem **6 abas**: o Gerador de Setores (100 bases prontas), o Auto
 - [Dados Causais (relação causa-efeito conhecida)](#-dados-causais-relação-causa-efeito-conhecida)
 - [Formatar DAX](#-formatar-dax)
 - [Formatar M](#-formatar-m)
+- [DAX Sandbox](#-dax-sandbox)
 - [Sugestão de próximo passo entre abas](#-sugestão-de-próximo-passo-entre-abas)
 - [Log de acesso e painel de uso](#-log-de-acesso-e-painel-de-uso)
 - [Internacionalização (PT/EN)](#-internacionalização-ptEN)
@@ -170,7 +171,7 @@ streamlit run app.py
 
 ## 🖱 Como usar o app
 
-O app abre com **6 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX" e "🔧 Formatar M".
+O app abre com **8 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo" e "🧮 DAX Sandbox".
 
 ### Aba 🏭 Gerador de Setores
 
@@ -209,6 +210,14 @@ Veja a seção [Formatar DAX](#-formatar-dax) para o passo a passo completo.
 ### Aba 🔧 Formatar M
 
 Veja a seção [Formatar M](#-formatar-m) para o passo a passo completo.
+
+### Aba 🩺 Auditor de Modelo
+
+Cole o TMDL de um modelo Power BI seu (arquivo `.tmdl` exportado do Tabular Editor, ou o conteúdo copiado da pasta `definition/` de um projeto PBIP) e receba uma nota de qualidade com achados acionáveis: medidas duplicadas, divisão sem `DIVIDE()`, colunas calculadas que poderiam ser medidas, relacionamentos inativos não utilizados, entre outras checagens comuns de boas práticas de modelagem.
+
+### Aba 🧮 DAX Sandbox
+
+Veja a seção [DAX Sandbox](#-dax-sandbox) para o passo a passo completo.
 
 ---
 
@@ -476,6 +485,8 @@ Depois de concluir uma ação relevante em qualquer uma das 6 abas (gerar uma ba
 - **Dados Causais** (`ui/dados_causais.py`): gera uma relação causa-efeito conhecida de propósito (com defasagem, confundidor e ruído configuráveis) em cima do setor que você já gerou, com gabarito causal documentado.
 - **Formatar DAX** (`ui/formatar_dax.py` + `generators/dax_formatter.py`): cola uma expressão ou medida DAX bagunçada e recebe ela formatada, com quebra de linha por profundidade de parênteses e espaçamento consistente, no mesmo espírito do daxformatter.com.
 - **Formatar M** (`ui/formatar_m.py` + `generators/m_formatter.py`): mesmo princípio do formatador de DAX, adaptado pra sintaxe do Power Query (`let...in`, record, lista).
+- **Auditor de Modelo** (`ui/auditor_modelo.py`): cole o TMDL de um modelo Power BI seu de verdade e receba uma nota de qualidade com achados acionáveis (medida duplicada, divisão sem `DIVIDE()`, coluna calculada que poderia ser medida, relacionamento inativo não utilizado, entre outras checagens).
+- **DAX Sandbox** (`ui/dax_sandbox.py` + `generators/dax_engine.py`): escreva uma medida DAX e veja o resultado calculado de verdade contra os dados do setor escolhido — não é só formatação de texto, é o subconjunto pedagógico (SUM, AVERAGE, COUNTROWS, DIVIDE, CALCULATE com filtro inclusive cruzando pra uma dimensão relacionada) rodando de verdade, com diagrama do modelo e passo a passo do cálculo.
 - **Progresso pessoal no Simulador PL-300** (sem ranking): painel com melhor nota, média geral e gráfico de evolução, combinando o histórico da sessão atual com arquivos `.csv` de tentativas anteriores reimportados, sem precisar de login.
 - **Sugestão de próximo passo entre abas** (`ui/sugestao_proximo_passo.py`): depois de uma ação concluída em qualquer aba, uma sugestão discreta aponta pra próxima ferramenta que provavelmente faz sentido usar.
 - **Log de acesso** (`log_acesso.py`): registra uso real do app numa planilha Google Sheets, com um painel de análise separado ([`dash_bi_data_generator`](https://github.com/RodrigoAiosa/dash_bi_data_generator)).
@@ -684,6 +695,38 @@ Cola um código M (Power Query) bagunçado, tudo numa linha só, e recebe ele fo
 - Uma expressão solta, sem `let`/`in` (ex.: `Table.SelectRows(Source, each [Coluna] > 100)`);
 - Identificadores entre aspas com espaço no nome (ex.: `#"Changed Type"`, `#"Expanded Clientes"`);
 - Nomes de coluna e passo com acentuação (ex.: `[Preço]`, `"Preço Médio"`).
+
+---
+
+## 🧮 DAX Sandbox
+
+Diferente do "Formatar DAX" (que só reformata texto), o DAX Sandbox **calcula de verdade**: você escreve uma medida DAX e vê o resultado real, computado em cima dos dados gerados para o setor escolhido — sem precisar abrir o Power BI Desktop para testar.
+
+Implementação própria (`generators/dax_engine.py` + `ui/dax_sandbox.py`), em Python puro + pandas, sem nenhuma dependência nova. Não é um motor de DAX completo (isso é o motor do próprio Power BI/Analysis Services), mas sim um **subconjunto pedagógico** com as funções e padrões mais comuns usados em sala de aula e no PL-300.
+
+### Como usar
+
+1. Escolha o **setor** (a lista já vem posicionada no último setor gerado, se houver um).
+2. Clique em **"🔄 Carregar dados"** (reaproveita o cache da última geração, se o setor bater).
+3. Abra o expansor **"📊 Modelo do setor"** para ver o diagrama do modelo estrela (Fato em amarelo, Dimensões em verde, Calendário em azul, com a coluna de relacionamento em cada seta).
+4. Escolha um dos **exemplos prontos** (deduzidos automaticamente para o setor: `SUM`, `AVERAGE`, `COUNTROWS`, `DIVIDE` e um `CALCULATE` com filtro cruzado, quando há uma dimensão com coluna categórica detectável) ou escreva sua própria medida no formato `NomeMedida = expressão` (o nome da medida é opcional).
+5. Clique em **"▶️ Executar"** e veja o valor calculado, com um **passo a passo** explicando exatamente o que foi computado.
+
+### Funções suportadas
+
+| Função | Exemplo |
+|---|---|
+| `SUM` / `AVERAGE` / `MIN` / `MAX` | `SUM(FatoVendas[valor_total])` |
+| `COUNTROWS` | `COUNTROWS(FatoVendas)` |
+| `DISTINCTCOUNT` | `DISTINCTCOUNT(FatoVendas[id_cliente])` |
+| `DIVIDE` (com valor alternativo opcional para divisão por zero) | `DIVIDE(SUM(FatoVendas[valor_total]), COUNTROWS(FatoVendas), 0)` |
+| `CALCULATE` com filtro na própria tabela | `CALCULATE(SUM(FatoVendas[valor_total]), FatoVendas[canal]="Online")` |
+| `CALCULATE` com filtro **cruzado** numa dimensão relacionada (detecta a FK automaticamente) | `CALCULATE(SUM(FatoVendas[valor_total]), DimProduto[categoria]="Eletrônicos")` |
+| Operadores aritméticos, com precedência e parênteses | `DIVIDE(SUM(FatoVendas[valor_total]), COUNTROWS(FatoVendas)) * 100` |
+
+Operadores de filtro aceitos dentro do `CALCULATE`: `=`, `<>`, `>`, `<`, `>=`, `<=`.
+
+Erros de sintaxe ou de dado (função não suportada, coluna/tabela inexistente, coluna não numérica, filtro sem relacionamento detectável) mostram uma mensagem clara explicando o problema, nunca um traceback técnico.
 
 ---
 
