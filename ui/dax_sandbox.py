@@ -103,17 +103,15 @@ def _montar_dot(tabelas: dict) -> str:
         for dim_nome in dim_tables:
             fk = _detectar_fk(fato_nome, dim_nome, tabelas)
             if fk:
-                fk_col, pk_dim = fk
                 linhas.append(
-                    f'  "{fato_nome}":"{fk_col}":e -> "{dim_nome}":"{pk_dim}":w '
+                    f'  "{fato_nome}" -> "{dim_nome}" '
                     f'[dir=both, arrowhead=none, arrowtail=normal, taillabel="*", headlabel="1", labeldistance=1.8];'
                 )
         for cal_nome in cal_tables:
-            cal_pk = tabelas[cal_nome].columns[0]
             date_cols = [c for c in tabelas[fato_nome].columns if "data" in c.lower()]
             if date_cols:
                 linhas.append(
-                    f'  "{fato_nome}":"{date_cols[0]}":e -> "{cal_nome}":"{cal_pk}":w '
+                    f'  "{fato_nome}" -> "{cal_nome}" '
                     f'[dir=both, arrowhead=none, arrowtail=normal, style=dashed, taillabel="*", headlabel="1", labeldistance=1.8];'
                 )
 
@@ -123,9 +121,8 @@ def _montar_dot(tabelas: dict) -> str:
         for dim_nome in dim_tables:
             fk = _detectar_fk(outras_nome, dim_nome, tabelas)
             if fk:
-                fk_col, pk_dim = fk
                 linhas.append(
-                    f'  "{outras_nome}":"{fk_col}":e -> "{dim_nome}":"{pk_dim}":w '
+                    f'  "{outras_nome}" -> "{dim_nome}" '
                     f'[dir=both, arrowhead=none, arrowtail=normal, taillabel="*", headlabel="1", labeldistance=1.8];'
                 )
 
