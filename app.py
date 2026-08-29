@@ -14,7 +14,6 @@ import streamlit as st
 
 from config import PAGE_CONFIG, SETORES
 from generators.dicionario import gerar_dicionario
-from generators.pbip_generator import gerar_pbip
 from generators.case_negocio import gerar_case_negocio, detectar_kpi_label
 from generators.concept_drift import injetar_concept_drift
 from log_acesso import iniciar_sessao, registrar_evento
@@ -367,44 +366,6 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: 
         use_container_width=True,
         on_click=lambda: registrar_evento("baixou_dicionario", setor=nome),
     )
-
-    # ── Projeto Power BI (PBIP) ─────────────────────────────────────────────
-    st.markdown("---")
-    label_pbip = "📊 Projeto Power BI (.pbip)" if lang == "pt" else "📊 Power BI Project (.pbip)"
-    hint_pbip = (
-        "Baixe um Power BI Project completo — o formato oficial mais novo da Microsoft, "
-        "que o Power BI Desktop abre exatamente como abre um .pbix. Já vem com todas as "
-        "tabelas, relacionamentos e medidas DAX prontos; só falta arrastar os campos "
-        "para a página em branco (veja o LEIA-ME.txt dentro do ZIP)."
-        if lang == "pt" else
-        "Download a complete Power BI Project — Microsoft's newest official format, "
-        "which Power BI Desktop opens exactly like a .pbix. Already comes with all "
-        "tables, relationships and DAX measures ready; just drag the fields onto the "
-        "blank page (see LEIA-ME.txt inside the ZIP)."
-    )
-    st.markdown(f"**{label_pbip}**: {hint_pbip}")
-
-    try:
-        pbip_bytes = gerar_pbip(nome, tabelas)
-        pbip_filename = f"PBIP_{nome.replace(' ', '_')}.zip"
-        st.download_button(
-            label=f"📥 {pbip_filename}",
-            data=pbip_bytes,
-            file_name=pbip_filename,
-            mime="application/zip",
-            use_container_width=True,
-            key="dl_pbip",
-            on_click=lambda: registrar_evento("baixou_pbip", setor=nome),
-        )
-    except Exception as e:
-        msg_erro_pbip = (
-            "Não foi possível gerar o projeto Power BI para este setor."
-            if lang == "pt" else
-            "Could not generate the Power BI project for this sector."
-        )
-        st.error(msg_erro_pbip)
-        with st.expander("Detalhe técnico" if lang == "pt" else "Technical detail"):
-            st.caption(f"{type(e).__name__}: {e}")
 
     sugerir(
         f"Já que você gerou a base de **{nome}**, que tal ir na aba **🧬 Dados Causais** "
