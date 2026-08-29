@@ -48,12 +48,13 @@ def _html_escape(texto: str) -> str:
     )
 
 
-def _cartao_tabela(nome_tabela: str, df, cor_header: str, cor_borda: str, pk_col: str | None) -> str:
+def _cartao_tabela(nome_tabela: str, df, cor_borda: str, pk_col: str | None) -> str:
     """Monta o label HTML (Graphviz) de uma tabela como 'cartão': cabeçalho com o
     nome da tabela e uma linha por coluna — no mesmo espírito do Model View do
     Power BI Desktop."""
     linhas_html = [
-        f'<TR><TD BGCOLOR="{cor_header}" ALIGN="CENTER"><B>{_html_escape(nome_tabela)}</B></TD></TR>'
+        f'<TR><TD BGCOLOR="{cor_borda}" ALIGN="CENTER">'
+        f'<FONT COLOR="white"><B>{_html_escape(nome_tabela)}</B></FONT></TD></TR>'
     ]
     for col in df.columns:
         icone = "🔑 " if col == pk_col else ""
@@ -82,21 +83,21 @@ def _montar_dot(tabelas: dict) -> str:
         "digraph G {",
         '  rankdir=TB; bgcolor="transparent"; nodesep=0.6; ranksep=0.9; splines="ortho";',
         '  node [shape=plaintext, fontname="Arial", fontsize=10];',
-        '  edge [fontname="Arial", fontsize=8, color="#666666", fontcolor="#666666"];',
+        '  edge [fontname="Arial", fontsize=9, color="#999999", fontcolor="#CCCCCC"];',
     ]
 
     for t in fato_tables:
         pk = tabelas[t].columns[0]
-        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#FFD966", "#BF9000", pk)}];')
+        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#BF9000", pk)}];')
     for t in dim_tables:
         pk = tabelas[t].columns[0]
-        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#A9D18E", "#548235", pk)}];')
+        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#548235", pk)}];')
     for t in cal_tables:
         pk = tabelas[t].columns[0]
-        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#9DC3E6", "#2E75B6", pk)}];')
+        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#2E75B6", pk)}];')
     for t in outras_tables:
         pk = tabelas[t].columns[0]
-        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#D9D9D9", "#808080", pk)}];')
+        linhas.append(f'  "{t}" [label={_cartao_tabela(t, tabelas[t], "#808080", pk)}];')
 
     for fato_nome in fato_tables:
         for dim_nome in dim_tables:
@@ -105,7 +106,7 @@ def _montar_dot(tabelas: dict) -> str:
                 fk_col, pk_dim = fk
                 linhas.append(
                     f'  "{fato_nome}":"{fk_col}":e -> "{dim_nome}":"{pk_dim}":w '
-                    f'[arrowhead=none, taillabel="*", headlabel="1", labeldistance=1.8];'
+                    f'[dir=both, arrowhead=none, arrowtail=normal, taillabel="*", headlabel="1", labeldistance=1.8];'
                 )
         for cal_nome in cal_tables:
             cal_pk = tabelas[cal_nome].columns[0]
@@ -113,7 +114,7 @@ def _montar_dot(tabelas: dict) -> str:
             if date_cols:
                 linhas.append(
                     f'  "{fato_nome}":"{date_cols[0]}":e -> "{cal_nome}":"{cal_pk}":w '
-                    f'[arrowhead=none, style=dashed, taillabel="*", headlabel="1", labeldistance=1.8];'
+                    f'[dir=both, arrowhead=none, arrowtail=normal, style=dashed, taillabel="*", headlabel="1", labeldistance=1.8];'
                 )
 
     # Tabelas ponte (N:N) e quaisquer outras que não sejam Fato/Dim/Calendário:
@@ -125,7 +126,7 @@ def _montar_dot(tabelas: dict) -> str:
                 fk_col, pk_dim = fk
                 linhas.append(
                     f'  "{outras_nome}":"{fk_col}":e -> "{dim_nome}":"{pk_dim}":w '
-                    f'[arrowhead=none, taillabel="*", headlabel="1", labeldistance=1.8];'
+                    f'[dir=both, arrowhead=none, arrowtail=normal, taillabel="*", headlabel="1", labeldistance=1.8];'
                 )
 
     linhas.append("}")
