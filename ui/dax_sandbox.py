@@ -80,7 +80,7 @@ def _montar_dot(tabelas: dict) -> str:
 
     linhas = [
         "digraph G {",
-        '  rankdir=LR; bgcolor="transparent"; nodesep=0.6; ranksep=0.9;',
+        '  rankdir=TB; bgcolor="transparent"; nodesep=0.6; ranksep=0.9; splines="ortho";',
         '  node [shape=plaintext, fontname="Arial", fontsize=10];',
         '  edge [fontname="Arial", fontsize=8, color="#666666", fontcolor="#666666"];',
     ]
