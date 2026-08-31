@@ -478,10 +478,10 @@ def main() -> None:
         render_auditor_modelo()
 
     with tab_sandbox:
-        render_dax_sandbox(setor)
+        render_dax_sandbox(setor, n_linhas, data_inicio, data_fim)
 
     with tab_pergunte:
-        render_pergunte_dados(setor)
+        render_pergunte_dados(setor, n_linhas, data_inicio, data_fim)
 
 
 if __name__ == "__main__":

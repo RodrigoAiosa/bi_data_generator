@@ -12,16 +12,12 @@ motor de reconhecimento de padrões de generators/qa_engine.py (sem
 nenhum LLM — o projeto não tem essa dependência).
 """
 
-import datetime
-
 import streamlit as st
 
 from generators.qa_engine import responder_pergunta
 from ui.cache_utils import gerar_bruto_com_cache
 from ui.dax_sandbox import _montar_dot
 from ui.sugestao_proximo_passo import sugerir
-
-_VOLUME_QA = 500
 
 _EXEMPLOS_GENERICOS = [
     "Quantos registros existem?",
@@ -40,28 +36,27 @@ def _primeira_medida(tabelas: dict) -> str:
     return medidas[0] if medidas else "valor"
 
 
-def render_pergunte_dados(setor: str) -> None:
+def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> None:
     st.markdown("## 💬 Pergunte aos Dados")
     st.caption(
         "Escreva uma pergunta de negócio em português e veja a resposta calculada de "
-        "verdade contra os dados do setor escolhido na barra lateral, junto com a medida "
-        "DAX equivalente que foi gerada — assim você aprende a traduzir a pergunta em "
-        "código, não só recebe o número pronto. **Importante:** isto não é um assistente "
-        "de IA de linguagem natural — é um motor de reconhecimento de padrões, limitado a "
-        "perguntas de agregação (total, média, contagem, ranking, ticket médio). Ele "
-        "nunca tenta prever o futuro nem explicar causas — só calcula o que já existe "
-        "nos dados."
+        "verdade contra os dados do setor e volume escolhidos na barra lateral, junto "
+        "com a medida DAX equivalente que foi gerada — assim você aprende a traduzir a "
+        "pergunta em código, não só recebe o número pronto. **Importante:** isto não é "
+        "um assistente de IA de linguagem natural — é um motor de reconhecimento de "
+        "padrões, limitado a perguntas de agregação (total, média, contagem, ranking, "
+        "ticket médio). Ele nunca tenta prever o futuro nem explicar causas — só calcula "
+        "o que já existe nos dados."
     )
 
     carregar = st.button("🔄 Recarregar dados", key="qa_carregar")
 
-    chave_atual = (setor, _VOLUME_QA)
+    chave_atual = (setor, n_linhas)
     if carregar or st.session_state.get("qa_chave") != chave_atual:
+        if n_linhas >= 20_000:
+            st.caption(f"ℹ️ Volume grande selecionado ({n_linhas:,} linhas) — pode levar alguns segundos.")
         with st.spinner("Carregando dados do setor…"):
-            tabelas = gerar_bruto_com_cache(
-                setor, _VOLUME_QA,
-                datetime.date(2024, 1, 1), datetime.date(2024, 12, 31),
-            )
+            tabelas = gerar_bruto_com_cache(setor, n_linhas, data_inicio, data_fim)
         st.session_state["qa_tabelas"] = tabelas
         st.session_state["qa_chave"] = chave_atual
 

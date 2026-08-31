@@ -9,7 +9,6 @@ uma dimensão relacionada) para ver o resultado calculado de verdade
 contra os dados, não apenas formatado como texto.
 """
 
-import datetime
 import random
 
 import streamlit as st
@@ -18,8 +17,6 @@ from generators.dax_engine import avaliar_medida, DaxError
 from log_acesso import registrar_evento
 from ui.cache_utils import gerar_bruto_com_cache
 from ui.sugestao_proximo_passo import sugerir
-
-_VOLUME_SANDBOX = 500  # volume pequeno o bastante pra ser instantâneo, grande o bastante pra ser representativo
 
 
 def _detectar_fk(tabela_fato: str, tabela_dim: str, tabelas: dict) -> tuple[str, str] | None:
@@ -173,25 +170,24 @@ def _achar_medida_e_exemplos(tabelas: dict) -> tuple[str, str, list[str]]:
     return fato, medida, exemplos
 
 
-def render_dax_sandbox(setor: str) -> None:
+def render_dax_sandbox(setor: str, n_linhas: int, data_inicio, data_fim) -> None:
     st.markdown("## 🧮 DAX Sandbox")
     st.caption(
         "Escreva uma medida DAX e veja o resultado calculado de verdade contra os dados do "
-        "setor escolhido na barra lateral — não é só formatação de texto, é o cálculo real "
-        "rodando nas linhas geradas. Suporta um subconjunto pedagógico: SUM, AVERAGE, MIN, MAX, "
-        "COUNTROWS, DISTINCTCOUNT, DIVIDE, CALCULATE (com filtros, inclusive cruzando para uma "
-        "dimensão relacionada) e operadores aritméticos (+ - * /)."
+        "setor e volume escolhidos na barra lateral — não é só formatação de texto, é o "
+        "cálculo real rodando nas linhas geradas. Suporta um subconjunto pedagógico: SUM, "
+        "AVERAGE, MIN, MAX, COUNTROWS, DISTINCTCOUNT, DIVIDE, CALCULATE (com filtros, "
+        "inclusive cruzando para uma dimensão relacionada) e operadores aritméticos (+ - * /)."
     )
 
     gerar_clicado = st.button("🔄 Recarregar dados", key="dax_sandbox_carregar")
 
-    chave_atual = (setor, _VOLUME_SANDBOX)
+    chave_atual = (setor, n_linhas)
     if gerar_clicado or st.session_state.get("dax_sandbox_chave") != chave_atual:
+        if n_linhas >= 20_000:
+            st.caption(f"ℹ️ Volume grande selecionado ({n_linhas:,} linhas) — pode levar alguns segundos.")
         with st.spinner("Carregando dados do setor…"):
-            tabelas = gerar_bruto_com_cache(
-                setor, _VOLUME_SANDBOX,
-                datetime.date(2024, 1, 1), datetime.date(2024, 12, 31),
-            )
+            tabelas = gerar_bruto_com_cache(setor, n_linhas, data_inicio, data_fim)
         st.session_state["dax_sandbox_tabelas"] = tabelas
         st.session_state["dax_sandbox_chave"] = chave_atual
 
