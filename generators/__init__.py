@@ -152,6 +152,58 @@ from .vending_machine import gerar_vending_machine
 from .viveiro_paisagismo import gerar_viveiro_paisagismo
 from .zoologico import gerar_zoologico
 
+# ═══════ +50 NOVOS SETORES (LOTE 7) ═══════
+from .aeroporto import gerar_aeroporto
+from .agencia_noticias import gerar_agencia_noticias
+from .asilo import gerar_asilo
+from .atacado import gerar_atacado
+from .autoescola import gerar_autoescola
+from .avicultura import gerar_avicultura
+from .banco_sangue import gerar_banco_sangue
+from .boliche import gerar_boliche
+from .cafeicultura import gerar_cafeicultura
+from .calcados import gerar_calcados
+from .casa_noturna import gerar_casa_noturna
+from .cemiterio import gerar_cemiterio
+from .ceramica import gerar_ceramica
+from .cerealista import gerar_cerealista
+from .circo import gerar_circo
+from .clube_social import gerar_clube_social
+from .cobranca import gerar_cobranca
+from .cosmeticos import gerar_cosmeticos
+from .creche import gerar_creche
+from .curtume import gerar_curtume
+from .despachante_aduaneiro import gerar_despachante_aduaneiro
+from .distribuidora_bebidas import gerar_distribuidora_bebidas
+from .engenharia import gerar_engenharia
+from .escola_tecnica import gerar_escola_tecnica
+from .estadio import gerar_estadio
+from .fabrica_brinquedos import gerar_fabrica_brinquedos
+from .fabrica_pneus import gerar_fabrica_pneus
+from .financeira import gerar_financeira
+from .fisioterapia import gerar_fisioterapia
+from .gas_natural import gerar_gas_natural
+from .gestora_fundos import gerar_gestora_fundos
+from .impressao_3d import gerar_impressao_3d
+from .incorporadora import gerar_incorporadora
+from .inspecao_certificacao import gerar_inspecao_certificacao
+from .livraria import gerar_livraria
+from .marina import gerar_marina
+from .onibus_intermunicipal import gerar_onibus_intermunicipal
+from .pedagio import gerar_pedagio
+from .controle_pragas import gerar_controle_pragas
+from .plasticos import gerar_plasticos
+from .resseguradora import gerar_resseguradora
+from .robotica import gerar_robotica
+from .seguranca_eletronica import gerar_seguranca_eletronica
+from .shopping_center import gerar_shopping_center
+from .sorveteria import gerar_sorveteria
+from .vidracaria import gerar_vidracaria
+from .agua_mineral import gerar_agua_mineral
+from .bike_sharing import gerar_bike_sharing
+from .manutencao_elevadores import gerar_manutencao_elevadores
+from .seguranca_trabalho import gerar_seguranca_trabalho
+
 from .moda import gerar_moda
 from .eventos import gerar_eventos
 from .laboratorio import gerar_laboratorio
@@ -321,4 +373,54 @@ __all__ = [
     "gerar_vending_machine",
     "gerar_viveiro_paisagismo",
     "gerar_zoologico",
+    "gerar_aeroporto",
+    "gerar_agencia_noticias",
+    "gerar_asilo",
+    "gerar_atacado",
+    "gerar_autoescola",
+    "gerar_avicultura",
+    "gerar_banco_sangue",
+    "gerar_boliche",
+    "gerar_cafeicultura",
+    "gerar_calcados",
+    "gerar_casa_noturna",
+    "gerar_cemiterio",
+    "gerar_ceramica",
+    "gerar_cerealista",
+    "gerar_circo",
+    "gerar_clube_social",
+    "gerar_cobranca",
+    "gerar_cosmeticos",
+    "gerar_creche",
+    "gerar_curtume",
+    "gerar_despachante_aduaneiro",
+    "gerar_distribuidora_bebidas",
+    "gerar_engenharia",
+    "gerar_escola_tecnica",
+    "gerar_estadio",
+    "gerar_fabrica_brinquedos",
+    "gerar_fabrica_pneus",
+    "gerar_financeira",
+    "gerar_fisioterapia",
+    "gerar_gas_natural",
+    "gerar_gestora_fundos",
+    "gerar_impressao_3d",
+    "gerar_incorporadora",
+    "gerar_inspecao_certificacao",
+    "gerar_livraria",
+    "gerar_marina",
+    "gerar_onibus_intermunicipal",
+    "gerar_pedagio",
+    "gerar_controle_pragas",
+    "gerar_plasticos",
+    "gerar_resseguradora",
+    "gerar_robotica",
+    "gerar_seguranca_eletronica",
+    "gerar_shopping_center",
+    "gerar_sorveteria",
+    "gerar_vidracaria",
+    "gerar_agua_mineral",
+    "gerar_bike_sharing",
+    "gerar_manutencao_elevadores",
+    "gerar_seguranca_trabalho",
 ]
