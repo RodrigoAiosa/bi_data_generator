@@ -18,7 +18,7 @@ O app principal tem **8 abas**: o Gerador de Setores (150 bases prontas), o Auto
 - [Qual versão usar?](#-qual-versão-usar)
 - [Instalação e execução local](#-instalação-e-execução-local)
 - [Como usar o app](#-como-usar-o-app)
-- [Setores de negócio disponíveis](#-setores-de-negócio-disponíveis-100)
+- [Setores de negócio disponíveis](#-setores-de-negócio-disponíveis-150)
 - [Quantidade de medidas DAX por setor](#-quantidade-de-medidas-dax-geradas-por-setor)
 - [Modelo de dados gerado (Star Schema)](#-modelo-de-dados-gerado-star-schema)
 - [Recursos principais](#-recursos-principais)
@@ -228,54 +228,80 @@ Veja a seção [DAX Sandbox](#-dax-sandbox) para o passo a passo completo.
 
 ---
 
-## 🏭 Setores de negócio disponíveis (100)
+## 🏭 Setores de negócio disponíveis (150)
 
 | Setor | Conteúdo típico |
 |---|---|
 | 🏋️ Academia & Fitness | Check-ins, alunos, instrutores, pagamentos e avaliações físicas |
+| 💱 Agência de Câmbio | Operações de câmbio, moedas, cotações e taxas de serviço |
 | 📢 Agência de Publicidade | Projetos, campanhas de mídia, equipe e clientes |
-| 🌱 AgTech | Sensores IoT, drones, monitoramento e agricultura de precisão |
 | 🌾 Agronegócio | Safras, culturas, propriedades e insumos |
+| 🌱 AgTech | Sensores IoT, drones, monitoramento e agricultura de precisão |
 | 🍔 Alimentos & Bebidas | Produção, plantas, produtos e fornecedores |
+| 🚑 Ambulância & Remoção | Chamados de emergência, ambulâncias, equipes e tempo de resposta |
+| 🐝 Apicultura | Apiários, colmeias, colheita de mel e sanidade |
 | 🎰 Apostas Esportivas & iGaming | Apostas, jogadores, eventos esportivos e transações |
+| 🏬 Armazenagem & Self Storage | Unidades, boxes, contratos e ocorrências de armazenagem |
 | 🏛️ Arquitetura & Design | Projetos, serviços, honorários e gestão de obras |
+| 🧶 Artesanato | Artesãos, produtos, vendas por canal e produção |
 | 🔩 Assistência Técnica de Eletrônicos | Ordens de serviço, técnicos, peças e reparos |
 | 🎬 Audiovisual & Produtora | Produções, orçamentos, recursos e bilheteria |
+| 🕵️ Auditoria & Compliance | Auditores, clientes, achados e não conformidades |
 | 🔧 Autopeças & Oficina Mecânica | Peças, serviços, clientes e canais de venda |
 | ✈️ Aviação Civil | Voos, passageiros, aeronaves e aeroportos |
+| 💈 Barbearia | Barbeiros, unidades, atendimentos e assinaturas |
 | 💄 Beleza & Estética | Vendas, serviços, agenda e salões parceiros |
+| 🌽 Biocombustíveis | Usinas, matérias-primas, produção e vendas de combustível |
 | 🧬 Biotecnologia | Genômica, CRISPR, pesquisa e experimentos laboratoriais |
 | 🪙 Blockchain & Criptomoedas | Transações, moedas, usuários e carteiras digitais |
+| 🍱 Buffet & Cerimonial | Eventos, cardápios, fornecedores e cerimonial |
 | 📞 Call Center & BPO | Atendimentos, atendentes, clientes e avaliação de qualidade |
 | 📜 Cartório & Serviços Notariais | Atos notariais, tabeliães, clientes e protestos |
 | 🎫 Casa Lotérica & Correspondente Bancário | Transações, apostas de loteria, unidades e serviços |
+| 🍺 Cervejaria Artesanal | Rótulos, pontos de venda, produção e vendas |
 | 🔐 Cibersegurança | Incidentes, vulnerabilidades, ativos e SLA de resposta (SOC) |
 | 🎥 Cinema & Exibição | Sessões, filmes, salas e bomboniere |
+| 🎁 Clube de Assinaturas | Assinantes, caixas temáticas, planos e envios |
+| 🌐 Comércio Exterior | Produtos, países, importações e exportações |
 | 🚙 Concessionária de Veículos | Vendas, veículos, vendedores e test-drives |
 | 🏢 Condomínio & Facilities | Cotas, despesas, ocorrências e manutenção |
 | 🧾 Consórcios | Parcelas, contemplações, grupos e cotistas |
 | 🏗️ Construção Civil | Obras, custos, materiais e fornecedores |
 | 📊 Consultoria Empresarial | Projetos, consultores, faturas e clientes |
+| 🧮 Contabilidade | Contadores, clientes PJ, serviços e honorários |
 | 💳 Cooperativa de Crédito | Operações, cooperados, produtos e sobras distribuídas |
 | 📦 Correios & Encomendas | Envios, agências, serviços e ocorrências |
+| 📈 Corretora de Investimentos | Assessores, clientes, ativos, ordens e carteiras |
 | 🪑 Coworking & Espaços Compartilhados | Reservas, assinaturas, espaços e clientes |
 | 🤝 CRM | Oportunidades, contas, contatos e atividades comerciais |
+| 📝 Cursinho Preparatório | Professores, alunos, matrículas e simulados |
 | 🖥️ Data Center & Cloud Hosting | Consumo, instâncias, clientes e incidentes |
+| 🛵 Delivery de Comida | Restaurantes parceiros, entregadores, pedidos e avaliações |
 | 🚁 Drones & Serviços Aéreos | Missões, drones, manutenção e clientes |
-| ♻️ Economia Circular | Reciclagem, logística reversa, créditos de carbono e ESG |
 | 🏪 E-commerce | Pedidos, clientes, produtos, fretes e pagamentos |
+| ♻️ Economia Circular | Reciclagem, logística reversa, créditos de carbono e ESG |
 | 📖 Editora & Publicação | Livros, vendas, canais e estoque |
 | 📚 Educação | Matrículas, alunos, cursos e instrutores |
 | ⚡ Energia | Consumo, medidores, subestações e tarifas |
+| ☀️ Energia Solar | Instalações, clientes, geração e projetos fotovoltaicos |
 | 🎓 Ensino Superior | Matrículas, disciplinas, cursos e desempenho acadêmico |
+| 🗣️ Escola de Idiomas | Professores, alunos, cursos, matrículas e avaliações |
+| 🎼 Escola de Música | Professores, alunos, instrumentos, aulas e matrículas |
 | 🚀 Espacial & Aeroespacial | Missões, satélites, lançamentos e operações |
 | 🏟️ Esportes | Partidas, atletas, clubes e competições |
 | 🅿️ Estacionamento & Zona Azul | Entradas, estacionamentos, clientes e multas |
+| 🖋️ Estúdio de Tatuagem | Tatuadores, clientes, sessões e retornos |
 | 🎉 Eventos & Entretenimento | Ingressos, fornecedores, receitas e NPS |
+| 📦 Fábrica de Embalagens | Produtos, clientes PJ, produção e pedidos |
 | 💊 Farmacêutico | Produtos, representantes, vendas e estoque |
+| ⚗️ Farmácia de Manipulação | Farmacêuticos, clientes, fórmulas e insumos |
+| 🥬 Feira Livre & Mercado Municipal | Feirantes, bancas, vendas e ocupação |
+| 🚂 Ferrovia de Carga | Locomotivas, terminais, viagens de carga e manutenção |
 | 💰 Financeiro | Transações bancárias, contas e agências |
 | 🏦 Fintech | Transações, cartões, usuários, comerciantes e antifraude |
 | 🌲 Florestal & Papel | Talhões, espécies, colheita e carbono |
+| 💐 Floricultura | Lojas, produtos, vendas e encomendas especiais |
+| 🌮 Food Truck | Trucks, cardápio, vendas e eventos |
 | 🏷️ Franquias | Unidades, royalties, taxas e faturamento |
 | 🥩 Frigorífico & Processamento de Carnes | Abate, produtos, unidades e canais de venda |
 | ⚰️ Funerária & Serviços Funerários | Atendimentos, serviços, planos preventivos e clientes |
@@ -284,17 +310,22 @@ Veja a seção [DAX Sandbox](#-dax-sandbox) para o passo a passo completo.
 | 🖨️ Gráfica & Comunicação Visual | Pedidos, produção, produtos e clientes |
 | 🩺 Home Care | Visitas, pacientes, profissionais e ocorrências |
 | 🏨 Hotelaria | Reservas, hóspedes, hotéis, quartos e canais |
+| ⛪ Igreja & Templos Religiosos | Membros, ministérios, dízimos e eventos |
 | 🏠 Imobiliário | Vendas, aluguéis, imóveis e corretores |
 | 🏭 Indústria | Produção, máquinas, insumos e operadores |
+| 🛋️ Indústria Moveleira | Produtos, máquinas, produção e vendas |
+| 🚢 Indústria Naval | Estaleiros, embarcações, etapas de construção e manutenção |
 | 💍 Joalheria & Relojoaria | Vendas, produtos, clientes e assistência técnica |
 | ⚖️ Jurídico | Processos, advogados, clientes e tribunais |
 | 🔬 Laboratório & Diagnóstico | Exames, pacientes, laudos e convênios |
+| 🧺 Lavanderia | Unidades, clientes B2B, pedidos e ocorrências |
 | 🔨 Leilão | Lances, lotes, arrematantes e arrematações |
-| 🚗 Locadora de Veículos | Reservas, frota, clientes, multas e diárias |
 | 🛠️ Locação de Equipamentos | Locações, equipamentos, manutenção e clientes |
 | 🏖️ Locação por Temporada | Reservas, imóveis, hóspedes e avaliações |
+| 🚗 Locadora de Veículos | Reservas, frota, clientes, multas e diárias |
 | 🚚 Logística | Entregas, transportadoras, rotas e clientes |
 | 🚴 Logística Urbana | Entregas last mile, entregadores e SLA |
+| 🛠️ Manutenção Industrial | Técnicos, clientes, ordens de serviço e peças |
 | 🪵 Marcenaria & Móveis Planejados | Contratos, projetos, produção e clientes |
 | 📣 Marketing Digital | Campanhas, canais, performance e conversões |
 | ⚙️ Metalurgia & Siderurgia | Produção, fornos, produtos e vendas |
@@ -303,17 +334,26 @@ Veja a seção [DAX Sandbox](#-dax-sandbox) para o passo a passo completo.
 | ⛏️ Mineração | Extrações, minas, minerais e equipamentos |
 | 🚗 Mobilidade | Viagens, motoristas, passageiros, rotas e veículos |
 | 👗 Moda & Vestuário | Coleções, vendas, estoque e devoluções |
+| 🏍️ Motoboy & App de Transporte | Motociclistas, clientes e corridas de entrega/passageiro |
+| 🏝️ Multipropriedade | Resorts, unidades, proprietários, reservas e taxas |
 | 🖼️ Museus & Cultura | Visitas, exposições, eventos culturais e ingressos |
 | 🦷 Odontologia | Consultas, dentistas, pacientes, procedimentos e convênios |
+| 🗂️ Operadora de Plano de Saúde | Beneficiários, planos, prestadores, autorizações e mensalidades |
 | 👓 Óptica | Vendas, produtos, clientes e exames de vista |
+| 🥐 Padaria & Confeitaria | Lojas, produtos, vendas e produção |
 | 📎 Papelaria & Material Escolar | Vendas, produtos, lojas e estoque |
+| 🎡 Parque de Diversões | Brinquedos, ingressos e uso dos brinquedos |
 | 🐄 Pecuária | Fazendas, rebanho, manejo e produção |
 | 🐟 Pesca & Aquicultura | Espécies, produção, qualidade e biomassa |
 | 🐾 Pet & Veterinária | Atendimentos, pets, tutores e serviços veterinários |
 | 🛢️ Petróleo & Gás | Produção, poços, plataformas e custos operacionais |
 | 🏊 Piscina & Spa | Serviços, clientes, técnicos e consumo de produtos químicos |
+| ⚓ Porto & Terminal Portuário | Terminais, navios, atracações e movimentação de carga |
+| ⛽ Posto de Combustível & Conveniência | Postos, combustíveis, abastecimentos e loja de conveniência |
+| 🎙️ Rádio & Podcast | Programas, apresentadores, audiência e anúncios |
 | 🗑️ Reciclagem & Gestão de Resíduos | Coletas, materiais, cooperativas e vendas de material |
 | 🏢 Recursos Humanos | Horas trabalhadas, funcionários, projetos e cargos |
+| 📰 Relações Públicas | Clientes, veículos de mídia, assessoria e clipping |
 | 🍽️ Restaurantes & Food Service | Pedidos, cardápio, unidades, reservas e delivery |
 | ☁️ SaaS B2B | Assinaturas, MRR, churn, NPS e planos |
 | 💧 Saneamento & Água | Consumo, faturas, estações de tratamento e ligações |
@@ -321,17 +361,27 @@ Veja a seção [DAX Sandbox](#-dax-sandbox) para o passo a passo completo.
 | 🧠 Saúde Mental | Sessões, profissionais, pacientes e diagnósticos |
 | 🔒 Segurança Privada | Escalações, vigilantes, clientes e ocorrências |
 | 🛡️ Seguros | Apólices, segurados, corretores e sinistros |
+| ⚒️ Serralheria | Clientes, produtos, pedidos e produção |
+| 🧹 Serviços de Limpeza | Funcionários, contratos, atendimentos e insumos |
+| 🪧 Sindicato & Associação de Classe | Associados, categorias, contribuições e benefícios |
 | 🦄 Startups & Venture Capital | Rodadas, valuations, MRR e métricas de crescimento |
 | 🎬 Streaming | Plays, assinantes, conteúdos, artistas |
+| 🛩️ Táxi Aéreo & Aviação Executiva | Aeronaves, pilotos, voos fretados e manutenção |
 | 💻 Tecnologia | Contratos SaaS, clientes e planos |
 | 📡 Telecom | Chamadas, assinantes, planos e torres |
+| 🖥️ Telemedicina | Médicos, pacientes, teleconsultas e prescrições |
 | 🤲 Terceiro Setor & ONGs | Doações, projetos sociais, doadores e execução |
 | 🧵 Têxtil & Confecção | Fibras, produção, eficiência e clientes |
 | 🚛 Transporte | Viagens, frota, combustível, manutenção e rentabilidade |
+| 🚌 Transporte Escolar | Veículos, motoristas, alunos, rotas e mensalidades |
 | ✈️ Turismo | Viagens, pacotes, agências e destinos |
+| 🍬 Usina de Açúcar & Etanol | Usinas, talhões, moagem e produção |
 | 🛒 Varejo | Vendas, clientes, produtos e filiais |
+| 🥤 Vending Machine & Autoatendimento | Máquinas, produtos, vendas e reposição |
 | ✈️ Viagens Corporativas | Viajantes, custos, política de viagem e SLA |
 | 🍷 Vinícola & Vitivinicultura | Produção, vinhedos, vinhos e canais de venda |
+| 🌳 Viveiro & Paisagismo | Plantas, clientes, vendas e projetos de paisagismo |
+| 🦁 Zoológico & Aquário | Recintos, animais, ingressos e manejo |
 
 A versão **EscolaDAX Simples** disponibiliza 8 destes setores (Varejo, Financeiro, Saúde, E-commerce, Logística, Educação, Imobiliário e SaaS B2B).
 
@@ -341,7 +391,7 @@ A versão **EscolaDAX Simples** disponibiliza 8 destes setores (Varejo, Financei
 
 ## 🧮 Quantidade de medidas DAX geradas por setor
 
-Cada setor gera uma quantidade diferente de medidas DAX automaticamente, dependendo de quantas tabelas fato, colunas numéricas e chaves estrangeiras ele tem (setores multi-fato e com mais colunas de valor multiplicam a base de medidas). Somando os 150 setores, o motor já sabe escrever **1.044 medidas DAX diferentes**, sem depender de nenhuma IA.
+Cada setor gera uma quantidade diferente de medidas DAX automaticamente, dependendo de quantas tabelas fato, colunas numéricas e chaves estrangeiras ele tem (setores multi-fato e com mais colunas de valor multiplicam a base de medidas). Somando os 150 setores, o motor já sabe escrever **9.197 medidas DAX diferentes**, sem depender de nenhuma IA.
 
 | Setor | Medidas DAX |
 | --- | --- |
@@ -367,6 +417,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🏋️ Academia & Fitness | 84 |
 | 👗 Moda & Vestuário | 83 |
 | 🏢 Recursos Humanos | 83 |
+| 💱 Agência de Câmbio | 82 |
 | 📢 Agência de Publicidade | 82 |
 | 💄 Beleza & Estética | 82 |
 | ♻️ Economia Circular | 82 |
@@ -381,68 +432,117 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🐄 Pecuária | 72 |
 | ✈️ Aviação Civil | 71 |
 | 📖 Editora & Publicação | 71 |
+| 📦 Fábrica de Embalagens | 71 |
 | 🥩 Frigorífico & Processamento de Carnes | 71 |
+| 🛋️ Indústria Moveleira | 71 |
+| 🛩️ Táxi Aéreo & Aviação Executiva | 71 |
+| 🍬 Usina de Açúcar & Etanol | 71 |
 | ⚡ Energia | 70 |
 | 🚴 Logística Urbana | 69 |
 | 💧 Saneamento & Água | 69 |
 | 🏢 Condomínio & Facilities | 63 |
+| 🌐 Comércio Exterior | 61 |
 | 🚙 Concessionária de Veículos | 61 |
 | 🏖️ Locação por Temporada | 61 |
 | 📎 Papelaria & Material Escolar | 61 |
+| 🥤 Vending Machine & Autoatendimento | 61 |
+| 🚑 Ambulância & Remoção | 60 |
 | 🔧 Autopeças & Oficina Mecânica | 60 |
 | 📞 Call Center & BPO | 60 |
 | 🔐 Cibersegurança | 60 |
 | 🎥 Cinema & Exibição | 60 |
-| 🖥️ Data Center & Cloud Hosting | 60 |
+| 📈 Corretora de Investimentos | 60 |
+| 🛵 Delivery de Comida | 60 |
 | 🚁 Drones & Serviços Aéreos | 60 |
 | 🖨️ Gráfica & Comunicação Visual | 60 |
 | 🏭 Indústria | 60 |
 | 🛠️ Locação de Equipamentos | 60 |
 | 🖼️ Museus & Cultura | 60 |
 | 🍷 Vinícola & Vitivinicultura | 60 |
+| 🌳 Viveiro & Paisagismo | 60 |
 | 🌱 AgTech | 59 |
 | 🧬 Biotecnologia | 59 |
+| 🖥️ Data Center & Cloud Hosting | 59 |
 | 🚚 Logística | 59 |
 | 🧠 Saúde Mental | 58 |
+| 🧶 Artesanato | 50 |
 | 🪙 Blockchain & Criptomoedas | 50 |
 | 🎓 Ensino Superior | 50 |
+| 🚢 Indústria Naval | 50 |
+| 🛠️ Manutenção Industrial | 50 |
 | ⚙️ Metalurgia & Siderurgia | 50 |
+| 🏝️ Multipropriedade | 50 |
 | 🦷 Odontologia | 50 |
+| 🥐 Padaria & Confeitaria | 50 |
+| ⚓ Porto & Terminal Portuário | 50 |
+| 🖥️ Telemedicina | 50 |
 | 🎰 Apostas Esportivas & iGaming | 49 |
+| 🌽 Biocombustíveis | 49 |
 | 📜 Cartório & Serviços Notariais | 49 |
 | 🎫 Casa Lotérica & Correspondente Bancário | 49 |
+| 🍺 Cervejaria Artesanal | 49 |
 | 📊 Consultoria Empresarial | 49 |
 | 📦 Correios & Encomendas | 49 |
 | 🪑 Coworking & Espaços Compartilhados | 49 |
+| 🚂 Ferrovia de Carga | 49 |
+| 🌮 Food Truck | 49 |
 | ⚰️ Funerária & Serviços Funerários | 49 |
 | 🪵 Marcenaria & Móveis Planejados | 49 |
 | 👓 Óptica | 49 |
 | 🏊 Piscina & Spa | 49 |
+| ⚒️ Serralheria | 49 |
+| 🚌 Transporte Escolar | 49 |
 | 🛒 Varejo | 49 |
+| ☀️ Energia Solar | 48 |
+| 🎙️ Rádio & Podcast | 48 |
 | 🎬 Streaming | 48 |
 | 📡 Telecom | 48 |
 | 🔬 Laboratório & Diagnóstico | 47 |
 | 📲 Migração Claro Brasil (Portabilidade) | 47 |
+| 🏍️ Motoboy & App de Transporte | 47 |
+| 🎁 Clube de Assinaturas | 39 |
 | 🧾 Consórcios | 39 |
+| 📝 Cursinho Preparatório | 39 |
+| 🖋️ Estúdio de Tatuagem | 39 |
+| 🥬 Feira Livre & Mercado Municipal | 39 |
 | 🗑️ Reciclagem & Gestão de Resíduos | 39 |
 | 🔩 Assistência Técnica de Eletrônicos | 38 |
+| 🕵️ Auditoria & Compliance | 38 |
+| 💈 Barbearia | 38 |
+| 🍱 Buffet & Cerimonial | 38 |
 | 🏗️ Construção Civil | 38 |
 | 💳 Cooperativa de Crédito | 38 |
 | 🅿️ Estacionamento & Zona Azul | 38 |
+| 💐 Floricultura | 38 |
 | 🩺 Home Care | 38 |
 | 🏨 Hotelaria | 38 |
 | 💍 Joalheria & Relojoaria | 38 |
 | 🔨 Leilão | 38 |
+| ⛽ Posto de Combustível & Conveniência | 38 |
+| 📰 Relações Públicas | 38 |
 | 🤲 Terceiro Setor & ONGs | 38 |
+| 🐝 Apicultura | 37 |
 | 📚 Educação | 37 |
+| ⚗️ Farmácia de Manipulação | 37 |
+| 🎡 Parque de Diversões | 37 |
 | 🛡️ Seguros | 37 |
 | 💻 Tecnologia | 37 |
 | 🏛️ Arquitetura & Design | 36 |
+| 🦁 Zoológico & Aquário | 36 |
+| 🎼 Escola de Música | 29 |
+| 🏬 Armazenagem & Self Storage | 28 |
+| 🗣️ Escola de Idiomas | 28 |
+| 🗂️ Operadora de Plano de Saúde | 28 |
+| 🧺 Lavanderia | 27 |
 | 🏥 Saúde | 27 |
 | 🔒 Segurança Privada | 27 |
+| 🧹 Serviços de Limpeza | 27 |
 | ✈️ Turismo | 27 |
 | 💰 Financeiro | 26 |
+| ⛪ Igreja & Templos Religiosos | 26 |
+| 🪧 Sindicato & Associação de Classe | 26 |
 | 🐾 Pet & Veterinária | 25 |
+| 🧮 Contabilidade | 16 |
 | 🚇 Metrô & Trem Urbano | 16 |
 | 🏠 Imobiliário | 15 |
 
@@ -476,7 +576,7 @@ Depois de concluir uma ação relevante em qualquer uma das abas (gerar uma base
 - **Período configurável**: qualquer intervalo de datas, com geração automática da `dCalendario`.
 - **Busca de setor** na barra lateral, com índice construído a partir do nome e da descrição de cada setor.
 - **Barra de progresso real**, com etapas (dimensões, fato, métricas, compactação).
-- **Medidas DAX sugeridas automaticamente** (`generators/medidas.py`), organizadas por categoria e prontas para colar no Power BI. Somando os 150 setores, já são **1.044 medidas diferentes** que o motor sabe escrever sozinho, sem depender de nenhuma IA.
+- **Medidas DAX sugeridas automaticamente** (`generators/medidas.py`), organizadas por categoria e prontas para colar no Power BI. Somando os 150 setores, já são **9.197 medidas diferentes** que o motor sabe escrever sozinho, sem depender de nenhuma IA.
 - **Modelo TMDL** (`generators/tmdl_generator.py`): tabelas, relacionamentos e medidas prontos para importar no Power BI (Tabular Editor), com resolução automática de ambiguidade de relacionamento, inclusive em cadeias fato-para-fato.
 - **Dicionário de dados** (`generators/dicionario.py`): explica o significado de cada tabela e coluna com base em padrões de nome (`id_`, `valor_`, `qtd_`, `status`, `data_`, etc.), disponível em PT/EN e exportado como ZIP.
 - **Case de negócio automático** (`generators/case_negocio.py`): cada base vem com um parágrafo de contexto fictício, adaptado ao setor e ao modo ativo (anomalia, deriva temporal ou nenhum dos dois), transformando a geração num exercício com objetivo real.
