@@ -18,6 +18,7 @@ exportados de forma errada:
   em vez de "Cobrança").
 """
 import os
+import re
 
 import pandas as pd
 import streamlit as st
@@ -26,6 +27,47 @@ from generators.medidas import _titulo
 from generators.tmdl_generator import _tabela_tmdl, _e_chave, _coluna_e_data
 from generators.helpers import to_zip
 from ui.sugestao_proximo_passo import sugerir
+
+
+def _normalizar_numero_br(valor) -> str:
+    """
+    Normaliza um número em formato brasileiro (ex.: 'R$ 1.234,56', '1.500,00',
+    '(89,90)' para negativo) para o formato que pd.to_numeric entende
+    ('1234.56'). Sem essa normalização, pd.to_numeric('1.234,56') falha
+    silenciosamente e vira NaN — era exatamente por isso que colunas de
+    valor monetário (ex.: 'Valor'), muito comuns em planilhas brasileiras
+    exportadas do Excel, apareciam completamente vazias depois de aplicar
+    o tipo 'Número decimal'/'Número inteiro'.
+    """
+    if valor is None:
+        return valor
+    s = str(valor).strip()
+    if not s:
+        return s
+    # Remove tudo que não for dígito, vírgula, ponto, sinal de menos ou parênteses
+    # (isso já elimina "R$", "US$", "%", espaços e o NBSP que o Excel às vezes usa).
+    s = re.sub(r"[^\d,.\-()]", "", s)
+    if not s or s in ("-", "(", ")", "()"):
+        return valor  # não parece um número; devolve o original e deixa o pandas decidir
+
+    negativo = s.startswith("(") and s.endswith(")")
+    if negativo:
+        s = s[1:-1]
+
+    if "," in s and "." in s:
+        # Os dois separadores aparecem juntos: o mais à direita é o decimal
+        # (ex.: "1.234,56" -> decimal é a vírgula; "1,234.56" -> decimal é o ponto).
+        if s.rfind(",") > s.rfind("."):
+            s = s.replace(".", "").replace(",", ".")
+        else:
+            s = s.replace(",", "")
+    elif "," in s:
+        # Só vírgula presente: assume o padrão brasileiro (vírgula = decimal).
+        s = s.replace(",", ".")
+    # Se só tem ponto (ou nenhum separador), já está no formato que o pandas
+    # entende — não mexe, pra não quebrar números já corretos tipo "1234.5".
+
+    return f"-{s}" if negativo else s
 
 OPCOES_TIPO = [
     "Detectar automaticamente",
@@ -70,7 +112,8 @@ def _sugerir_tipo(serie: pd.Series) -> str:
     amostra = serie.dropna().astype(str).str.strip()
     amostra = amostra[amostra != ""].head(50)
     if len(amostra):
-        convertidos_num = pd.to_numeric(amostra, errors="coerce")
+        amostra_normalizada = amostra.map(_normalizar_numero_br)
+        convertidos_num = pd.to_numeric(amostra_normalizada, errors="coerce")
         if convertidos_num.notna().mean() >= 0.9:
             eh_inteiro = (convertidos_num.dropna() % 1 == 0).all()
             return "Número inteiro" if eh_inteiro else "Número decimal"
@@ -90,9 +133,9 @@ def _aplicar_tipos(df: pd.DataFrame, tipos: dict) -> pd.DataFrame:
             continue
         try:
             if tipo == "Número inteiro":
-                df[col] = pd.to_numeric(df[col], errors="coerce")
+                df[col] = pd.to_numeric(df[col].map(_normalizar_numero_br), errors="coerce")
             elif tipo == "Número decimal":
-                df[col] = pd.to_numeric(df[col], errors="coerce").astype(float)
+                df[col] = pd.to_numeric(df[col].map(_normalizar_numero_br), errors="coerce").astype(float)
             elif tipo in ("Data", "Data e hora"):
                 df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
             elif tipo == "Verdadeiro/Falso (booleano)":
