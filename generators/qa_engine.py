@@ -108,6 +108,98 @@ def _achar_coluna_medida(pergunta_norm: str, fato_nome: str, tabelas: dict) -> s
     return None
 
 
+_PERIODOS_TEMPORAIS = [
+    (["trimestre"], "Trimestre"),
+    (["semestre"], "Semestre"),
+    (["ano"], "Ano"),
+    (["mes", "mês", "mensal"], "MesAno"),
+]
+
+
+def _achar_periodo_temporal(pergunta_norm: str, cal_df: pd.DataFrame) -> str | None:
+    for palavras, coluna in _PERIODOS_TEMPORAIS:
+        if coluna in cal_df.columns and any(p in pergunta_norm for p in palavras):
+            return coluna
+    return None
+
+
+def _tabela_calendario(tabelas: dict) -> str | None:
+    return next((t for t in tabelas if t.startswith("dCal")), None)
+
+
+def _responder_ranking_temporal(pergunta_norm: str, fato_nome: str, cal_nome: str, periodo_col: str,
+                                 tabelas: dict, ascendente: bool) -> RespostaQA:
+    fato_df = tabelas[fato_nome]
+    cal_df = tabelas[cal_nome]
+
+    date_cols = [c for c in fato_df.columns if "data" in c.lower()]
+    if not date_cols:
+        return RespostaQA(
+            entendida=False,
+            sugestoes=[f"Não encontrei uma coluna de data em {fato_nome} para agrupar por período."],
+        )
+    date_col = date_cols[0]
+    medida = _achar_coluna_medida(pergunta_norm, fato_nome, tabelas)
+    contando_linhas = medida is None
+    eh_media = bool(re.search(r"\bmedi[ao]\b|\bmédia\b", pergunta_norm))
+
+    colunas_fato = [date_col] + ([medida] if medida else [])
+    fato_tmp = fato_df[colunas_fato].copy()
+    fato_tmp["_data_norm"] = pd.to_datetime(fato_tmp[date_col], errors="coerce").dt.date
+    cal_tmp = cal_df[["Data", periodo_col]].copy()
+    cal_tmp["_data_norm"] = pd.to_datetime(cal_tmp["Data"], errors="coerce").dt.date
+
+    merged = fato_tmp.merge(cal_tmp[["_data_norm", periodo_col]], on="_data_norm", how="left")
+    merged = merged.dropna(subset=[periodo_col])
+
+    if contando_linhas:
+        agrupado = merged.groupby(periodo_col).size().reset_index(name="valor")
+        funcao_nome = "COUNTROWS"
+    elif eh_media:
+        agrupado = merged.groupby(periodo_col)[medida].mean().reset_index(name="valor")
+        funcao_nome = "AVERAGE"
+    else:
+        agrupado = merged.groupby(periodo_col)[medida].sum().reset_index(name="valor")
+        funcao_nome = "SUM"
+
+    agrupado = agrupado.sort_values("valor", ascending=ascendente)
+    if agrupado.empty:
+        return RespostaQA(entendida=False, sugestoes=["Não há dados suficientes para calcular esse ranking."])
+
+    linha_top = agrupado.iloc[0]
+    medida_label = medida.replace("_", " ") if medida else None
+    superlativo = "menor" if ascendente else "maior"
+    if contando_linhas:
+        rotulo_agregacao = f"{superlativo} número de registros"
+    elif eh_media:
+        rotulo_agregacao = f"{superlativo} média de {medida_label}"
+    else:
+        rotulo_agregacao = f"{superlativo} total de {medida_label}"
+    valor_periodo = linha_top[periodo_col]
+    if isinstance(valor_periodo, float) and valor_periodo.is_integer():
+        valor_periodo = int(valor_periodo)
+    expr = (
+        f'CALCULATE({funcao_nome}({fato_nome}{f"[{medida}]" if medida else ""}), '
+        f'{cal_nome}[{periodo_col}]="{valor_periodo}")'
+    )
+
+    return RespostaQA(
+        entendida=True,
+        resposta_texto=(
+            f"**{valor_periodo}** foi o período com {rotulo_agregacao} "
+            f"(**{linha_top['valor']:,.2f}**)."
+        ),
+        medida_dax=expr,
+        valor=float(linha_top["valor"]),
+        passos=[
+            f"Agrupou {fato_nome} por {cal_nome}[{periodo_col}] (via {fato_nome}[{date_col}] = {cal_nome}[Data])",
+            f"Calculou {funcao_nome} de {medida_label or 'registros'} para cada período",
+            f"Ordenou {'crescente' if ascendente else 'decrescente'} e pegou o primeiro colocado",
+        ],
+        tabela_resultado=agrupado.head(15),
+    )
+
+
 def _achar_dimensao(pergunta_norm: str, tabelas: dict) -> str | None:
     """Acha a tabela Dim que a pergunta está citando (ex.: 'vendedor' -> DimVendedor)."""
     for dim_nome in _tabelas_dim(tabelas):
@@ -198,14 +290,34 @@ def responder_pergunta(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> Respo
             passos=passos,
         )
 
-    # 2) Ranking por dimensão: "qual <dimensão> teve o maior/menor <medida>"
-    dim_nome = _achar_dimensao(pergunta_norm, tabelas)
+    # 2) Ranking por período de tempo: "qual mês/ano teve o maior/menor <medida>"
+    cal_nome = _tabela_calendario(tabelas)
     eh_maior = bool(re.search(r"\bmai(o|s)r\b|\bmais\b|\btop\b", pergunta_norm))
     eh_menor = bool(re.search(r"\bmeno?r\b|\bpior\b|\bmenos\b", pergunta_norm))
-    if dim_nome and (eh_maior or eh_menor):
+    periodo_col = _achar_periodo_temporal(pergunta_norm, tabelas[cal_nome]) if cal_nome else None
+    dim_nome = _achar_dimensao(pergunta_norm, tabelas)
+
+    if (periodo_col or dim_nome) and (eh_maior or eh_menor):
+        # Se a pergunta claramente pede uma medida (total/soma/média) mas não achamos
+        # nenhuma coluna correspondente, recusa em vez de silenciosamente contar
+        # registros — evita responder "quantidade de registros" quando a pessoa
+        # queria "total de valor total" e essa coluna nem existe neste setor.
+        tem_intencao_medida = bool(_TEM_INTENCAO_TOTAL.search(pergunta_norm) or re.search(r"\bmedi[ao]\b|\bmédia\b", pergunta_norm))
+        medida_tentativa = _achar_coluna_medida(pergunta_norm, fato_nome, tabelas)
+        if tem_intencao_medida and medida_tentativa is None:
+            return RespostaQA(
+                entendida=False,
+                sugestoes=[
+                    "Encontrei a comparação (maior/menor) e a dimensão, mas não achei a medida "
+                    "que você mencionou neste setor.",
+                    f"Medidas disponíveis: {', '.join(_medidas_disponiveis(fato_df))}",
+                ],
+            )
+        if periodo_col:
+            return _responder_ranking_temporal(pergunta_norm, fato_nome, cal_nome, periodo_col, tabelas, ascendente=eh_menor)
         return _responder_ranking(pergunta_norm, fato_nome, dim_nome, tabelas, ascendente=eh_menor)
 
-    # 3) Ticket médio (caso especial reconhecido por nome, não por coluna)
+    # 4) Ticket médio (caso especial reconhecido por nome, não por coluna)
     if "ticket medio" in pergunta_norm or "ticket médio" in pergunta_norm.replace("é", "e"):
         medida = _achar_coluna_medida(pergunta_norm, fato_nome, tabelas) or _medida_principal(fato_df)
         if medida is None:
@@ -300,6 +412,7 @@ def _responder_ranking(pergunta_norm: str, fato_nome: str, dim_nome: str,
 
     medida = _achar_coluna_medida(pergunta_norm, fato_nome, tabelas)
     contando_linhas = medida is None
+    eh_media = bool(re.search(r"\bmedi[ao]\b|\bmédia\b", pergunta_norm))
 
     # Coluna descritiva da dimensão (nome-like), pra mostrar em vez do ID puro
     col_desc = next(
@@ -313,32 +426,43 @@ def _responder_ranking(pergunta_norm: str, fato_nome: str, dim_nome: str,
     )
     if contando_linhas:
         agrupado = merged.groupby(col_desc).size().reset_index(name="valor")
+        funcao_nome = "COUNTROWS"
+    elif eh_media:
+        agrupado = merged.groupby(col_desc)[medida].mean().reset_index(name="valor")
+        funcao_nome = "AVERAGE"
     else:
         agrupado = merged.groupby(col_desc)[medida].sum().reset_index(name="valor")
+        funcao_nome = "SUM"
 
     agrupado = agrupado.sort_values("valor", ascending=ascendente)
     if agrupado.empty:
         return RespostaQA(entendida=False, sugestoes=["Não há dados suficientes para calcular esse ranking."])
 
     linha_top = agrupado.iloc[0]
-    medida_label = medida.replace("_", " ") if medida else "quantidade de registros"
+    medida_label = medida.replace("_", " ") if medida else None
     superlativo = "menor" if ascendente else "maior"
+    if contando_linhas:
+        artigo, rotulo_agregacao = "o", f"{superlativo} número de registros"
+    elif eh_media:
+        artigo, rotulo_agregacao = "a", f"{superlativo} média de {medida_label}"
+    else:
+        artigo, rotulo_agregacao = "o", f"{superlativo} total de {medida_label}"
     expr = (
-        f'CALCULATE({"COUNTROWS" if contando_linhas else "SUM"}({fato_nome}'
+        f'CALCULATE({funcao_nome}({fato_nome}'
         f'{f"[{medida}]" if medida else ""}), {dim_nome}[{col_desc}]="{linha_top[col_desc]}")'
     )
 
     return RespostaQA(
         entendida=True,
         resposta_texto=(
-            f"**{linha_top[col_desc]}** foi quem teve o {superlativo} {medida_label} "
+            f"**{linha_top[col_desc]}** foi quem teve {artigo} {rotulo_agregacao} "
             f"(**{linha_top['valor']:,.2f}**)."
         ),
         medida_dax=expr,
         valor=float(linha_top["valor"]),
         passos=[
             f"Agrupou {fato_nome} por {dim_nome}[{col_desc}] (via {fato_nome}[{fk_col}] = {dim_nome}[{pk_dim}])",
-            f"Somou/contou {medida_label} para cada {dim_nome}[{col_desc}]",
+            f"Calculou {funcao_nome} de {medida_label or 'registros'} para cada {dim_nome}[{col_desc}]",
             f"Ordenou {'crescente' if ascendente else 'decrescente'} e pegou o primeiro colocado",
         ],
         tabela_resultado=agrupado.head(10),
