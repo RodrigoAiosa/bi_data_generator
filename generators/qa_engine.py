@@ -84,15 +84,18 @@ def _medidas_disponiveis(fato_df: pd.DataFrame) -> list[str]:
 
 def _achar_coluna_medida(pergunta_norm: str, fato_nome: str, tabelas: dict) -> str | None:
     """Acha qual coluna numérica da tabela fato a pergunta está pedindo.
-    Primeiro tenta bater o NOME DA COLUNA de verdade (com _ trocado por
-    espaço) na pergunta — a via mais confiável, sem chute. Só recorre a
+    Primeiro tenta bater o NOME DA COLUNA de verdade — tanto a forma literal
+    com underscore (ex.: 'quantidade_kg', comum quando a pessoa copia o nome
+    direto do diagrama do modelo) quanto com _ trocado por espaço (ex.:
+    'quantidade kg') — a via mais confiável, sem chute. Só recorre a
     sinônimos genéricos (venda/faturamento/receita) se não achar nada."""
     df = tabelas[fato_nome]
     medidas = _medidas_disponiveis(df)
 
     for col in medidas:
-        col_norm = _norm(col.replace("_", " "))
-        if col_norm and col_norm in pergunta_norm:
+        col_underscore = col.lower()
+        col_espaco = _norm(col.replace("_", " "))
+        if col_underscore in pergunta_norm or (col_espaco and col_espaco in pergunta_norm):
             return col
 
     for palavra, candidatos in _SINONIMOS_MEDIDA.items():
@@ -200,14 +203,35 @@ def _responder_ranking_temporal(pergunta_norm: str, fato_nome: str, cal_nome: st
     )
 
 
+def _palavras(pergunta_norm: str) -> list[str]:
+    """Tokeniza a pergunta em palavras limpas, sem pontuação grudada (ex.:
+    'abelha?' -> 'abelha'). Usar isto em vez de .split() sempre que for
+    comparar palavra a palavra — pontuação grudada faz comparações exatas
+    (p == sufixo) falharem silenciosamente."""
+    return re.findall(r"[a-z0-9_]+", pergunta_norm)
+
+
 def _achar_dimensao(pergunta_norm: str, tabelas: dict) -> str | None:
-    """Acha a tabela Dim que a pergunta está citando (ex.: 'vendedor' -> DimVendedor)."""
+    """Acha a tabela Dim que a pergunta está citando — tanto pelo nome da
+    própria tabela (ex.: 'vendedor' -> DimVendedor) quanto por uma coluna
+    descritiva dentro dela (ex.: 'espécie de abelha' -> DimColmeia, via a
+    coluna especie_abelha, mesmo com uma preposição no meio das palavras)."""
+    palavras_pergunta = set(_palavras(pergunta_norm))
     for dim_nome in _tabelas_dim(tabelas):
         sufixo = dim_nome[3:].lower()  # remove "Dim"
         if sufixo in pergunta_norm or any(
-            p == sufixo or (len(p) > 3 and p in sufixo) for p in pergunta_norm.split()
+            p == sufixo or (len(p) > 3 and p in sufixo) for p in palavras_pergunta
         ):
             return dim_nome
+
+        dim_df = tabelas[dim_nome]
+        for col in dim_df.columns:
+            cl = col.lower()
+            if cl.startswith(("id_", "sk_")):
+                continue
+            palavras_coluna = [p for p in cl.split("_") if len(p) > 3]
+            if palavras_coluna and all(_norm(p) in palavras_pergunta for p in palavras_coluna):
+                return dim_nome
     return None
 
 
@@ -414,12 +438,25 @@ def _responder_ranking(pergunta_norm: str, fato_nome: str, dim_nome: str,
     contando_linhas = medida is None
     eh_media = bool(re.search(r"\bmedi[ao]\b|\bmédia\b", pergunta_norm))
 
-    # Coluna descritiva da dimensão (nome-like), pra mostrar em vez do ID puro
-    col_desc = next(
-        (c for c in dim_df.columns if pd.api.types.is_string_dtype(dim_df[c])
-         and c.lower() not in ("email", "cpf", "cnpj", "endereco")),
-        pk_dim,
-    )
+    # Coluna descritiva da dimensão: prioriza a coluna que a pergunta
+    # realmente mencionou (ex.: 'espécie de abelha' -> especie_abelha), e só
+    # cai no fallback genérico (primeira coluna de texto) se nenhuma bater.
+    palavras_pergunta = set(_palavras(pergunta_norm))
+    col_desc = None
+    for c in dim_df.columns:
+        cl = c.lower()
+        if cl.startswith(("id_", "sk_")) or cl in ("email", "cpf", "cnpj", "endereco"):
+            continue
+        palavras_coluna = [p for p in cl.split("_") if len(p) > 3]
+        if palavras_coluna and all(_norm(p) in palavras_pergunta for p in palavras_coluna):
+            col_desc = c
+            break
+    if col_desc is None:
+        col_desc = next(
+            (c for c in dim_df.columns if pd.api.types.is_string_dtype(dim_df[c])
+             and c.lower() not in ("email", "cpf", "cnpj", "endereco")),
+            pk_dim,
+        )
 
     merged = fato_df[[fk_col] + ([medida] if medida else [])].merge(
         dim_df[[pk_dim, col_desc]], left_on=fk_col, right_on=pk_dim, how="left"
