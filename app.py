@@ -38,6 +38,7 @@ from ui.formatar_m import render_formatar_m
 from ui.sugestao_proximo_passo import sugerir
 from ui.auditor_modelo import render_auditor_modelo
 from ui.dax_sandbox import render_dax_sandbox
+from ui.pergunte_dados import render_pergunte_dados
 
 st.set_page_config(**PAGE_CONFIG)
 
@@ -87,7 +88,9 @@ _TABS_GUIA_TEXTO = {
         "- 🩺 **Auditor de Modelo** — cole o TMDL de um modelo Power BI seu de verdade e receba uma "
         "nota de qualidade com achados acionáveis (medida duplicada, divisão sem `DIVIDE()` etc.).\n"
         "- 🧮 **DAX Sandbox** — escreva uma medida DAX e veja o resultado calculado DE VERDADE contra "
-        "os dados do setor, com diagrama do modelo e explicação passo a passo do cálculo."
+        "os dados do setor, com diagrama do modelo e explicação passo a passo do cálculo.\n"
+        "- 💬 **Pergunte aos Dados** — escreva uma pergunta de negócio em português (ex.: 'qual foi "
+        "o total de vendas?') e veja a medida DAX equivalente e a resposta calculada de verdade."
     ),
     "en": (
         "- 🏭 **Sector Generator** — generates a ready-to-use synthetic BI dataset, choosing from "
@@ -104,7 +107,9 @@ _TABS_GUIA_TEXTO = {
         "- 🩺 **Model Auditor** — paste the TMDL of one of your real Power BI models and get a "
         "quality score with actionable findings (duplicate measure, division without `DIVIDE()`, etc.).\n"
         "- 🧮 **DAX Sandbox** — write a DAX measure and see the result calculated FOR REAL against "
-        "the sector's data, with a model diagram and a step-by-step explanation of the calculation."
+        "the sector's data, with a model diagram and a step-by-step explanation of the calculation.\n"
+        "- 💬 **Ask Your Data** — write a business question in plain language (e.g., 'what was the "
+        "total sales?') and see the equivalent DAX measure and the real calculated answer."
     ),
 }
 
@@ -407,8 +412,8 @@ def main() -> None:
         st.markdown(_TABS_GUIA_TEXTO[lang])
     st.session_state["tabs_guia_visto"] = True
 
-    tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_dax, tab_m, tab_auditor, tab_sandbox = st.tabs(
-        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox"]
+    tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_dax, tab_m, tab_auditor, tab_sandbox, tab_pergunte = st.tabs(
+        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox", "💬 Pergunte aos Dados"]
     )
 
     with tab_gerador:
@@ -474,6 +479,9 @@ def main() -> None:
 
     with tab_sandbox:
         render_dax_sandbox()
+
+    with tab_pergunte:
+        render_pergunte_dados()
 
 
 if __name__ == "__main__":
