@@ -1,12 +1,12 @@
 """
 ui/dax_sandbox.py: Aba "🧮 DAX Sandbox".
 
-Escolha um setor (reaproveitando a última geração, se os parâmetros
-baterem), veja o diagrama do modelo estrela (Fato/Dim relacionados) e
-escreva uma medida DAX (subconjunto pedagógico: SUM, AVERAGE, MIN, MAX,
-COUNTROWS, DISTINCTCOUNT, DIVIDE, CALCULATE com filtros — inclusive
-cruzando para uma dimensão relacionada) para ver o resultado calculado de
-verdade contra os dados, não apenas formatado como texto.
+Setor vem da barra lateral (não tem seletor próprio nesta aba); veja o
+diagrama do modelo estrela (Fato/Dim relacionados) e escreva uma medida
+DAX (subconjunto pedagógico: SUM, AVERAGE, MIN, MAX, COUNTROWS,
+DISTINCTCOUNT, DIVIDE, CALCULATE com filtros — inclusive cruzando para
+uma dimensão relacionada) para ver o resultado calculado de verdade
+contra os dados, não apenas formatado como texto.
 """
 
 import datetime
@@ -14,7 +14,6 @@ import random
 
 import streamlit as st
 
-from config import SETORES
 from generators.dax_engine import avaliar_medida, DaxError
 from log_acesso import registrar_evento
 from ui.cache_utils import gerar_bruto_com_cache
@@ -174,27 +173,17 @@ def _achar_medida_e_exemplos(tabelas: dict) -> tuple[str, str, list[str]]:
     return fato, medida, exemplos
 
 
-def render_dax_sandbox() -> None:
+def render_dax_sandbox(setor: str) -> None:
     st.markdown("## 🧮 DAX Sandbox")
     st.caption(
         "Escreva uma medida DAX e veja o resultado calculado de verdade contra os dados do "
-        "setor escolhido — não é só formatação de texto, é o cálculo real rodando nas linhas "
-        "geradas. Suporta um subconjunto pedagógico: SUM, AVERAGE, MIN, MAX, COUNTROWS, "
-        "DISTINCTCOUNT, DIVIDE, CALCULATE (com filtros, inclusive cruzando para uma dimensão "
-        "relacionada) e operadores aritméticos (+ - * /)."
+        "setor escolhido na barra lateral — não é só formatação de texto, é o cálculo real "
+        "rodando nas linhas geradas. Suporta um subconjunto pedagógico: SUM, AVERAGE, MIN, MAX, "
+        "COUNTROWS, DISTINCTCOUNT, DIVIDE, CALCULATE (com filtros, inclusive cruzando para uma "
+        "dimensão relacionada) e operadores aritméticos (+ - * /)."
     )
 
-    setores_disponiveis = list(SETORES.keys())
-    setor_default = st.session_state.get("ultima_geracao", {}).get("setor", setores_disponiveis[0])
-    idx_default = setores_disponiveis.index(setor_default) if setor_default in setores_disponiveis else 0
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        setor = st.selectbox("Setor", options=setores_disponiveis, index=idx_default, key="dax_sandbox_setor")
-    with col2:
-        st.write("")
-        st.write("")
-        gerar_clicado = st.button("🔄 Carregar dados", use_container_width=True, key="dax_sandbox_carregar")
+    gerar_clicado = st.button("🔄 Recarregar dados", key="dax_sandbox_carregar")
 
     chave_atual = (setor, _VOLUME_SANDBOX)
     if gerar_clicado or st.session_state.get("dax_sandbox_chave") != chave_atual:
@@ -208,7 +197,7 @@ def render_dax_sandbox() -> None:
 
     tabelas = st.session_state.get("dax_sandbox_tabelas")
     if tabelas is None:
-        st.info("Escolha um setor e clique em **Carregar dados** para começar.")
+        st.info("Escolha um setor na barra lateral para começar.")
         return
 
     with st.expander("📊 Modelo do setor (clique para ver o diagrama)", expanded=False):

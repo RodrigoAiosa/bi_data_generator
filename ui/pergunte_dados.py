@@ -16,7 +16,6 @@ import datetime
 
 import streamlit as st
 
-from config import SETORES
 from generators.qa_engine import responder_pergunta
 from ui.cache_utils import gerar_bruto_com_cache
 from ui.dax_sandbox import _montar_dot
@@ -41,30 +40,20 @@ def _primeira_medida(tabelas: dict) -> str:
     return medidas[0] if medidas else "valor"
 
 
-def render_pergunte_dados() -> None:
+def render_pergunte_dados(setor: str) -> None:
     st.markdown("## 💬 Pergunte aos Dados")
     st.caption(
         "Escreva uma pergunta de negócio em português e veja a resposta calculada de "
-        "verdade contra os dados do setor escolhido, junto com a medida DAX equivalente "
-        "que foi gerada — assim você aprende a traduzir a pergunta em código, não só "
-        "recebe o número pronto. **Importante:** isto não é um assistente de IA de "
-        "linguagem natural — é um motor de reconhecimento de padrões, limitado a "
+        "verdade contra os dados do setor escolhido na barra lateral, junto com a medida "
+        "DAX equivalente que foi gerada — assim você aprende a traduzir a pergunta em "
+        "código, não só recebe o número pronto. **Importante:** isto não é um assistente "
+        "de IA de linguagem natural — é um motor de reconhecimento de padrões, limitado a "
         "perguntas de agregação (total, média, contagem, ranking, ticket médio). Ele "
         "nunca tenta prever o futuro nem explicar causas — só calcula o que já existe "
         "nos dados."
     )
 
-    setores_disponiveis = list(SETORES.keys())
-    setor_default = st.session_state.get("ultima_geracao", {}).get("setor", setores_disponiveis[0])
-    idx_default = setores_disponiveis.index(setor_default) if setor_default in setores_disponiveis else 0
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        setor = st.selectbox("Setor", options=setores_disponiveis, index=idx_default, key="qa_setor")
-    with col2:
-        st.write("")
-        st.write("")
-        carregar = st.button("🔄 Carregar dados", use_container_width=True, key="qa_carregar")
+    carregar = st.button("🔄 Recarregar dados", key="qa_carregar")
 
     chave_atual = (setor, _VOLUME_QA)
     if carregar or st.session_state.get("qa_chave") != chave_atual:
@@ -78,7 +67,7 @@ def render_pergunte_dados() -> None:
 
     tabelas = st.session_state.get("qa_tabelas")
     if tabelas is None:
-        st.info("Escolha um setor e clique em **Carregar dados** para começar.")
+        st.info("Escolha um setor na barra lateral para começar.")
         return
 
     with st.expander("📊 Modelo do setor (clique para ver o diagrama)", expanded=False):
