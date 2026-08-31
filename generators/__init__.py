@@ -100,6 +100,58 @@ from .estacionamento import gerar_estacionamento
 from .leilao import gerar_leilao
 from .medidas import gerar_bateria_medidas
 
+# ═══════ +50 NOVOS SETORES (LOTE 6) ═══════
+from .agencia_cambio import gerar_agencia_cambio
+from .ambulancia import gerar_ambulancia
+from .apicultura import gerar_apicultura
+from .armazenagem import gerar_armazenagem
+from .artesanato import gerar_artesanato
+from .auditoria import gerar_auditoria
+from .barbearia import gerar_barbearia
+from .biocombustiveis import gerar_biocombustiveis
+from .buffet import gerar_buffet
+from .cervejaria import gerar_cervejaria
+from .clube_assinatura import gerar_clube_assinatura
+from .comercio_exterior import gerar_comercio_exterior
+from .contabilidade import gerar_contabilidade
+from .corretora_investimentos import gerar_corretora_investimentos
+from .cursinho import gerar_cursinho
+from .delivery import gerar_delivery
+from .energia_solar import gerar_energia_solar
+from .escola_idiomas import gerar_escola_idiomas
+from .escola_musica import gerar_escola_musica
+from .estudio_tatuagem import gerar_estudio_tatuagem
+from .fabrica_embalagens import gerar_fabrica_embalagens
+from .farmacia_manipulacao import gerar_farmacia_manipulacao
+from .feira_livre import gerar_feira_livre
+from .ferrovia_carga import gerar_ferrovia_carga
+from .floricultura import gerar_floricultura
+from .food_truck import gerar_food_truck
+from .igreja import gerar_igreja
+from .industria_moveleira import gerar_industria_moveleira
+from .industria_naval import gerar_industria_naval
+from .lavanderia import gerar_lavanderia
+from .manutencao_industrial import gerar_manutencao_industrial
+from .motoboy import gerar_motoboy
+from .multipropriedade import gerar_multipropriedade
+from .plano_saude import gerar_plano_saude
+from .padaria import gerar_padaria
+from .parque_diversoes import gerar_parque_diversoes
+from .porto import gerar_porto
+from .posto_combustivel import gerar_posto_combustivel
+from .radio_podcast import gerar_radio_podcast
+from .relacoes_publicas import gerar_relacoes_publicas
+from .serralheria import gerar_serralheria
+from .limpeza import gerar_limpeza
+from .sindicato import gerar_sindicato
+from .taxi_aereo import gerar_taxi_aereo
+from .telemedicina import gerar_telemedicina
+from .transporte_escolar import gerar_transporte_escolar
+from .usina_acucar_etanol import gerar_usina_acucar_etanol
+from .vending_machine import gerar_vending_machine
+from .viveiro_paisagismo import gerar_viveiro_paisagismo
+from .zoologico import gerar_zoologico
+
 from .moda import gerar_moda
 from .eventos import gerar_eventos
 from .laboratorio import gerar_laboratorio
@@ -219,4 +271,54 @@ __all__ = [
     "gerar_estacionamento",
     "gerar_leilao",
     "gerar_bateria_medidas",
+    "gerar_agencia_cambio",
+    "gerar_ambulancia",
+    "gerar_apicultura",
+    "gerar_armazenagem",
+    "gerar_artesanato",
+    "gerar_auditoria",
+    "gerar_barbearia",
+    "gerar_biocombustiveis",
+    "gerar_buffet",
+    "gerar_cervejaria",
+    "gerar_clube_assinatura",
+    "gerar_comercio_exterior",
+    "gerar_contabilidade",
+    "gerar_corretora_investimentos",
+    "gerar_cursinho",
+    "gerar_delivery",
+    "gerar_energia_solar",
+    "gerar_escola_idiomas",
+    "gerar_escola_musica",
+    "gerar_estudio_tatuagem",
+    "gerar_fabrica_embalagens",
+    "gerar_farmacia_manipulacao",
+    "gerar_feira_livre",
+    "gerar_ferrovia_carga",
+    "gerar_floricultura",
+    "gerar_food_truck",
+    "gerar_igreja",
+    "gerar_industria_moveleira",
+    "gerar_industria_naval",
+    "gerar_lavanderia",
+    "gerar_manutencao_industrial",
+    "gerar_motoboy",
+    "gerar_multipropriedade",
+    "gerar_plano_saude",
+    "gerar_padaria",
+    "gerar_parque_diversoes",
+    "gerar_porto",
+    "gerar_posto_combustivel",
+    "gerar_radio_podcast",
+    "gerar_relacoes_publicas",
+    "gerar_serralheria",
+    "gerar_limpeza",
+    "gerar_sindicato",
+    "gerar_taxi_aereo",
+    "gerar_telemedicina",
+    "gerar_transporte_escolar",
+    "gerar_usina_acucar_etanol",
+    "gerar_vending_machine",
+    "gerar_viveiro_paisagismo",
+    "gerar_zoologico",
 ]

@@ -4,7 +4,7 @@ Gerador de **dados fictícios em modelo estrela** (fato + dimensões + calendár
 
 Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário, medidas DAX sugeridas, modelo TMDL pronto para o Power BI, dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
 
-O app principal tem **6 abas**: o Gerador de Setores (100 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada) e o Formatar M (o mesmo princípio, mas para código Power Query).
+O app principal tem **8 abas**: o Gerador de Setores (150 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada), o Formatar M (o mesmo princípio, mas para código Power Query), o Auditor de Modelo (cole o TMDL de um modelo seu e receba uma nota de qualidade) e o DAX Sandbox (escreva uma medida DAX e veja o resultado calculado de verdade contra os dados).
 
 > Aplicação construída em **Streamlit** e distribuída publicamente em:
 > 🔗 **https://rodrigoaiosa.streamlit.app**
@@ -29,6 +29,7 @@ O app principal tem **6 abas**: o Gerador de Setores (100 bases prontas), o Auto
 - [Dados Causais (relação causa-efeito conhecida)](#-dados-causais-relação-causa-efeito-conhecida)
 - [Formatar DAX](#-formatar-dax)
 - [Formatar M](#-formatar-m)
+- [Auditor de Modelo](#-auditor-de-modelo)
 - [DAX Sandbox](#-dax-sandbox)
 - [Sugestão de próximo passo entre abas](#-sugestão-de-próximo-passo-entre-abas)
 - [Log de acesso e painel de uso](#-log-de-acesso-e-painel-de-uso)
@@ -66,24 +67,27 @@ O repositório evoluiu ao longo do tempo e hoje contém a versão principal na r
 ```
 bi_data_generator/
 ├── app.py                      # ⭐ App principal (BI Data Generator PRO), versão mais completa
-├── config.py                   # Configuração da página, slider de volume e dicionário de 100 setores
+├── config.py                   # Configuração da página, slider de volume e dicionário de 150 setores
 ├── i18n.py                     # Sistema de internacionalização (PT-BR / EN)
 ├── helpers.py                  # Funções utilitárias no nível raiz
 ├── log_acesso.py               # Log de acesso e uso (sessão, eventos) enviado para uma planilha Google Sheets
 ├── requirements.txt            # Dependências do app principal
 ├── LICENSE
 │
-├── generators/                 # 🏭 Um módulo por setor de negócio (108 arquivos)
+├── generators/                 # 🏭 Um módulo por setor de negócio (163 arquivos)
 │   ├── __init__.py             # Exporta todas as funções gerar_<setor>
 │   ├── helpers.py              # dcalendario(), new_ids(), get_faker(), rand_dates(), to_zip()...
 │   ├── dicionario.py           # Gera o dicionário de dados (CSV zipado) com descrições PT/EN
 │   ├── medidas.py              # Gera a bateria de medidas DAX sugeridas por tabela fato
 │   ├── sql_generator.py        # Gera DDL / INSERT / script completo (SQL Server, PostgreSQL, MySQL)
+│   ├── relatorios_gerenciais.py # Gera as views SQL de Relatórios Gerenciais para qualquer setor
 │   ├── tmdl_generator.py       # Gera o modelo TMDL (tabelas, relacionamentos e medidas) para o Power BI
 │   ├── case_negocio.py         # Gera o case de negócio fictício que acompanha cada base
 │   ├── concept_drift.py        # Injeta deriva temporal (concept drift) genérica na tabela fato
 │   ├── dax_formatter.py         # Motor de formatação de expressões DAX (tokenizador + quebra de linha)
 │   ├── m_formatter.py           # Motor de formatação de código M / Power Query (mesmo princípio, adaptado)
+│   ├── auditor_modelo.py        # Motor de análise/nota de qualidade de um TMDL colado pelo usuário
+│   ├── dax_engine.py            # Motor de avaliação real de medidas DAX (subconjunto pedagógico) contra os dados
 │   ├── varejo.py, financeiro.py, saude.py, ecommerce.py, ... (um arquivo por setor)
 │   └── ...
 │
@@ -92,12 +96,15 @@ bi_data_generator/
 │   ├── sidebar.py                # Sidebar: busca de setor, período, volume, botão gerar, export SQL
 │   ├── estado_inicial.py         # Tela inicial / onboarding ("Como usar")
 │   ├── resultado.py               # Métricas, preview de tabelas, medidas DAX, gabarito e download do ZIP
+│   ├── cache_utils.py              # Cache da geração bruta, compartilhado entre abas/botão de SQL
 │   ├── automatizar_bi.py           # Aba "Automatizar BI": upload de planilha, tipos, medidas e TMDL
 │   └── simulador_pl300.py           # Aba "Simulador PL-300": quiz de prática para a certificação
 │   └── dados_causais.py             # Aba "Dados Causais": relação causa-efeito conhecida, em cima do setor gerado
 │   └── formatar_dax.py              # Aba "Formatar DAX": cola uma expressão bagunçada e recebe ela formatada
 │   └── formatar_m.py                # Aba "Formatar M": mesmo princípio, pra código Power Query
-│   └── sugestao_proximo_passo.py    # Sugestão discreta de próxima ferramenta a usar, entre as 6 abas
+│   └── auditor_modelo.py            # Aba "Auditor de Modelo": cola o TMDL e recebe uma nota de qualidade
+│   └── dax_sandbox.py               # Aba "DAX Sandbox": escreve uma medida DAX e vê o resultado calculado de verdade
+│   └── sugestao_proximo_passo.py    # Sugestão discreta de próxima ferramenta a usar, entre as abas
 │
 ├── styles/
 │   ├── css.py                   # CSS customizado injetado no Streamlit (tema Power BI: amarelo/preto)
@@ -126,7 +133,7 @@ bi_data_generator/
 
 | Versão | Pasta | Setores | Indicado para |
 |---|---|---|---|
-| **BI Data Generator PRO** (recomendada) | raiz do repositório (`app.py`) | 100 setores | Uso geral, estudo avançado, portfólio, prática de Power BI/DAX/SQL completa |
+| **BI Data Generator PRO** (recomendada) | raiz do repositório (`app.py`) | 150 setores | Uso geral, estudo avançado, portfólio, prática de Power BI/DAX/SQL completa |
 | **BI Data Generator (completo)** | `bi_data_generator/` | 55 setores* | Espelho da versão principal, útil se você quiser hospedar separadamente |
 | **EscolaDAX Simples** | `escoladax_simples/` | 8 setores (Varejo, Financeiro, Saúde, E-commerce, Logística, Educação, Imobiliário, SaaS B2B) | Quem está começando e quer uma interface mais enxuta, com menos opções |
 
@@ -175,7 +182,7 @@ O app abre com **8 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "�
 
 ### Aba 🏭 Gerador de Setores
 
-1. **Escolha o setor**: use a caixa de busca na barra lateral para filtrar entre os 100 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
+1. **Escolha o setor**: use a caixa de busca na barra lateral para filtrar entre os 150 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
 2. **Defina o período**: datas de início e fim; a tabela `dCalendario` é gerada automaticamente cobrindo esse intervalo.
 3. **Defina o volume de dados**: slider de 100 a 100.000 linhas na tabela fato (o volume das dimensões é ajustado proporcionalmente).
 4. *(Opcional)* **Ative "Injetar anomalias nos dados"** para adicionar problemas propositais (veja [Modo anomalias, deriva temporal e case de negócio](#-modo-anomalias-deriva-temporal-e-case-de-negócio)).
@@ -328,13 +335,13 @@ Veja a seção [DAX Sandbox](#-dax-sandbox) para o passo a passo completo.
 
 A versão **EscolaDAX Simples** disponibiliza 8 destes setores (Varejo, Financeiro, Saúde, E-commerce, Logística, Educação, Imobiliário e SaaS B2B).
 
-> \* A pasta `bi_data_generator/` (versão espelhada standalone) ainda está parada em 55 setores. Replique os arquivos de `generators/` e as entradas de `config.py`/`i18n.py` nela caso queira mantê-la em paridade com a raiz (hoje com 100 setores).
+> \* A pasta `bi_data_generator/` (versão espelhada standalone) ainda está parada em 55 setores. Replique os arquivos de `generators/` e as entradas de `config.py`/`i18n.py` nela caso queira mantê-la em paridade com a raiz (hoje com 150 setores).
 
 ---
 
 ## 🧮 Quantidade de medidas DAX geradas por setor
 
-Cada setor gera uma quantidade diferente de medidas DAX automaticamente, dependendo de quantas tabelas fato, colunas numéricas e chaves estrangeiras ele tem (setores multi-fato e com mais colunas de valor multiplicam a base de medidas). Somando os 100 setores, o motor já sabe escrever **6.916 medidas DAX diferentes**, sem depender de nenhuma IA.
+Cada setor gera uma quantidade diferente de medidas DAX automaticamente, dependendo de quantas tabelas fato, colunas numéricas e chaves estrangeiras ele tem (setores multi-fato e com mais colunas de valor multiplicam a base de medidas). Somando os 150 setores, o motor já sabe escrever **1.044 medidas DAX diferentes**, sem depender de nenhuma IA.
 
 | Setor | Medidas DAX |
 | --- | --- |
@@ -458,18 +465,18 @@ Em setores onde uma fato referencia outra fato (ex.: despesas ou abastecimentos 
 
 ## 🔗 Sugestão de próximo passo entre abas
 
-Depois de concluir uma ação relevante em qualquer uma das 6 abas (gerar uma base, gerar medidas no Automatizar BI, corrigir um simulado, gerar um cenário causal, formatar um DAX ou um M), aparece uma sugestão discreta apontando para a próxima aba que provavelmente faz sentido usar em seguida, conectando as ferramentas em vez de tratá-las como produtos isolados. Nunca interrompe o fluxo principal, sempre some quando não se aplica mais (ex.: a sugestão de gerar uma base primeiro só aparece no Simulador PL-300 se você ainda não tiver gerado nenhuma).
+Depois de concluir uma ação relevante em qualquer uma das abas (gerar uma base, gerar medidas no Automatizar BI, corrigir um simulado, gerar um cenário causal, formatar um DAX ou um M, auditar um modelo, testar uma medida no DAX Sandbox), aparece uma sugestão discreta apontando para a próxima aba que provavelmente faz sentido usar em seguida, conectando as ferramentas em vez de tratá-las como produtos isolados. Nunca interrompe o fluxo principal, sempre some quando não se aplica mais (ex.: a sugestão de gerar uma base primeiro só aparece no Simulador PL-300 se você ainda não tiver gerado nenhuma).
 
 ---
 
 ## ✨ Recursos principais
 
-- **100 setores de negócio** com dados contextualmente coerentes (nomes, categorias, faixas de valores e distribuições plausíveis para cada indústria).
+- **150 setores de negócio** com dados contextualmente coerentes (nomes, categorias, faixas de valores e distribuições plausíveis para cada indústria).
 - **Volume configurável**: de 100 a 100.000 linhas na tabela fato via slider.
 - **Período configurável**: qualquer intervalo de datas, com geração automática da `dCalendario`.
 - **Busca de setor** na barra lateral, com índice construído a partir do nome e da descrição de cada setor.
 - **Barra de progresso real**, com etapas (dimensões, fato, métricas, compactação).
-- **Medidas DAX sugeridas automaticamente** (`generators/medidas.py`), organizadas por categoria e prontas para colar no Power BI. Somando os 100 setores, já são mais de 6.900 medidas diferentes que o motor sabe escrever sozinho, sem depender de nenhuma IA.
+- **Medidas DAX sugeridas automaticamente** (`generators/medidas.py`), organizadas por categoria e prontas para colar no Power BI. Somando os 150 setores, já são **1.044 medidas diferentes** que o motor sabe escrever sozinho, sem depender de nenhuma IA.
 - **Modelo TMDL** (`generators/tmdl_generator.py`): tabelas, relacionamentos e medidas prontos para importar no Power BI (Tabular Editor), com resolução automática de ambiguidade de relacionamento, inclusive em cadeias fato-para-fato.
 - **Dicionário de dados** (`generators/dicionario.py`): explica o significado de cada tabela e coluna com base em padrões de nome (`id_`, `valor_`, `qtd_`, `status`, `data_`, etc.), disponível em PT/EN e exportado como ZIP.
 - **Case de negócio automático** (`generators/case_negocio.py`): cada base vem com um parágrafo de contexto fictício, adaptado ao setor e ao modo ativo (anomalia, deriva temporal ou nenhum dos dois), transformando a geração num exercício com objetivo real.
@@ -508,7 +515,7 @@ Além do ZIP de CSVs, a barra lateral do app principal permite gerar diretamente
 
 ### 📊 Relatórios Gerenciais (Views)
 
-Ao gerar o script **Completo** ou a opção **Somente Relatórios Gerenciais**, o app cria automaticamente (`generators/relatorios_gerenciais.py`) um conjunto de *views* SQL de análise gerencial para **qualquer um dos 100 setores** — sem depender de conhecimento manual do schema de cada um. A lógica introspecciona as tabelas `Fato*`/`Dim*`/`dCalendario` e as colunas reais geradas (nome, tipo e cardinalidade) para deduzir:
+Ao gerar o script **Completo** ou a opção **Somente Relatórios Gerenciais**, o app cria automaticamente (`generators/relatorios_gerenciais.py`) um conjunto de *views* SQL de análise gerencial para **qualquer um dos 150 setores** — sem depender de conhecimento manual do schema de cada um. A lógica introspecciona as tabelas `Fato*`/`Dim*`/`dCalendario` e as colunas reais geradas (nome, tipo e cardinalidade) para deduzir:
 
 | View | O que mostra |
 |---|---|
@@ -556,7 +563,7 @@ Quando qualquer um dos dois modos acima está ativo, um aviso é exibido na inte
 
 ## 🤖 Automatizar BI (suas próprias planilhas)
 
-A segunda aba do app aplica o mesmo motor de medidas DAX e modelo TMDL usado nos 100 setores prontos, só que em **planilhas que você mesmo envia**, sem depender do padrão Fato/Dimensão dos setores prontos.
+A segunda aba do app aplica o mesmo motor de medidas DAX e modelo TMDL usado nos 150 setores prontos, só que em **planilhas que você mesmo envia**, sem depender do padrão Fato/Dimensão dos setores prontos.
 
 ### Passo a passo
 
@@ -698,6 +705,33 @@ Cola um código M (Power Query) bagunçado, tudo numa linha só, e recebe ele fo
 
 ---
 
+## 🩺 Auditor de Modelo
+
+Cole o TMDL de um modelo Power BI **seu, de verdade** (não precisa ter sido gerado por este projeto) e receba uma nota de qualidade de 0 a 100, mais uma lista de achados acionáveis, cada um com localização e sugestão de correção.
+
+É uma **implementação própria** (`generators/auditor_modelo.py` + `ui/auditor_modelo.py`), baseada em análise de texto/regex — não usa nenhum serviço externo nem envia o modelo para fora da sessão.
+
+### Como usar
+
+1. Cole o TMDL do seu modelo no campo de texto, ou envie um arquivo `.tmdl`/`.txt`.
+2. Clique em **"🩺 Auditar modelo"**.
+3. Veja a nota geral e as métricas (medidas, colunas e relacionamentos analisados).
+4. Abra cada achado num expansor para ver onde está o problema, o que é e a sugestão de correção.
+5. Baixe o relatório completo em `.txt` se quiser guardar ou compartilhar.
+
+### O que ele analisa
+
+- Divisão sem `DIVIDE()` (risco de erro por divisão por zero);
+- Medidas duplicadas (mesma lógica, nomes diferentes);
+- Colunas calculadas que poderiam ser medidas;
+- Colunas técnicas expostas (ex.: chaves/IDs sem `isHidden`);
+- Nomenclatura inconsistente entre medidas;
+- Organização de pastas (`displayFolder`) ausente ou incompleta.
+
+> 💡 No Tabular Editor (2 ou 3), clique com o botão direito no modelo → **"Advanced Scripting"** ou use **"Copy as TMDL"**/**"Script"** para pegar o texto completo do seu modelo real.
+
+---
+
 ## 🧮 DAX Sandbox
 
 Diferente do "Formatar DAX" (que só reformata texto), o DAX Sandbox **calcula de verdade**: você escreve uma medida DAX e vê o resultado real, computado em cima dos dados gerados para o setor escolhido — sem precisar abrir o Power BI Desktop para testar.
@@ -773,6 +807,9 @@ pandas
 numpy
 faker
 plotly
+requests
+tzdata
+openpyxl
 ```
 
 Python 3.10+ é recomendado devido ao uso de type hints modernos (`dict[str, pd.DataFrame]`) presentes no código.
