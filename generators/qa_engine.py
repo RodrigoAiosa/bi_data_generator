@@ -246,10 +246,12 @@ def _palavras(pergunta_norm: str) -> list[str]:
 
 
 def _achar_dimensao(pergunta_norm: str, tabelas: dict) -> str | None:
-    """Acha a tabela Dim que a pergunta está citando — tanto pelo nome da
-    própria tabela (ex.: 'vendedor' -> DimVendedor) quanto por uma coluna
-    descritiva dentro dela (ex.: 'espécie de abelha' -> DimColmeia, via a
-    coluna especie_abelha, mesmo com uma preposição no meio das palavras)."""
+    """Acha a tabela Dim que a pergunta está citando — pelo nome da própria
+    tabela (ex.: 'vendedor' -> DimVendedor), pelo nome da CHAVE PRIMÁRIA da
+    dimensão (ex.: 'profissional' -> DimEquipe, via id_profissional, mesmo
+    que o nome da tabela seja bem diferente do nome da própria coluna-chave)
+    ou por uma coluna descritiva dentro dela (ex.: 'espécie de abelha' ->
+    DimColmeia, via a coluna especie_abelha, mesmo com preposição no meio)."""
     palavras_pergunta = set(_palavras(pergunta_norm))
     for dim_nome in _tabelas_dim(tabelas):
         sufixo = dim_nome[3:].lower()  # remove "Dim"
@@ -259,6 +261,12 @@ def _achar_dimensao(pergunta_norm: str, tabelas: dict) -> str | None:
             return dim_nome
 
         dim_df = tabelas[dim_nome]
+        pk_dim = dim_df.columns[0]
+        if pk_dim.lower().startswith(("id_", "sk_")):
+            sufixo_pk = pk_dim.split("_", 1)[1] if "_" in pk_dim else pk_dim[3:]
+            if sufixo_pk.lower() in palavras_pergunta:
+                return dim_nome
+
         for col in dim_df.columns:
             cl = col.lower()
             if cl.startswith(("id_", "sk_")):

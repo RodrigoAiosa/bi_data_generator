@@ -25,10 +25,22 @@ def _detectar_fk(tabela_fato: str, tabela_dim: str, tabelas: dict) -> tuple[str,
         return None
     dim_df = tabelas[tabela_dim]
     pk_dim = dim_df.columns[0]
+    fk_cols = [c for c in tabelas[tabela_fato].columns if c.lower().startswith(("id_", "sk_"))]
+
+    # 1) Prioridade máxima: uma coluna do Fato com o MESMO NOME EXATO da PK
+    # da dimensão (ex.: FatoProjeto.id_profissional == DimEquipe.id_profissional)
+    # — sinal muito mais confiável do que comparar com o nome da TABELA, que
+    # pode não ter nada a ver com o nome da própria coluna-chave (a dimensão
+    # "Equipe" é identificada por "id_profissional", não por "id_equipe").
+    for col in fk_cols:
+        if col.lower() == pk_dim.lower():
+            return col, pk_dim
+
+    # 2) Fallback: heurística de sufixo por nome da tabela (cobre os casos
+    # onde a coluna do Fato não tem o mesmo nome exato da PK, mas os nomes
+    # são parecidos o bastante, ex.: 'id_vendedor' com DimVendedor).
     sufixo_dim = tabela_dim[3:].lower() if tabela_dim.startswith("Dim") else tabela_dim.lower()
-    for col in tabelas[tabela_fato].columns:
-        if not col.lower().startswith(("id_", "sk_")):
-            continue
+    for col in fk_cols:
         sufixo_col = col.split("_", 1)[1] if "_" in col else col[3:]
         if sufixo_col.lower() in sufixo_dim or sufixo_dim in sufixo_col.lower():
             return col, pk_dim

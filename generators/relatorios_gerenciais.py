@@ -191,8 +191,13 @@ def _colunas_descritivas_dim(df: pd.DataFrame, pk_col: str, limite: int = 2) -> 
 
 def _detectar_fks_para_dims(fato_df: pd.DataFrame, fato_nome: str, tabelas: dict[str, pd.DataFrame]) -> list[tuple[str, str, str]]:
     """
-    Retorna lista de (coluna_fk_no_fato, nome_tabela_dim, coluna_pk_na_dim)
-    detectada pela mesma heurística de sufixo já usada em sql_generator._ordenar_por_fk.
+    Retorna lista de (coluna_fk_no_fato, nome_tabela_dim, coluna_pk_na_dim).
+    Prioriza correspondência EXATA entre o nome da coluna do Fato e o nome
+    da PK da dimensão (ex.: id_profissional == id_profissional) — mais
+    confiável do que comparar com o nome da tabela, que pode não ter nada a
+    ver com o nome da própria coluna-chave (ex.: a dimensão "Equipe" é
+    identificada por "id_profissional", não por "id_equipe"). Só cai na
+    heurística de sufixo por nome de tabela se não achar por nome exato.
     """
     resultado = []
     dim_tables = {n: d for n, d in tabelas.items() if n.startswith("Dim")}
@@ -202,13 +207,21 @@ def _detectar_fks_para_dims(fato_df: pd.DataFrame, fato_nome: str, tabelas: dict
         if c.lower().startswith(("id_", "sk_")) and c != pk_fato
     ]
     for col in fk_cols:
-        sufixo = col.split("_", 1)[1] if "_" in col else col[3:]
         melhor = None
+
         for dim_nome, dim_df in dim_tables.items():
-            dim_sem_prefixo = dim_nome[3:].lower()  # remove "Dim"
-            if sufixo.lower() in dim_sem_prefixo or dim_sem_prefixo in sufixo.lower():
+            if dim_df.columns[0].lower() == col.lower():
                 melhor = dim_nome
                 break
+
+        if melhor is None:
+            sufixo = col.split("_", 1)[1] if "_" in col else col[3:]
+            for dim_nome, dim_df in dim_tables.items():
+                dim_sem_prefixo = dim_nome[3:].lower()  # remove "Dim"
+                if sufixo.lower() in dim_sem_prefixo or dim_sem_prefixo in sufixo.lower():
+                    melhor = dim_nome
+                    break
+
         if melhor:
             pk_dim = dim_tables[melhor].columns[0]
             resultado.append((col, melhor, pk_dim))
