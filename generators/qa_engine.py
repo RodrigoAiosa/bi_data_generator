@@ -68,6 +68,7 @@ class RespostaQA:
     passos: list[str] = field(default_factory=list)
     tabela_resultado: pd.DataFrame | None = None
     sugestoes: list[str] = field(default_factory=list)
+    aviso: str | None = None
 
 
 def _tabelas_fato(tabelas: dict[str, pd.DataFrame]) -> list[str]:
@@ -272,7 +273,67 @@ def _exemplos_padrao(fato_nome: str, medida: str | None) -> list[str]:
     ]
 
 
+def _achar_ano_filtro(pergunta_norm: str, tabelas: dict) -> str | None:
+    """Acha um ano de 4 dígitos mencionado na pergunta (ex.: 'em 2020', 'no
+    ano de 2020') e só o aceita como filtro se esse ano realmente existir no
+    dCalendario — evita tratar qualquer número de 4 dígitos como ano."""
+    cal_nome = _tabela_calendario(tabelas)
+    if not cal_nome or "Ano" not in tabelas[cal_nome].columns:
+        return None
+    anos_validos = {str(int(a)) for a in tabelas[cal_nome]["Ano"].dropna().unique()}
+    for m in re.finditer(r"\b(19|20)\d{2}\b", pergunta_norm):
+        if m.group(0) in anos_validos:
+            return m.group(0)
+    return None
+
+
+def _tabelas_com_filtro_ano(tabelas: dict, fato_nome: str, ano: str) -> dict:
+    """Retorna uma cópia rasa de tabelas onde fato_nome só contém as linhas
+    do ano informado (filtra pela coluna de data detectada)."""
+    fato_df = tabelas[fato_nome]
+    date_cols = [c for c in fato_df.columns if "data" in c.lower()]
+    if not date_cols:
+        return tabelas
+    datas = pd.to_datetime(fato_df[date_cols[0]], errors="coerce")
+    mask = datas.dt.year == int(ano)
+    tabelas_novo = dict(tabelas)
+    tabelas_novo[fato_nome] = fato_df[mask]
+    return tabelas_novo
+
+
+def _ano_mencionado_invalido(pergunta_norm: str, tabelas: dict) -> str | None:
+    """Se a pergunta menciona um número de 4 dígitos que parece um ano mas
+    NÃO existe no dCalendario, devolve esse ano (pra avisar o usuário em vez
+    de silenciosamente ignorar a menção e calcular sem filtro nenhum)."""
+    cal_nome = _tabela_calendario(tabelas)
+    if not cal_nome or "Ano" not in tabelas[cal_nome].columns:
+        return None
+    anos_validos = {str(int(a)) for a in tabelas[cal_nome]["Ano"].dropna().unique()}
+    for m in re.finditer(r"\b(19|20)\d{2}\b", pergunta_norm):
+        if m.group(0) not in anos_validos:
+            return m.group(0)
+    return None
+
+
 def responder_pergunta(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> RespostaQA:
+    """Ponto de entrada público: chama o motor de verdade e, se a pergunta
+    mencionou um ano que não existe nos dados, anexa um aviso claro em vez
+    de deixar a menção passar batido silenciosamente."""
+    resultado = _responder_pergunta_core(pergunta, tabelas)
+    if resultado.entendida and resultado.aviso is None:
+        pergunta_norm = _norm(pergunta)
+        ano_invalido = _ano_mencionado_invalido(pergunta_norm, tabelas)
+        if ano_invalido:
+            cal_nome = _tabela_calendario(tabelas)
+            anos = sorted({int(a) for a in tabelas[cal_nome]["Ano"].dropna().unique()})
+            resultado.aviso = (
+                f"Você mencionou {ano_invalido}, mas os dados deste setor só cobrem de "
+                f"{anos[0]} a {anos[-1]} — calculei sem aplicar filtro de ano."
+            )
+    return resultado
+
+
+def _responder_pergunta_core(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> RespostaQA:
     fato_tables = _tabelas_fato(tabelas)
     if not fato_tables:
         return RespostaQA(entendida=False, sugestoes=["Este setor não tem uma tabela Fato para consultar."])
@@ -294,6 +355,16 @@ def responder_pergunta(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> Respo
             ] + _exemplos_padrao(fato_nome, None),
         )
 
+    # Filtro de ano mencionado na pergunta (ex.: "em 2020", "no ano de 2020").
+    # Detectado contra a tabela ORIGINAL (não afeta detecção de medida/dimensão),
+    # mas os CÁLCULOS a partir daqui usam tabelas_calc (com a tabela fato já
+    # pré-filtrada por esse ano) — sem isso, um ano mencionado na pergunta era
+    # silenciosamente ignorado e o cálculo saía errado (respondia a média/total
+    # de TODOS os anos, não só do ano pedido).
+    ano_filtro = _achar_ano_filtro(pergunta_norm, tabelas)
+    tabelas_calc = _tabelas_com_filtro_ano(tabelas, fato_nome, ano_filtro) if ano_filtro else tabelas
+    sufixo_ano = f" em {ano_filtro}" if ano_filtro else ""
+
     # 1) "Quantos registros/linhas/vendas/pedidos existem" (contagem simples, sem medida)
     if re.search(r"\bquant[oa]s?\b", pergunta_norm) and not re.search(r"\bquant[oa]s?\b.*\b(vendedor|produto|cliente|filial|categoria)\b", pergunta_norm):
         filtro = _achar_filtro_categorico(pergunta_norm, tabelas)
@@ -303,12 +374,12 @@ def responder_pergunta(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> Respo
         else:
             expr = f"COUNTROWS({fato_nome})"
         try:
-            valor, passos, _ = avaliar_medida(expr, tabelas)
+            valor, passos, _ = avaliar_medida(expr, tabelas_calc)
         except DaxError as e:
             return RespostaQA(entendida=False, sugestoes=[str(e)] + _exemplos_padrao(fato_nome, None))
         return RespostaQA(
             entendida=True,
-            resposta_texto=f"**{valor:,.0f}** registro(s).",
+            resposta_texto=f"**{valor:,.0f}** registro(s){sufixo_ano}.",
             medida_dax=expr,
             valor=valor,
             passos=passos,
@@ -338,8 +409,8 @@ def responder_pergunta(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> Respo
                 ],
             )
         if periodo_col:
-            return _responder_ranking_temporal(pergunta_norm, fato_nome, cal_nome, periodo_col, tabelas, ascendente=eh_menor)
-        return _responder_ranking(pergunta_norm, fato_nome, dim_nome, tabelas, ascendente=eh_menor)
+            return _responder_ranking_temporal(pergunta_norm, fato_nome, cal_nome, periodo_col, tabelas_calc, ascendente=eh_menor)
+        return _responder_ranking(pergunta_norm, fato_nome, dim_nome, tabelas_calc, ascendente=eh_menor)
 
     # 4) Ticket médio (caso especial reconhecido por nome, não por coluna)
     if "ticket medio" in pergunta_norm or "ticket médio" in pergunta_norm.replace("é", "e"):
@@ -348,12 +419,12 @@ def responder_pergunta(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> Respo
             return RespostaQA(entendida=False, sugestoes=_exemplos_padrao(fato_nome, None))
         expr = f"DIVIDE(SUM({fato_nome}[{medida}]), COUNTROWS({fato_nome}))"
         try:
-            valor, passos, _ = avaliar_medida(expr, tabelas)
+            valor, passos, _ = avaliar_medida(expr, tabelas_calc)
         except DaxError as e:
             return RespostaQA(entendida=False, sugestoes=[str(e)])
         return RespostaQA(
             entendida=True,
-            resposta_texto=f"O ticket médio foi de **{valor:,.2f}**.",
+            resposta_texto=f"O ticket médio foi de **{valor:,.2f}**{sufixo_ano}.",
             medida_dax=expr,
             valor=valor,
             passos=passos,
@@ -400,7 +471,7 @@ def responder_pergunta(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> Respo
         expr = expr_interna
 
     try:
-        valor, passos, _ = avaliar_medida(expr, tabelas)
+        valor, passos, _ = avaliar_medida(expr, tabelas_calc)
     except DaxError as e:
         return RespostaQA(entendida=False, sugestoes=[str(e)])
 
@@ -408,7 +479,7 @@ def responder_pergunta(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> Respo
     artigo, rotulo_texto = rotulo
     return RespostaQA(
         entendida=True,
-        resposta_texto=f"{artigo.capitalize()} {rotulo_texto} de {medida.replace('_', ' ')} foi **{valor:,.2f}**.",
+        resposta_texto=f"{artigo.capitalize()} {rotulo_texto} de {medida.replace('_', ' ')} foi **{valor:,.2f}**{sufixo_ano}.",
         medida_dax=expr,
         valor=valor,
         passos=passos,

@@ -85,6 +85,8 @@ def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> N
             resp = responder_pergunta(pergunta, tabelas)
             if resp.entendida:
                 st.success(resp.resposta_texto)
+                if resp.aviso:
+                    st.warning(resp.aviso)
                 st.code(resp.medida_dax, language="sql")
                 if resp.passos:
                     with st.expander("🔍 Passo a passo", expanded=True):
