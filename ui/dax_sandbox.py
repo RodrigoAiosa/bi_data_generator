@@ -25,7 +25,11 @@ def _detectar_fk(tabela_fato: str, tabela_dim: str, tabelas: dict) -> tuple[str,
         return None
     dim_df = tabelas[tabela_dim]
     pk_dim = dim_df.columns[0]
-    fk_cols = [c for c in tabelas[tabela_fato].columns if c.lower().startswith(("id_", "sk_"))]
+    pk_proprio = tabelas[tabela_fato].columns[0]
+    fk_cols = [
+        c for c in tabelas[tabela_fato].columns
+        if c.lower().startswith(("id_", "sk_")) and c != pk_proprio
+    ]
 
     # 1) Prioridade máxima: uma coluna do Fato com o MESMO NOME EXATO da PK
     # da dimensão (ex.: FatoProjeto.id_profissional == DimEquipe.id_profissional)
@@ -132,6 +136,26 @@ def _montar_dot(tabelas: dict) -> str:
                 linhas.append(
                     f'  "{outras_nome}" -> "{dim_nome}" '
                     f'[dir=both, arrowhead=none, arrowtail=normal, taillabel="*", headlabel="1", labeldistance=1.8];'
+                )
+
+    # Relações Dimensão-para-Dimensão (esquema floco de neve): quando uma
+    # dimensão tem uma coluna que aponta pra OUTRA dimensão (ex.:
+    # DimLote.id_granja -> DimGranja.id_granja), não só Fato-para-Dimensão.
+    # Sem isso, dimensões que só se conectam indiretamente (nunca direto
+    # com nenhuma tabela Fato) ficavam "soltas" no diagrama, sem nenhuma
+    # linha, mesmo tendo uma coluna em comum de verdade com outra dimensão.
+    # Linha pontilhada pra diferenciar visualmente de uma relação direta
+    # com Fato (linha cheia) ou com Calendário (tracejada).
+    for dim_a in dim_tables:
+        for dim_b in dim_tables:
+            if dim_a == dim_b:
+                continue
+            fk = _detectar_fk(dim_a, dim_b, tabelas)
+            if fk:
+                linhas.append(
+                    f'  "{dim_a}" -> "{dim_b}" '
+                    f'[dir=both, arrowhead=none, arrowtail=normal, style=dotted, '
+                    f'taillabel="*", headlabel="1", labeldistance=1.8];'
                 )
 
     linhas.append("}")
