@@ -33,19 +33,6 @@ def gerar_esportes(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     n_clubes     = min(n // 8 + 20, 150)
     n_competicoes = len(COMPETICOES)
 
-    dim_atleta = pd.DataFrame({
-        "id_atleta":     new_ids(n_atletas),
-        "nome":          [fake.name() for _ in range(n_atletas)],
-        "cpf":           [fake.cpf() for _ in range(n_atletas)],
-        "nascimento":    rand_dates(date(1980, 1, 1), date(2006, 12, 31), n_atletas),
-        "nacionalidade": random.choices(["Brasileira", "Argentina", "Uruguaia", "Colombiana", "Portuguesa", "Outra"], weights=[70, 10, 5, 5, 5, 5], k=n_atletas),
-        "modalidade":    random.choices(MODALIDADES, k=n_atletas),
-        "posicao":       random.choices(POSICOES_FUTEBOL + ["N/A"], k=n_atletas),
-        "salario_mes":   rng.uniform(1500, 5000000, n_atletas).round(2),
-        "valor_mercado": rng.uniform(10000, 200000000, n_atletas).round(2),
-        "rating":        rng.uniform(40, 99, n_atletas).round(1),
-    })
-
     dim_clube = pd.DataFrame({
         "id_clube":       new_ids(n_clubes),
         "nome":           [f"Clube {fake.last_name()} {fake.random_int(1, 99)}" for _ in range(n_clubes)],
@@ -57,6 +44,21 @@ def gerar_esportes(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "receita_anual":  rng.uniform(500000, 2000000000, n_clubes).round(2),
         "divisao":        random.choices(["Série A", "Série B", "Série C", "Série D", "Regional"], k=n_clubes),
     })
+
+    dim_atleta = pd.DataFrame({
+        "id_atleta":     new_ids(n_atletas),
+        "nome":          [fake.name() for _ in range(n_atletas)],
+        "cpf":           [fake.cpf() for _ in range(n_atletas)],
+        "nascimento":    rand_dates(date(1980, 1, 1), date(2006, 12, 31), n_atletas),
+        "nacionalidade": random.choices(["Brasileira", "Argentina", "Uruguaia", "Colombiana", "Portuguesa", "Outra"], weights=[70, 10, 5, 5, 5, 5], k=n_atletas),
+        "id_clube":      random.choices(dim_clube["id_clube"].tolist(), k=n_atletas),
+        "modalidade":    random.choices(MODALIDADES, k=n_atletas),
+        "posicao":       random.choices(POSICOES_FUTEBOL + ["N/A"], k=n_atletas),
+        "salario_mes":   rng.uniform(1500, 5000000, n_atletas).round(2),
+        "valor_mercado": rng.uniform(10000, 200000000, n_atletas).round(2),
+        "rating":        rng.uniform(40, 99, n_atletas).round(1),
+    })
+
 
     dim_competicao = pd.DataFrame({
         "id_competicao": new_ids(n_competicoes),

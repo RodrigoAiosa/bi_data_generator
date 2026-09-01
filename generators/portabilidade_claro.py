@@ -163,6 +163,18 @@ def gerar_portabilidade_claro(n: int, start: date, end: date) -> dict[str, pd.Da
     uf_evento = cliente_map.loc[ids_cliente, "uf"].to_numpy()
     regiao_evento = cliente_map.loc[ids_cliente, "regiao"].to_numpy()
 
+    # IDs da operadora concorrente envolvida em cada evento (contraparte da Claro)
+    id_por_nome_operadora = dim_operadora.set_index("nome_operadora")["id_operadora"].to_dict()
+    ids_operadora_cc = [id_por_nome_operadora[nome] for nome in operadoras_cc]
+    id_operadora_origem = [
+        idcc if d == "IN" else id_claro
+        for d, idcc in zip(direcao, ids_operadora_cc)
+    ]
+    id_operadora_destino = [
+        id_claro if d == "IN" else idcc
+        for d, idcc in zip(direcao, ids_operadora_cc)
+    ]
+
     tempo_permanencia_dias = rng.integers(30, 2600, n)  # tempo na operadora de origem antes da portabilidade
     nota_satisfacao = rng.integers(1, 11, n)            # 1-10, pesquisa pós-portabilidade
 
@@ -173,6 +185,8 @@ def gerar_portabilidade_claro(n: int, start: date, end: date) -> dict[str, pd.Da
         "id_cliente":             ids_cliente,
         "id_servico":             ids_servico,
         "categoria_servico":      categoria_servico,
+        "id_operadora_origem":    id_operadora_origem,
+        "id_operadora_destino":   id_operadora_destino,
         "operadora_origem":       operadora_origem,
         "operadora_destino":      operadora_destino,
         "canal":                  canais,

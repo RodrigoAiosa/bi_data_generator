@@ -40,11 +40,16 @@ def gerar_audiovisual(n, start, end):
     })
     custo = rng.uniform(10_000, 20_000_000, n).round(2)
     receita = rng.uniform(0, 30_000_000, n).round(2)
+    departamento = random.choices(DEPARTAMENTOS, k=n)
+    recursos_por_funcao = dim_recurso.groupby("funcao")["id_recurso"].apply(list).to_dict()
+    todos_recursos = dim_recurso["id_recurso"].tolist()
+    id_recurso = [random.choice(recursos_por_funcao.get(dep, todos_recursos)) for dep in departamento]
     fato_producao = pd.DataFrame({
         "id_producao":      new_ids(n),
         "id_data":          rand_dates(start, end, n),
         "id_projeto":       random.choices(dim_projeto["id_projeto"].tolist(), k=n),
-        "departamento":     random.choices(DEPARTAMENTOS, k=n),
+        "id_recurso":       id_recurso,
+        "departamento":     departamento,
         "custo_realizado":  custo,
         "custo_orcado":     (custo * rng.uniform(0.8, 1.3, n)).round(2),
         "horas_producao":   rng.uniform(1, 1000, n).round(1),

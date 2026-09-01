@@ -46,7 +46,7 @@ def gerar_saas_b2b(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "id_feature":  new_ids(n_features),
         "nome":        FEATURES,
         "categoria":   random.choices(["Analytics", "Integrações", "Segurança", "Produto", "Suporte"], k=n_features),
-        "plano_min":   random.choices(PLANOS, k=n_features),
+        "id_plano_min": random.choices(dim_plano["id_plano"].tolist(), k=n_features),
         "custo_dev":   rng.uniform(5000, 500000, n_features).round(2),
     })
 
@@ -58,7 +58,7 @@ def gerar_saas_b2b(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "uf":              [fake.state_abbr() for _ in range(n_clientes)],
         "n_funcionarios":  rng.integers(1, 10000, n_clientes),
         "canal_aquisicao": random.choices(CANAIS_AQUISICAO, k=n_clientes),
-        "id_plano_atual":  random.choices(PLANOS, k=n_clientes),
+        "id_plano_atual":  random.choices(dim_plano["id_plano"].tolist(), k=n_clientes),
         "data_contrato":   rand_dates(date(2018, 1, 1), end, n_clientes),
     })
 
