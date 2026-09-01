@@ -39,6 +39,31 @@ _PALAVRAS_IGNORAR_MEDIDA = {
     "maior", "menor", "existem", "tem", "teve", "foram", "com", "e",
 }
 
+# Mapeia nome/abreviação de mês (já sem acento, minúsculo) para o número do mês
+_MESES_NUM = {
+    "jan": 1, "janeiro": 1,
+    "fev": 2, "fevereiro": 2,
+    "mar": 3, "marco": 3,
+    "abr": 4, "abril": 4,
+    "mai": 5, "maio": 5,
+    "jun": 6, "junho": 6,
+    "jul": 7, "julho": 7,
+    "ago": 8, "agosto": 8,
+    "set": 9, "setembro": 9,
+    "out": 10, "outubro": 10,
+    "nov": 11, "novembro": 11,
+    "dez": 12, "dezembro": 12,
+}
+# Mesma abreviação de 3 letras usada por generators/helpers.py:dcalendario()
+_MESES_ABREV = {1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr", 5: "Mai", 6: "Jun",
+                7: "Jul", 8: "Ago", 9: "Set", 10: "Out", 11: "Nov", 12: "Dez"}
+
+_MES_ANO_RE = re.compile(
+    r"\b(jan(?:eiro)?|fev(?:ereiro)?|mar(?:co)?|abr(?:il)?|mai(?:o)?|jun(?:ho)?|"
+    r"jul(?:ho)?|ago(?:sto)?|set(?:embro)?|out(?:ubro)?|nov(?:embro)?|dez(?:embro)?)"
+    r"\s*(?:de\s*|/)?\s*(\d{2,4})\b"
+)
+
 _FORA_DE_ESCOPO = [
     "previsao", "previsão", "projecao", "projeção", "tendencia", "tendência",
     "futuro", "proximo mes", "próximo mês", "proximo trimestre", "próximo trimestre",
@@ -88,8 +113,10 @@ def _achar_coluna_medida(pergunta_norm: str, fato_nome: str, tabelas: dict) -> s
     Primeiro tenta bater o NOME DA COLUNA de verdade — tanto a forma literal
     com underscore (ex.: 'quantidade_kg', comum quando a pessoa copia o nome
     direto do diagrama do modelo) quanto com _ trocado por espaço (ex.:
-    'quantidade kg') — a via mais confiável, sem chute. Só recorre a
-    sinônimos genéricos (venda/faturamento/receita) se não achar nada."""
+    'quantidade kg') — a via mais confiável, sem chute. Se não achar assim,
+    tenta por CONJUNTO DE PALAVRAS (aceita preposição no meio, ex.: 'valor
+    DO contrato' batendo com a coluna valor_contrato). Só recorre a
+    sinônimos genéricos (venda/faturamento/receita) por último."""
     df = tabelas[fato_nome]
     medidas = _medidas_disponiveis(df)
 
@@ -97,6 +124,12 @@ def _achar_coluna_medida(pergunta_norm: str, fato_nome: str, tabelas: dict) -> s
         col_underscore = col.lower()
         col_espaco = _norm(col.replace("_", " "))
         if col_underscore in pergunta_norm or (col_espaco and col_espaco in pergunta_norm):
+            return col
+
+    palavras_pergunta = set(_palavras(pergunta_norm))
+    for col in medidas:
+        palavras_coluna = [p for p in col.lower().split("_") if len(p) > 3]
+        if len(palavras_coluna) >= 2 and all(_norm(p) in palavras_pergunta for p in palavras_coluna):
             return col
 
     for palavra, candidatos in _SINONIMOS_MEDIDA.items():
@@ -273,62 +306,179 @@ def _exemplos_padrao(fato_nome: str, medida: str | None) -> list[str]:
     ]
 
 
-def _achar_ano_filtro(pergunta_norm: str, tabelas: dict) -> str | None:
-    """Acha um ano de 4 dígitos mencionado na pergunta (ex.: 'em 2020', 'no
-    ano de 2020') e só o aceita como filtro se esse ano realmente existir no
-    dCalendario — evita tratar qualquer número de 4 dígitos como ano."""
+def _achar_periodos_mencionados(pergunta_norm: str, tabelas: dict) -> list[tuple[str, str]]:
+    """Acha TODOS os períodos mencionados na pergunta, na ordem em que
+    aparecem — tanto mês+ano específico ('janeiro de 2022', 'jan/22' ->
+    ('MesAno', 'Jan/22')) quanto ano sozinho ('em 2020' -> ('Ano', '2020')).
+    Só aceita um período que realmente exista no dCalendario — evita tratar
+    qualquer número de 4 dígitos como ano, ou combinar mês+ano que nunca
+    aconteceu nos dados. Prioriza mês+ano sobre ano sozinho quando os dois
+    aparecem juntos (ex.: 'janeiro de 2022' não deve virar dois períodos,
+    um 'MesAno' e um 'Ano' redundante)."""
     cal_nome = _tabela_calendario(tabelas)
-    if not cal_nome or "Ano" not in tabelas[cal_nome].columns:
-        return None
-    anos_validos = {str(int(a)) for a in tabelas[cal_nome]["Ano"].dropna().unique()}
+    if not cal_nome:
+        return []
+    cal_df = tabelas[cal_nome]
+    mesano_validos = set(cal_df["MesAno"].dropna().unique()) if "MesAno" in cal_df.columns else set()
+    anos_validos = {str(int(a)) for a in cal_df["Ano"].dropna().unique()} if "Ano" in cal_df.columns else set()
+
+    periodos: list[tuple[str, str]] = []
+    spans_consumidos: list[tuple[int, int]] = []
+
+    for m in _MES_ANO_RE.finditer(pergunta_norm):
+        mes_token, ano_token = m.group(1), m.group(2)
+        mes_num = _MESES_NUM.get(mes_token)
+        if mes_num is None:
+            continue
+        ano2 = ano_token[-2:] if len(ano_token) >= 2 else ano_token.zfill(2)
+        valor_mesano = f"{_MESES_ABREV[mes_num]}/{ano2}"
+        if valor_mesano in mesano_validos:
+            periodos.append(("MesAno", valor_mesano))
+            spans_consumidos.append(m.span())
+
     for m in re.finditer(r"\b(19|20)\d{2}\b", pergunta_norm):
+        span = m.span()
+        if any(span[0] >= s[0] and span[1] <= s[1] for s in spans_consumidos):
+            continue  # já faz parte de um mês+ano encontrado acima
         if m.group(0) in anos_validos:
-            return m.group(0)
-    return None
+            periodos.append(("Ano", m.group(0)))
+
+    return periodos
 
 
-def _tabelas_com_filtro_ano(tabelas: dict, fato_nome: str, ano: str) -> dict:
-    """Retorna uma cópia rasa de tabelas onde fato_nome só contém as linhas
-    do ano informado (filtra pela coluna de data detectada)."""
-    fato_df = tabelas[fato_nome]
-    date_cols = [c for c in fato_df.columns if "data" in c.lower()]
-    if not date_cols:
-        return tabelas
-    datas = pd.to_datetime(fato_df[date_cols[0]], errors="coerce")
-    mask = datas.dt.year == int(ano)
-    tabelas_novo = dict(tabelas)
-    tabelas_novo[fato_nome] = fato_df[mask]
-    return tabelas_novo
-
-
-def _ano_mencionado_invalido(pergunta_norm: str, tabelas: dict) -> str | None:
-    """Se a pergunta menciona um número de 4 dígitos que parece um ano mas
-    NÃO existe no dCalendario, devolve esse ano (pra avisar o usuário em vez
-    de silenciosamente ignorar a menção e calcular sem filtro nenhum)."""
+def _periodo_mencionado_invalido(pergunta_norm: str, tabelas: dict) -> str | None:
+    """Se a pergunta parece mencionar um período (mês+ano ou só ano) que NÃO
+    bate com nenhum período real do dCalendario, devolve um texto amigável
+    descrevendo o que foi mencionado — pra avisar o usuário em vez de
+    silenciosamente ignorar a menção e calcular sem filtro nenhum."""
     cal_nome = _tabela_calendario(tabelas)
-    if not cal_nome or "Ano" not in tabelas[cal_nome].columns:
+    if not cal_nome:
         return None
-    anos_validos = {str(int(a)) for a in tabelas[cal_nome]["Ano"].dropna().unique()}
+    cal_df = tabelas[cal_nome]
+    mesano_validos = set(cal_df["MesAno"].dropna().unique()) if "MesAno" in cal_df.columns else set()
+    anos_validos = {str(int(a)) for a in cal_df["Ano"].dropna().unique()} if "Ano" in cal_df.columns else set()
+
+    spans_ok: list[tuple[int, int]] = []
+    for m in _MES_ANO_RE.finditer(pergunta_norm):
+        mes_token, ano_token = m.group(1), m.group(2)
+        mes_num = _MESES_NUM.get(mes_token)
+        if mes_num is None:
+            continue
+        ano2 = ano_token[-2:] if len(ano_token) >= 2 else ano_token.zfill(2)
+        valor_mesano = f"{_MESES_ABREV[mes_num]}/{ano2}"
+        if valor_mesano in mesano_validos:
+            spans_ok.append(m.span())
+        else:
+            return f"{_MESES_ABREV[mes_num]}/{ano2}"
+
     for m in re.finditer(r"\b(19|20)\d{2}\b", pergunta_norm):
+        span = m.span()
+        if any(span[0] >= s[0] and span[1] <= s[1] for s in spans_ok):
+            continue
         if m.group(0) not in anos_validos:
             return m.group(0)
     return None
 
 
+def _tabelas_com_filtro_periodo(tabelas: dict, fato_nome: str, cal_nome: str | None,
+                                 coluna: str, valor: str) -> dict:
+    """Retorna uma cópia rasa de tabelas onde fato_nome só contém as linhas
+    do período informado (Ano ou MesAno), filtrando pela coluna de data
+    detectada. Para MesAno, junta com dCalendario pra achar quais datas de
+    verdade pertencem àquele mês/ano (não dá pra derivar isso só com
+    .dt.year/.dt.month sem arriscar formato — mais seguro reaproveitar as
+    datas que o próprio dCalendario já tem daquele período)."""
+    fato_df = tabelas[fato_nome]
+    date_cols = [c for c in fato_df.columns if "data" in c.lower()]
+    if not date_cols:
+        return tabelas
+    date_col = date_cols[0]
+
+    if coluna == "Ano":
+        datas = pd.to_datetime(fato_df[date_col], errors="coerce")
+        mask = datas.dt.year == int(valor)
+    elif coluna == "MesAno" and cal_nome:
+        cal_df = tabelas[cal_nome]
+        datas_do_periodo = set(cal_df.loc[cal_df["MesAno"] == valor, "Data"])
+        datas_fato = pd.to_datetime(fato_df[date_col], errors="coerce").dt.date
+        mask = datas_fato.isin(datas_do_periodo)
+    else:
+        return tabelas
+
+    tabelas_novo = dict(tabelas)
+    tabelas_novo[fato_nome] = fato_df[mask]
+    return tabelas_novo
+
+
+def _responder_comparacao(pergunta_norm: str, fato_nome: str, cal_nome: str,
+                           periodo_a: tuple[str, str], periodo_b: tuple[str, str],
+                           tabelas: dict) -> "RespostaQA":
+    """Compara a mesma medida entre dois períodos (ex.: Jan/21 vs Jan/22) e
+    devolve a variação percentual entre eles — mesmo espírito de %MoM/%YoY."""
+    coluna_a, valor_a = periodo_a
+    coluna_b, valor_b = periodo_b
+    fato_df = tabelas[fato_nome]
+
+    medida = _achar_coluna_medida(pergunta_norm, fato_nome, tabelas) or _medida_principal(fato_df)
+    if medida is None:
+        return RespostaQA(entendida=False, sugestoes=["Não encontrei uma medida numérica para comparar."])
+
+    if re.search(r"\bmedi[ao]\b|\bmédia\b", pergunta_norm):
+        expr = f"AVERAGE({fato_nome}[{medida}])"
+    else:
+        expr = f"SUM({fato_nome}[{medida}])"
+
+    tabelas_a = _tabelas_com_filtro_periodo(tabelas, fato_nome, cal_nome, coluna_a, valor_a)
+    tabelas_b = _tabelas_com_filtro_periodo(tabelas, fato_nome, cal_nome, coluna_b, valor_b)
+
+    try:
+        valor_a_calc, _, _ = avaliar_medida(expr, tabelas_a)
+        valor_b_calc, _, _ = avaliar_medida(expr, tabelas_b)
+    except DaxError as e:
+        return RespostaQA(entendida=False, sugestoes=[str(e)])
+
+    if valor_a_calc == 0:
+        variacao_texto = "N/D (o valor do primeiro período é zero)"
+        variacao_num = None
+    else:
+        variacao_pct = (valor_b_calc - valor_a_calc) / valor_a_calc * 100
+        sinal = "+" if variacao_pct >= 0 else ""
+        variacao_texto = f"{sinal}{variacao_pct:.2f}%"
+        variacao_num = variacao_pct
+
+    return RespostaQA(
+        entendida=True,
+        resposta_texto=(
+            f"**{valor_a}**: {valor_a_calc:,.2f} → **{valor_b}**: {valor_b_calc:,.2f} "
+            f"— variação de **{variacao_texto}**."
+        ),
+        medida_dax=(
+            f'CALCULATE({expr}, {cal_nome}[{coluna_a}]="{valor_a}") comparado com '
+            f'CALCULATE({expr}, {cal_nome}[{coluna_b}]="{valor_b}")'
+        ),
+        valor=variacao_num,
+        passos=[
+            f"{expr} em {valor_a} → {valor_a_calc:,.4f}",
+            f"{expr} em {valor_b} → {valor_b_calc:,.4f}",
+            f"Variação = ({valor_b_calc:,.4f} − {valor_a_calc:,.4f}) ÷ {valor_a_calc:,.4f} × 100 → {variacao_texto}",
+        ],
+    )
+
+
 def responder_pergunta(pergunta: str, tabelas: dict[str, pd.DataFrame]) -> RespostaQA:
     """Ponto de entrada público: chama o motor de verdade e, se a pergunta
-    mencionou um ano que não existe nos dados, anexa um aviso claro em vez
-    de deixar a menção passar batido silenciosamente."""
+    mencionou um período (mês/ano) que não existe nos dados, anexa um aviso
+    claro em vez de deixar a menção passar batido silenciosamente."""
     resultado = _responder_pergunta_core(pergunta, tabelas)
     if resultado.entendida and resultado.aviso is None:
         pergunta_norm = _norm(pergunta)
-        ano_invalido = _ano_mencionado_invalido(pergunta_norm, tabelas)
-        if ano_invalido:
+        periodo_invalido = _periodo_mencionado_invalido(pergunta_norm, tabelas)
+        if periodo_invalido:
             cal_nome = _tabela_calendario(tabelas)
             anos = sorted({int(a) for a in tabelas[cal_nome]["Ano"].dropna().unique()})
             resultado.aviso = (
-                f"Você mencionou {ano_invalido}, mas os dados deste setor só cobrem de "
-                f"{anos[0]} a {anos[-1]} — calculei sem aplicar filtro de ano."
+                f"Você mencionou {periodo_invalido}, mas os dados deste setor só cobrem de "
+                f"{anos[0]} a {anos[-1]} — calculei sem aplicar esse filtro de período."
             )
     return resultado
 
@@ -355,15 +505,30 @@ def _responder_pergunta_core(pergunta: str, tabelas: dict[str, pd.DataFrame]) ->
             ] + _exemplos_padrao(fato_nome, None),
         )
 
-    # Filtro de ano mencionado na pergunta (ex.: "em 2020", "no ano de 2020").
-    # Detectado contra a tabela ORIGINAL (não afeta detecção de medida/dimensão),
-    # mas os CÁLCULOS a partir daqui usam tabelas_calc (com a tabela fato já
-    # pré-filtrada por esse ano) — sem isso, um ano mencionado na pergunta era
-    # silenciosamente ignorado e o cálculo saía errado (respondia a média/total
-    # de TODOS os anos, não só do ano pedido).
-    ano_filtro = _achar_ano_filtro(pergunta_norm, tabelas)
-    tabelas_calc = _tabelas_com_filtro_ano(tabelas, fato_nome, ano_filtro) if ano_filtro else tabelas
-    sufixo_ano = f" em {ano_filtro}" if ano_filtro else ""
+    # Períodos mencionados na pergunta (ex.: "em 2020", "janeiro de 2022", "Jan/22").
+    # Detectados contra a tabela ORIGINAL (não afeta detecção de medida/dimensão).
+    cal_nome_geral = _tabela_calendario(tabelas)
+    periodos_mencionados = _achar_periodos_mencionados(pergunta_norm, tabelas)
+
+    # 0) Comparação entre dois períodos (ex.: "comparar total de X de Jan/21 vs Jan/22")
+    if re.search(r"\bcompar", pergunta_norm) and len(periodos_mencionados) >= 2 and cal_nome_geral:
+        return _responder_comparacao(
+            pergunta_norm, fato_nome, cal_nome_geral,
+            periodos_mencionados[0], periodos_mencionados[1], tabelas,
+        )
+
+    # Filtro de período único mencionado na pergunta. Os CÁLCULOS a partir
+    # daqui usam tabelas_calc (com a tabela fato já pré-filtrada por esse
+    # período) — sem isso, um mês/ano mencionado na pergunta era
+    # silenciosamente ignorado e o cálculo saía errado (respondia a
+    # média/total de TODO o período, não só do mês/ano pedido).
+    periodo_filtro = periodos_mencionados[0] if len(periodos_mencionados) == 1 else None
+    if periodo_filtro and cal_nome_geral:
+        tabelas_calc = _tabelas_com_filtro_periodo(tabelas, fato_nome, cal_nome_geral, *periodo_filtro)
+        sufixo_ano = f" em {periodo_filtro[1]}"
+    else:
+        tabelas_calc = tabelas
+        sufixo_ano = ""
 
     # 1) "Quantos registros/linhas/vendas/pedidos existem" (contagem simples, sem medida)
     if re.search(r"\bquant[oa]s?\b", pergunta_norm) and not re.search(r"\bquant[oa]s?\b.*\b(vendedor|produto|cliente|filial|categoria)\b", pergunta_norm):

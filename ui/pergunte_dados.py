@@ -24,6 +24,7 @@ _EXEMPLOS_GENERICOS = [
     "Qual foi o total de {medida}?",
     "Qual foi a média de {medida}?",
     "Qual é o ticket médio?",
+    "Comparar total de {medida} de Jan/22 vs Jan/23",
 ]
 
 
@@ -45,8 +46,9 @@ def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> N
         "pergunta em código, não só recebe o número pronto. **Importante:** isto não é "
         "um assistente de IA de linguagem natural — é um motor de reconhecimento de "
         "padrões, limitado a perguntas de agregação (total, média, contagem, ranking, "
-        "ticket médio). Ele nunca tenta prever o futuro nem explicar causas — só calcula "
-        "o que já existe nos dados."
+        "ticket médio), filtro por período (ano ou mês/ano) e comparação entre dois "
+        "períodos (ex.: Jan/22 vs Jan/23). Ele nunca tenta prever o futuro nem explicar "
+        "causas — só calcula o que já existe nos dados."
     )
 
     carregar = st.button("🔄 Recarregar dados", key="qa_carregar")
