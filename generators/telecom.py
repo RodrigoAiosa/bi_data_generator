@@ -6,7 +6,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -40,8 +40,8 @@ def gerar_telecom(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_assinante = pd.DataFrame({
         "id_assinante": new_ids(n_assinantes),
-        "nome":         [fake.name() for _ in range(n_assinantes)],
-        "cpf":          [fake.cpf()  for _ in range(n_assinantes)],
+        "nome":         fake_pool(fake, "name", n_assinantes),
+        "cpf":          fake_pool(fake, "cpf", n_assinantes),
         "ddd":          [str(random.choice([11,21,31,41,51,61,71,81,85,91])) for _ in range(n_assinantes)],
         "id_plano":     random.choices(dim_plano["id_plano"].tolist(), k=n_assinantes),
         "uf":           random.choices(["SP","RJ","MG","RS","PR","BA"], k=n_assinantes),

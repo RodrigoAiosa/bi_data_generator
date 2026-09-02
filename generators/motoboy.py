@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,7 +17,7 @@ def gerar_motoboy(n, start, end):
     n_motociclista = min(max(n // 60, 10), 3000)
     dim_motociclista = pd.DataFrame({
         "id_motociclista":   new_ids(n_motociclista),
-        "nome":              [fake.name() for _ in range(n_motociclista)],
+        "nome":              fake_pool(fake, "name", n_motociclista),
         "tipo_veiculo":      random.choices(TIPOS_VEICULO, weights=[55, 35, 10], k=n_motociclista),
         "anos_experiencia":  rng.integers(0, 20, n_motociclista),
     })

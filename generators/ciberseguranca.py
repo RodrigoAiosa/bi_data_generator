@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -36,7 +36,7 @@ def gerar_ciberseguranca(n, start, end):
     n_analista = min(max(n // 200, 5), 60)
     dim_analista = pd.DataFrame({
         "id_analista":       new_ids(n_analista),
-        "nome":              [fake.name() for _ in range(n_analista)],
+        "nome":              fake_pool(fake, "name", n_analista),
         "nivel":             random.choices(["N1", "N2", "N3", "Especialista"], weights=[35, 30, 20, 15], k=n_analista),
         "turno":             random.choices(["Manhã", "Tarde", "Noite", "Plantão 24h"], k=n_analista),
         "certificacoes":     random.choices(["CEH", "CISSP", "Security+", "OSCP", "Nenhuma"], k=n_analista),

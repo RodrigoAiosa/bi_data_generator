@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -13,15 +13,15 @@ def gerar_onibus_intermunicipal(n, start, end):
     n_empresa = min(max(n // 300, 3), 40)
     dim_empresa = pd.DataFrame({
         "id_empresa":        new_ids(n_empresa),
-        "nome_empresa":      [fake.company() for _ in range(n_empresa)],
+        "nome_empresa":      fake_pool(fake, "company", n_empresa),
     })
 
     n_linha = min(max(n // 20, 15), 2000)
     dim_linha = pd.DataFrame({
         "id_linha":          new_ids(n_linha),
         "id_empresa":        random.choices(dim_empresa["id_empresa"].tolist(), k=n_linha),
-        "origem":            [fake.city() for _ in range(n_linha)],
-        "destino":           [fake.city() for _ in range(n_linha)],
+        "origem":            fake_pool(fake, "city", n_linha),
+        "destino":           fake_pool(fake, "city", n_linha),
         "distancia_km":      rng.integers(50, 3000, n_linha),
     })
 

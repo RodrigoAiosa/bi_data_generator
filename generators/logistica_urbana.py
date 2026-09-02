@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,10 +19,10 @@ def gerar_logistica_urbana(n, start, end):
     n_entg = min(max(n//5,30),250)
     dim_entregador = pd.DataFrame({
         "id_entregador":    new_ids(n_entg),
-        "nome":             [fake.name() for _ in range(n_entg)],
+        "nome":             fake_pool(fake, "name", n_entg),
         "tipo_veiculo":     random.choices(TIPOS_VEICULO, weights=[40,10,25,5,10,5,5], k=n_entg),
         "hub":              random.choices(HUBS, k=n_entg),
-        "uf":               [fake.state_abbr() for _ in range(n_entg)],
+        "uf":               fake_pool(fake, "state_abbr", n_entg),
         "avaliacao_media":  rng.uniform(3.0, 5.0, n_entg).round(2),
         "entregas_total":   rng.integers(10, 10_000, n_entg),
         "taxa_sucesso_pct": rng.uniform(75, 99, n_entg).round(1),
@@ -31,10 +31,10 @@ def gerar_logistica_urbana(n, start, end):
     n_cli = min(max(n//8,30),200)
     dim_cliente = pd.DataFrame({
         "id_cliente":       new_ids(n_cli),
-        "nome":             [fake.company() for _ in range(n_cli)],
+        "nome":             fake_pool(fake, "company", n_cli),
         "segmento":         random.choices(SEGMENTOS, k=n_cli),
-        "uf":               [fake.state_abbr() for _ in range(n_cli)],
-        "cidade":           [fake.city() for _ in range(n_cli)],
+        "uf":               fake_pool(fake, "state_abbr", n_cli),
+        "cidade":           fake_pool(fake, "city", n_cli),
         "sla_horas":        random.choices([1, 2, 4, 8, 24, 48], k=n_cli),
         "volume_mensal":    rng.integers(50, 50_000, n_cli),
     })

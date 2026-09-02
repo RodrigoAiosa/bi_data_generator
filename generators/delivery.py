@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,7 +18,7 @@ def gerar_delivery(n, start, end):
     n_rest = min(max(n // 40, 20), 3000)
     dim_restaurante = pd.DataFrame({
         "id_restaurante":    new_ids(n_rest),
-        "nome":              [fake.company() for _ in range(n_rest)],
+        "nome":              fake_pool(fake, "company", n_rest),
         "categoria":         random.choices(CATEGORIAS_REST, k=n_rest),
         "avaliacao":         rng.uniform(3.0, 5.0, n_rest).round(1),
     })
@@ -26,7 +26,7 @@ def gerar_delivery(n, start, end):
     n_entregador = min(max(n // 25, 15), 4000)
     dim_entregador = pd.DataFrame({
         "id_entregador":     new_ids(n_entregador),
-        "nome":              [fake.name() for _ in range(n_entregador)],
+        "nome":              fake_pool(fake, "name", n_entregador),
         "veiculo":           random.choices(VEICULOS, weights=[70, 25, 5], k=n_entregador),
         "avaliacao":         rng.uniform(3.5, 5.0, n_entregador).round(1),
     })

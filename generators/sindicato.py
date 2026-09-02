@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -26,9 +26,9 @@ def gerar_sindicato(n, start, end):
     n_associado = min(max(n // 6, 200), 15000)
     dim_associado = pd.DataFrame({
         "id_associado":      new_ids(n_associado),
-        "nome":              [fake.name() for _ in range(n_associado)],
+        "nome":              fake_pool(fake, "name", n_associado),
         "id_categoria":      random.choices(dim_categoria["id_categoria"].tolist(), k=n_associado),
-        "uf":                [fake.state_abbr() for _ in range(n_associado)],
+        "uf":                fake_pool(fake, "state_abbr", n_associado),
         "ano_filiacao":      rng.integers(1995, 2024, n_associado),
         "ativo":             random.choices([True, False], weights=[85, 15], k=n_associado),
     })

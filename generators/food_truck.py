@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -23,7 +23,7 @@ def gerar_food_truck(n, start, end):
         "id_truck":          new_ids(n_truck),
         "nome_truck":        [f"Truck {fake.first_name()}" for _ in range(n_truck)],
         "tipo_cozinha":      random.choices(TIPOS_COZINHA, k=n_truck),
-        "cidade_base":       [fake.city() for _ in range(n_truck)],
+        "cidade_base":       fake_pool(fake, "city", n_truck),
     })
 
     n_item = min(max(n // 30, 15), 200)

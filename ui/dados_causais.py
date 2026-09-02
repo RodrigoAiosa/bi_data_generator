@@ -13,6 +13,8 @@ Serve pra praticar inferência causal, teste A/B e marketing mix modeling
 com um cenário onde a resposta certa é conhecida de antemão, em cima dos
 seus próprios dados gerados, não de um exemplo genérico desconectado.
 """
+import uuid
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -240,6 +242,10 @@ def render_dados_causais() -> None:
 
         st.session_state["causal_df"] = df_causal
         st.session_state["causal_gabarito"] = gabarito
+        # Identidade estável do cenário causal atual: permite que o cache de
+        # ZIP/medidas/TMDL do resultado principal (ui/resultado.py) saiba
+        # quando esse cenário mudou, sem precisar comparar o DataFrame inteiro.
+        st.session_state["causal_id"] = uuid.uuid4().hex
         registrar_evento("gerou_dados_causais", setor=nome_setor, volume=len(df_causal), status="sucesso")
 
     if "causal_df" not in st.session_state:

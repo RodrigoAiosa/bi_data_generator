@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,7 +18,7 @@ def gerar_usina_acucar_etanol(n, start, end):
     dim_usina = pd.DataFrame({
         "id_usina":          new_ids(n_usina),
         "nome":              [f"Usina {fake.last_name()}" for _ in range(n_usina)],
-        "uf":                [fake.state_abbr() for _ in range(n_usina)],
+        "uf":                fake_pool(fake, "state_abbr", n_usina),
         "capacidade_moagem_ton_dia": rng.integers(3000, 40000, n_usina),
         "ano_inicio_operacao": rng.integers(1970, 2020, n_usina),
     })

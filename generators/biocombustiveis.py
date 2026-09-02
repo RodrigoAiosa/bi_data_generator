@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,8 +17,8 @@ def gerar_biocombustiveis(n, start, end):
     n_usina = min(max(n // 150, 3), 40)
     dim_usina = pd.DataFrame({
         "id_usina":          new_ids(n_usina),
-        "cidade":            [fake.city() for _ in range(n_usina)],
-        "uf":                [fake.state_abbr() for _ in range(n_usina)],
+        "cidade":            fake_pool(fake, "city", n_usina),
+        "uf":                fake_pool(fake, "state_abbr", n_usina),
         "capacidade_litros_dia": rng.integers(50000, 2000000, n_usina),
     })
 

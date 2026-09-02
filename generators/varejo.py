@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng, validar_parametros_geracao
+from .helpers import dcalendario, new_ids, rand_dates, rng, validar_parametros_geracao, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -35,11 +35,11 @@ def gerar_varejo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_cliente = pd.DataFrame({
         "id_cliente": new_ids(n_clientes),
-        "nome":       [fake.name()  for _ in range(n_clientes)],
-        "cpf":        [fake.cpf()   for _ in range(n_clientes)],
-        "email":      [fake.email() for _ in range(n_clientes)],
+        "nome":       fake_pool(fake, "name", n_clientes),
+        "cpf":        fake_pool(fake, "cpf", n_clientes),
+        "email":      fake_pool(fake, "email", n_clientes),
         "segmento":   random.choices(["Pessoa Física", "Pessoa Jurídica", "Premium"], k=n_clientes),
-        "cidade":     [fake.city()  for _ in range(n_clientes)],
+        "cidade":     fake_pool(fake, "city", n_clientes),
         "uf":         random.choices(ESTADOS, k=n_clientes),
     })
 
@@ -55,8 +55,8 @@ def gerar_varejo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_vendedor = pd.DataFrame({
         "id_vendedor": new_ids(n_vendedores),
-        "nome":        [fake.name() for _ in range(n_vendedores)],
-        "cpf":         [fake.cpf()  for _ in range(n_vendedores)],
+        "nome":        fake_pool(fake, "name", n_vendedores),
+        "cpf":         fake_pool(fake, "cpf", n_vendedores),
         "regiao":      random.choices(list(REGIOES.values()), k=n_vendedores),
         "meta_mensal": rng.integers(10000, 80000, n_vendedores),
     })

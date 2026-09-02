@@ -6,7 +6,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -26,8 +26,8 @@ def gerar_financeiro(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_conta = pd.DataFrame({
         "id_conta":   new_ids(n_contas),
-        "titular":    [fake.name() for _ in range(n_contas)],
-        "cpf_cnpj":   [fake.cpf()  for _ in range(n_contas)],
+        "titular":    fake_pool(fake, "name", n_contas),
+        "cpf_cnpj":   fake_pool(fake, "cpf", n_contas),
         "tipo_conta": random.choices(["Corrente","Poupança","Empresarial","Investimento"], k=n_contas),
         "id_agencia": random.choices(dim_agencia["id_agencia"].tolist(), k=n_contas),
         "segmento":   random.choices(["Varejo","Personnalité","Corporate","Private"], k=n_contas),

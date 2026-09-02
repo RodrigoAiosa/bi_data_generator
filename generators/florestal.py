@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -22,7 +22,7 @@ def gerar_florestal(n, start, end):
         "uf":               random.choices(["MS","MT","GO","SP","MG","BA","PR","SC","RS","PA"], k=n_faz),
         "area_ha":          rng.uniform(100, 50_000, n_faz).round(1),
         "certificacao":     random.choices(CERTIFICACOES, k=n_faz),
-        "proprietario":     [fake.company() for _ in range(n_faz)],
+        "proprietario":     fake_pool(fake, "company", n_faz),
         "ativa":            random.choices([True,False], weights=[90,10], k=n_faz),
     })
     n_tal = min(max(n//4,50),500)

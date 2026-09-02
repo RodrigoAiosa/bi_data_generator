@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,9 +19,9 @@ def gerar_datacenter(n, start, end):
     n_cliente = min(max(n // 10, 80), 5000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.company() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "company", n_cliente),
         "plano":             random.choices(["Starter", "Business", "Enterprise", "Enterprise Plus"], weights=[35, 30, 25, 10], k=n_cliente),
-        "uf":                [fake.state_abbr() for _ in range(n_cliente)],
+        "uf":                fake_pool(fake, "state_abbr", n_cliente),
     })
 
     n_instancia = min(max(n // 5, 150), 12000)

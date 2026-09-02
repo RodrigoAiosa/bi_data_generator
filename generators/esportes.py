@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -37,7 +37,7 @@ def gerar_esportes(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "id_clube":       new_ids(n_clubes),
         "nome":           [f"Clube {fake.last_name()} {fake.random_int(1, 99)}" for _ in range(n_clubes)],
         "uf":             random.choices(UFS_CLUBES, k=n_clubes),
-        "cidade":         [fake.city() for _ in range(n_clubes)],
+        "cidade":         fake_pool(fake, "city", n_clubes),
         "fundacao_ano":   rng.integers(1900, 2010, n_clubes),
         "n_socios":       rng.integers(500, 150000, n_clubes),
         "estadio_cap":    rng.integers(1000, 80000, n_clubes),
@@ -47,8 +47,8 @@ def gerar_esportes(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_atleta = pd.DataFrame({
         "id_atleta":     new_ids(n_atletas),
-        "nome":          [fake.name() for _ in range(n_atletas)],
-        "cpf":           [fake.cpf() for _ in range(n_atletas)],
+        "nome":          fake_pool(fake, "name", n_atletas),
+        "cpf":           fake_pool(fake, "cpf", n_atletas),
         "nascimento":    rand_dates(date(1980, 1, 1), date(2006, 12, 31), n_atletas),
         "nacionalidade": random.choices(["Brasileira", "Argentina", "Uruguaia", "Colombiana", "Portuguesa", "Outra"], weights=[70, 10, 5, 5, 5, 5], k=n_atletas),
         "id_clube":      random.choices(dim_clube["id_clube"].tolist(), k=n_atletas),

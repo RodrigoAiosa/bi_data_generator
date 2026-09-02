@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,8 +17,8 @@ def gerar_asilo(n, start, end):
     dim_instituicao = pd.DataFrame({
         "id_instituicao":    new_ids(n_instituicao),
         "nome_instituicao":  [f"Residencial {fake.last_name()}" for _ in range(n_instituicao)],
-        "cidade":            [fake.city() for _ in range(n_instituicao)],
-        "uf":                [fake.state_abbr() for _ in range(n_instituicao)],
+        "cidade":            fake_pool(fake, "city", n_instituicao),
+        "uf":                fake_pool(fake, "state_abbr", n_instituicao),
         "capacidade_leitos":  rng.integers(15, 200, n_instituicao),
     })
 
@@ -26,7 +26,7 @@ def gerar_asilo(n, start, end):
     dim_residente = pd.DataFrame({
         "id_residente":      new_ids(n_residente),
         "id_instituicao":    random.choices(dim_instituicao["id_instituicao"].tolist(), k=n_residente),
-        "nome":              [fake.name() for _ in range(n_residente)],
+        "nome":              fake_pool(fake, "name", n_residente),
         "idade":             rng.integers(60, 100, n_residente),
         "grau_dependencia":  random.choices(GRAUS_DEPENDENCIA, weights=[40, 40, 20], k=n_residente),
     })

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,8 +16,8 @@ def gerar_impressao_3d(n, start, end):
     n_empresa = min(max(n // 200, 4), 60)
     dim_empresa = pd.DataFrame({
         "id_empresa":        new_ids(n_empresa),
-        "cidade":            [fake.city() for _ in range(n_empresa)],
-        "uf":                [fake.state_abbr() for _ in range(n_empresa)],
+        "cidade":            fake_pool(fake, "city", n_empresa),
+        "uf":                fake_pool(fake, "state_abbr", n_empresa),
     })
 
     n_impressora = min(max(n // 20, 15), 1200)
@@ -32,7 +32,7 @@ def gerar_impressao_3d(n, start, end):
         "id_pedido":         new_ids(n),
         "id_data":           rand_dates(start, end, n),
         "id_impressora":     random.choices(dim_impressora["id_impressora"].tolist(), k=n),
-        "cliente":           [fake.name() for _ in range(n)],
+        "cliente":           fake_pool(fake, "name", n),
         "tempo_impressao_h": rng.uniform(0.5, 60, n).round(1),
         "gramas_material":   rng.integers(5, 3000, n),
         "valor":             rng.uniform(20, 2500, n).round(2),

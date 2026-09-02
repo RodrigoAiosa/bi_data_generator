@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -31,18 +31,18 @@ def gerar_plano_saude(n, start, end):
         "id_prestador":      new_ids(n_prestador),
         "nome":              [f"{fake.last_name()} {random.choice(['Hospital', 'Clínica', 'Laboratório', 'Consultório'])}" for _ in range(n_prestador)],
         "especialidade":     random.choices(ESPECIALIDADES, k=n_prestador),
-        "uf":                [fake.state_abbr() for _ in range(n_prestador)],
+        "uf":                fake_pool(fake, "state_abbr", n_prestador),
         "credenciado_desde": rng.integers(2005, 2024, n_prestador),
     })
 
     n_beneficiario = min(max(n // 4, 300), 20000)
     dim_beneficiario = pd.DataFrame({
         "id_beneficiario":   new_ids(n_beneficiario),
-        "nome":              [fake.name() for _ in range(n_beneficiario)],
+        "nome":              fake_pool(fake, "name", n_beneficiario),
         "idade":             rng.integers(0, 95, n_beneficiario),
         "sexo":              random.choices(["F", "M"], k=n_beneficiario),
         "id_plano":          random.choices(dim_plano["id_plano"].tolist(), k=n_beneficiario),
-        "uf":                [fake.state_abbr() for _ in range(n_beneficiario)],
+        "uf":                fake_pool(fake, "state_abbr", n_beneficiario),
         "ativo":             random.choices([True, False], weights=[88, 12], k=n_beneficiario),
     })
 

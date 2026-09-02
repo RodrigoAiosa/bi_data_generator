@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,8 +17,8 @@ def gerar_locacao_temporada(n, start, end):
     dim_imovel = pd.DataFrame({
         "id_imovel":         new_ids(n_imovel),
         "tipo":              random.choices(TIPOS_IMOVEL, weights=[30, 25, 15, 15, 10, 5], k=n_imovel),
-        "uf":                [fake.state_abbr() for _ in range(n_imovel)],
-        "cidade":            [fake.city() for _ in range(n_imovel)],
+        "uf":                fake_pool(fake, "state_abbr", n_imovel),
+        "cidade":            fake_pool(fake, "city", n_imovel),
         "capacidade":        rng.integers(1, 12, n_imovel),
         "diaria_base":       rng.uniform(90, 1800, n_imovel).round(2),
     })
@@ -26,8 +26,8 @@ def gerar_locacao_temporada(n, start, end):
     n_hospede = min(max(n // 4, 150), 12000)
     dim_hospede = pd.DataFrame({
         "id_hospede":        new_ids(n_hospede),
-        "nome":              [fake.name() for _ in range(n_hospede)],
-        "uf":                [fake.state_abbr() for _ in range(n_hospede)],
+        "nome":              fake_pool(fake, "name", n_hospede),
+        "uf":                fake_pool(fake, "state_abbr", n_hospede),
         "avaliacao_media":   rng.uniform(3.0, 5.0, n_hospede).round(1),
     })
 

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,8 +17,8 @@ def gerar_casa_noturna(n, start, end):
     n_casa = min(max(n // 300, 3), 40)
     dim_casa = pd.DataFrame({
         "id_casa":           new_ids(n_casa),
-        "cidade":            [fake.city() for _ in range(n_casa)],
-        "uf":                [fake.state_abbr() for _ in range(n_casa)],
+        "cidade":            fake_pool(fake, "city", n_casa),
+        "uf":                fake_pool(fake, "state_abbr", n_casa),
         "capacidade":        rng.integers(200, 5000, n_casa),
     })
 

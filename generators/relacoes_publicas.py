@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,7 +17,7 @@ def gerar_relacoes_publicas(n, start, end):
     n_cliente = min(max(n // 60, 15), 800)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.company() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "company", n_cliente),
         "segmento":          random.choices(["Varejo", "Tecnologia", "Alimentício", "Financeiro", "Saúde", "Governo"], k=n_cliente),
     })
 

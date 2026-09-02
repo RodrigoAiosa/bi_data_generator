@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,14 +21,14 @@ def gerar_piscina_spa(n, start, end):
         "id_cliente":        new_ids(n_cliente),
         "nome":              [fake.name() if random.random() < 0.6 else fake.company() for _ in range(n_cliente)],
         "tipo_cliente":      random.choices(TIPOS_CLIENTE, weights=[50, 20, 12, 10, 8], k=n_cliente),
-        "uf":                [fake.state_abbr() for _ in range(n_cliente)],
+        "uf":                fake_pool(fake, "state_abbr", n_cliente),
         "volume_piscina_litros": rng.integers(15000, 800000, n_cliente),
     })
 
     n_tecnico = min(max(n // 100, 8), 300)
     dim_tecnico = pd.DataFrame({
         "id_tecnico":        new_ids(n_tecnico),
-        "nome":              [fake.name() for _ in range(n_tecnico)],
+        "nome":              fake_pool(fake, "name", n_tecnico),
         "anos_experiencia":  rng.integers(1, 25, n_tecnico),
     })
 

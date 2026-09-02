@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -105,7 +105,7 @@ TIPOS_CONTA = ["Cliente Ativo", "Cliente Inativo", "Prospect", "Parceiro", "Conc
 
 PRIORIDADES = ["Alta", "Média", "Baixa"]
 
-VENDEDORES = [fake.name() for _ in range(20)]
+VENDEDORES = fake_pool(fake, "name", 20)
 EQUIPES = ["Comercial Sul", "Comercial Norte", "Comercial Centro-Oeste", "Comercial Nordeste", "Key Accounts", "SMB"]
 
 
@@ -148,7 +148,7 @@ def gerar_crm(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "nome":          VENDEDORES,
         "equipe":        random.choices(EQUIPES, k=n_vendedores),
         "cargo":         random.choices(["Executivo de Vendas", "SDR", "Account Executive", "Key Account Manager"], k=n_vendedores),
-        "uf":            [fake.state_abbr() for _ in range(n_vendedores)],
+        "uf":            fake_pool(fake, "state_abbr", n_vendedores),
         "meta_mensal":   rng.uniform(50_000, 500_000, n_vendedores).round(2),
         "ativo":         random.choices([True, False], weights=[90, 10], k=n_vendedores),
         "data_admissao": rand_dates(date(2015, 1, 1), end, n_vendedores),
@@ -182,13 +182,13 @@ def gerar_crm(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     n_contas = min(max(n // 5, 200), 2_000)
     dim_conta = pd.DataFrame({
         "id_conta":         new_ids(n_contas),
-        "nome_empresa":     [fake.company() for _ in range(n_contas)],
-        "cnpj":             [fake.cnpj() for _ in range(n_contas)],
+        "nome_empresa":     fake_pool(fake, "company", n_contas),
+        "cnpj":             fake_pool(fake, "cnpj", n_contas),
         "setor":            random.choices(SETORES, k=n_contas),
         "segmento":         random.choices(SEGMENTOS, k=n_contas),
         "tipo_conta":       random.choices(TIPOS_CONTA, weights=[40, 10, 35, 10, 5], k=n_contas),
-        "uf":               [fake.state_abbr() for _ in range(n_contas)],
-        "cidade":           [fake.city() for _ in range(n_contas)],
+        "uf":               fake_pool(fake, "state_abbr", n_contas),
+        "cidade":           fake_pool(fake, "city", n_contas),
         "faturamento_anual": rng.uniform(100_000, 500_000_000, n_contas).round(2),
         "n_funcionarios":   rng.integers(1, 50_000, n_contas),
         "id_vendedor_resp": random.choices(dim_vendedor["id_vendedor"].tolist(), k=n_contas),
@@ -200,10 +200,10 @@ def gerar_crm(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     n_contatos = min(n_contas * 2, 4_000)
     dim_contato = pd.DataFrame({
         "id_contato":    new_ids(n_contatos),
-        "nome":          [fake.name() for _ in range(n_contatos)],
+        "nome":          fake_pool(fake, "name", n_contatos),
         "cargo":         random.choices(CARGOS_DECISOR, k=n_contatos),
-        "email":         [fake.company_email() for _ in range(n_contatos)],
-        "telefone":      [fake.phone_number() for _ in range(n_contatos)],
+        "email":         fake_pool(fake, "company_email", n_contatos),
+        "telefone":      fake_pool(fake, "phone_number", n_contatos),
         "id_conta":      random.choices(dim_conta["id_conta"].tolist(), k=n_contatos),
         "decisor":       random.choices([True, False], weights=[30, 70], k=n_contatos),
         "linkedin":      [f"linkedin.com/in/{fake.user_name()}" for _ in range(n_contatos)],

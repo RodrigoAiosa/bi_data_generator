@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -34,8 +34,8 @@ def gerar_restaurante(n, start, end):
         "id_unidade":        new_ids(n_unidade),
         "nome":              [f"Unidade {fake.city()}" for _ in range(n_unidade)],
         "tipo":              random.choices(TIPOS_UNIDADE, k=n_unidade),
-        "uf":                [fake.state_abbr() for _ in range(n_unidade)],
-        "cidade":            [fake.city() for _ in range(n_unidade)],
+        "uf":                fake_pool(fake, "state_abbr", n_unidade),
+        "cidade":            fake_pool(fake, "city", n_unidade),
         "capacidade_mesas":  rng.integers(0, 60, n_unidade),
         "avaliacao":         rng.uniform(3.0, 5.0, n_unidade).round(1),
     })

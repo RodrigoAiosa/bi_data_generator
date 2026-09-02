@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -20,8 +20,8 @@ def gerar_eventos(n, start, end):
         "nome":         [f"{random.choice(TIPOS_EVENTO)} {fake.last_name()}" for _ in range(n_ev)],
         "tipo":         random.choices(TIPOS_EVENTO, k=n_ev),
         "local":        random.choices(LOCAIS, k=n_ev),
-        "uf":           [fake.state_abbr() for _ in range(n_ev)],
-        "cidade":       [fake.city() for _ in range(n_ev)],
+        "uf":           fake_pool(fake, "state_abbr", n_ev),
+        "cidade":       fake_pool(fake, "city", n_ev),
         "data_evento":  rand_dates(start, end, n_ev),
         "capacidade":   rng.integers(50, 80_000, n_ev),
         "status":       random.choices(STATUS_EVENTO, weights=[30,5,55,5,5], k=n_ev),
@@ -30,9 +30,9 @@ def gerar_eventos(n, start, end):
     n_cli = min(max(n//8,40),300)
     dim_cliente = pd.DataFrame({
         "id_cliente":   new_ids(n_cli),
-        "nome":         [fake.company() for _ in range(n_cli)],
+        "nome":         fake_pool(fake, "company", n_cli),
         "tipo":         random.choices(["PF","PJ"], weights=[40,60], k=n_cli),
-        "uf":           [fake.state_abbr() for _ in range(n_cli)],
+        "uf":           fake_pool(fake, "state_abbr", n_cli),
         "segmento":     random.choices(["Corporativo","Social","Musical","Esportivo","Educacional"], k=n_cli),
     })
     receita = rng.uniform(5_000, 2_000_000, n).round(2)

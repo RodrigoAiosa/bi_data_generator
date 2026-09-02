@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,14 +17,14 @@ def gerar_inspecao_certificacao(n, start, end):
     n_inspetor = min(max(n // 100, 8), 300)
     dim_inspetor = pd.DataFrame({
         "id_inspetor":       new_ids(n_inspetor),
-        "nome":              [fake.name() for _ in range(n_inspetor)],
+        "nome":              fake_pool(fake, "name", n_inspetor),
         "area_atuacao":      random.choices(AREAS_ATUACAO, k=n_inspetor),
     })
 
     n_empresa_cliente = min(max(n // 5, 200), 15000)
     dim_empresa_cliente = pd.DataFrame({
         "id_empresa_cliente": new_ids(n_empresa_cliente),
-        "nome_empresa":      [fake.company() for _ in range(n_empresa_cliente)],
+        "nome_empresa":      fake_pool(fake, "company", n_empresa_cliente),
         "setor":             random.choices(["Indústria", "Serviços", "Alimentos", "Construção"], k=n_empresa_cliente),
     })
 

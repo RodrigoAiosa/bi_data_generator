@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -28,7 +28,7 @@ def gerar_leilao(n, start, end):
         "id_arrematante":    new_ids(n_arrematante),
         "nome":              [fake.name() if random.random() < 0.75 else fake.company() for _ in range(n_arrematante)],
         "tipo_pessoa":       random.choices(TIPOS_PESSOA, weights=[75, 25], k=n_arrematante),
-        "uf":                [fake.state_abbr() for _ in range(n_arrematante)],
+        "uf":                fake_pool(fake, "state_abbr", n_arrematante),
     })
 
     lote_idx = random.choices(range(n_lote), k=n)

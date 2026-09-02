@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -28,9 +28,9 @@ def gerar_drones(n, start, end):
     n_cliente = min(max(n // 25, 20), 2000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.company() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "company", n_cliente),
         "segmento":          random.choices(SEGMENTOS_CLIENTE, k=n_cliente),
-        "uf":                [fake.state_abbr() for _ in range(n_cliente)],
+        "uf":                fake_pool(fake, "state_abbr", n_cliente),
     })
 
     status_missao = random.choices(STATUS_MISSAO, weights=[75, 10, 8, 7], k=n)

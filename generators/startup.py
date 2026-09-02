@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,14 +18,14 @@ def gerar_startup(n, start, end):
     n_st = min(max(n//4,50),400)
     dim_startup = pd.DataFrame({
         "id_startup":       new_ids(n_st),
-        "nome":             [fake.company() for _ in range(n_st)],
+        "nome":             fake_pool(fake, "company", n_st),
         "vertical":         random.choices(VERTICAIS, k=n_st),
         "estagio":          random.choices(ESTAGIOS, weights=[20,25,20,15,10,7,3], k=n_st),
         "status":           random.choices(STATUS_STARTUP, weights=[70,8,10,5,7], k=n_st),
         "ano_fundacao":     rng.integers(2010, 2024, n_st),
         "n_fundadores":     rng.integers(1, 5, n_st),
         "n_funcionarios":   rng.integers(1, 500, n_st),
-        "sede_uf":          [fake.state_abbr() for _ in range(n_st)],
+        "sede_uf":          fake_pool(fake, "state_abbr", n_st),
         "mrr":              rng.uniform(0, 2_000_000, n_st).round(2),
         "arr":              rng.uniform(0, 24_000_000, n_st).round(2),
         "valuation":        rng.uniform(1_000_000, 1_000_000_000, n_st).round(2),

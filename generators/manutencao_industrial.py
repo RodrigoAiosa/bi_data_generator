@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,7 +19,7 @@ def gerar_manutencao_industrial(n, start, end):
     n_tecnico = min(max(n // 60, 8), 400)
     dim_tecnico = pd.DataFrame({
         "id_tecnico":        new_ids(n_tecnico),
-        "nome":              [fake.name() for _ in range(n_tecnico)],
+        "nome":              fake_pool(fake, "name", n_tecnico),
         "especialidade":     random.choices(ESPECIALIDADES, k=n_tecnico),
         "anos_experiencia":  rng.integers(1, 30, n_tecnico),
     })
@@ -27,7 +27,7 @@ def gerar_manutencao_industrial(n, start, end):
     n_cliente = min(max(n // 30, 15), 1500)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome_cliente":      [fake.company() for _ in range(n_cliente)],
+        "nome_cliente":      fake_pool(fake, "company", n_cliente),
         "segmento_industrial": random.choices(SEGMENTOS_INDUSTRIAIS, k=n_cliente),
     })
 

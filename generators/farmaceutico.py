@@ -5,7 +5,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -23,7 +23,7 @@ FORMAS_FARMACEUTICAS = ["Comprimido", "Cápsula", "Solução Oral", "Injetável"
 
 REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"]
 
-REPRESENTANTES = [fake.name() for _ in range(25)]
+REPRESENTANTES = fake_pool(fake, "name", 25)
 
 
 def gerar_farmaceutico(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
@@ -43,7 +43,7 @@ def gerar_farmaceutico(n: int, start: date, end: date) -> dict[str, pd.DataFrame
         "id_representante": new_ids(n_rep),
         "nome":             REPRESENTANTES,
         "regiao":           random.choices(REGIOES, k=n_rep),
-        "uf":               [fake.state_abbr() for _ in range(n_rep)],
+        "uf":               fake_pool(fake, "state_abbr", n_rep),
         "meta_trimestral":  rng.uniform(50_000, 500_000, n_rep).round(2),
         "ativo":            random.choices([True, False], weights=[88, 12], k=n_rep),
         "data_admissao":    rand_dates(date(2010, 1, 1), end, n_rep),
@@ -54,7 +54,7 @@ def gerar_farmaceutico(n: int, start: date, end: date) -> dict[str, pd.DataFrame
     dim_produto = pd.DataFrame({
         "id_produto":           new_ids(n_prod),
         "nome_comercial":       [f"{fake.last_name()} {random.choice(['Plus','Max','Neo','Forte','D'])}" for _ in range(n_prod)],
-        "principio_ativo":      [fake.last_name() for _ in range(n_prod)],
+        "principio_ativo":      fake_pool(fake, "last_name", n_prod),
         "classe_terapeutica":   random.choices(CLASSES_TERAPEUTICAS, k=n_prod),
         "tipo":                 random.choices(TIPOS_PRODUTO, weights=[15, 40, 25, 5, 10, 5], k=n_prod),
         "forma_farmaceutica":   random.choices(FORMAS_FARMACEUTICAS, k=n_prod),
@@ -71,11 +71,11 @@ def gerar_farmaceutico(n: int, start: date, end: date) -> dict[str, pd.DataFrame
     n_cli = min(max(n // 8, 150), 1_000)
     dim_cliente = pd.DataFrame({
         "id_cliente":       new_ids(n_cli),
-        "nome":             [fake.company() for _ in range(n_cli)],
-        "cnpj":             [fake.cnpj() for _ in range(n_cli)],
+        "nome":             fake_pool(fake, "company", n_cli),
+        "cnpj":             fake_pool(fake, "cnpj", n_cli),
         "canal":            random.choices(CANAIS_VENDA, k=n_cli),
-        "uf":               [fake.state_abbr() for _ in range(n_cli)],
-        "cidade":           [fake.city() for _ in range(n_cli)],
+        "uf":               fake_pool(fake, "state_abbr", n_cli),
+        "cidade":           fake_pool(fake, "city", n_cli),
         "regiao":           random.choices(REGIOES, k=n_cli),
         "id_representante": random.choices(dim_representante["id_representante"].tolist(), k=n_cli),
         "data_cadastro":    rand_dates(date(2015, 1, 1), end, n_cli),
@@ -86,8 +86,8 @@ def gerar_farmaceutico(n: int, start: date, end: date) -> dict[str, pd.DataFrame
     n_dist = 20
     dim_distribuidora = pd.DataFrame({
         "id_distribuidora": new_ids(n_dist),
-        "nome":             [fake.company() for _ in range(n_dist)],
-        "uf":               [fake.state_abbr() for _ in range(n_dist)],
+        "nome":             fake_pool(fake, "company", n_dist),
+        "uf":               fake_pool(fake, "state_abbr", n_dist),
         "regiao":           random.choices(REGIOES, k=n_dist),
         "prazo_entrega_d":  rng.integers(1, 10, n_dist),
     })

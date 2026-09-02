@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -26,7 +26,7 @@ def gerar_ferrovia_carga(n, start, end):
     dim_terminal = pd.DataFrame({
         "id_terminal":       new_ids(n_terminal),
         "nome":              [f"Terminal {fake.city()}" for _ in range(n_terminal)],
-        "uf":                [fake.state_abbr() for _ in range(n_terminal)],
+        "uf":                fake_pool(fake, "state_abbr", n_terminal),
     })
 
     fato_viagem_carga = pd.DataFrame({

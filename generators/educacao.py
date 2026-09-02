@@ -6,7 +6,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -27,9 +27,9 @@ def gerar_educacao(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_aluno = pd.DataFrame({
         "id_aluno":     new_ids(n_alunos),
-        "nome":         [fake.name()  for _ in range(n_alunos)],
-        "cpf":          [fake.cpf()   for _ in range(n_alunos)],
-        "email":        [fake.email() for _ in range(n_alunos)],
+        "nome":         fake_pool(fake, "name", n_alunos),
+        "cpf":          fake_pool(fake, "cpf", n_alunos),
+        "email":        fake_pool(fake, "email", n_alunos),
         "sexo":         random.choices(["M","F","Outro"], weights=[47,50,3], k=n_alunos),
         "uf":           random.choices(["SP","RJ","MG","RS","PR","BA","CE"], k=n_alunos),
         "faixa_etaria": random.choices(["15-17","18-24","25-34","35-44","45+"], k=n_alunos),
@@ -37,7 +37,7 @@ def gerar_educacao(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_instrutor = pd.DataFrame({
         "id_instrutor": new_ids(n_instrutores),
-        "nome":         [fake.name() for _ in range(n_instrutores)],
+        "nome":         fake_pool(fake, "name", n_instrutores),
         "titulacao":    random.choices(["Graduado","Especialista","Mestre","Doutor"], k=n_instrutores),
         "area":         random.choices(["TI","Saúde","Gestão","Direito","Engenharia","Design"], k=n_instrutores),
     })

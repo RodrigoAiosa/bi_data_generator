@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,8 +17,8 @@ def gerar_cosmeticos(n, start, end):
     n_fabrica = min(max(n // 300, 3), 40)
     dim_fabrica = pd.DataFrame({
         "id_fabrica":        new_ids(n_fabrica),
-        "cidade":            [fake.city() for _ in range(n_fabrica)],
-        "uf":                [fake.state_abbr() for _ in range(n_fabrica)],
+        "cidade":            fake_pool(fake, "city", n_fabrica),
+        "uf":                fake_pool(fake, "state_abbr", n_fabrica),
     })
 
     n_linha = min(max(n // 20, 20), 3000)

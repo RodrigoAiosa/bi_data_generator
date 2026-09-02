@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -20,7 +20,7 @@ def gerar_lavanderia(n, start, end):
     dim_unidade = pd.DataFrame({
         "id_unidade":        new_ids(n_unidade),
         "nome_unidade":      [f"Lavanderia {fake.first_name()}" for _ in range(n_unidade)],
-        "cidade":            [fake.city() for _ in range(n_unidade)],
+        "cidade":            fake_pool(fake, "city", n_unidade),
         "tipo":              random.choices(TIPOS_UNIDADE, weights=[25, 40, 35], k=n_unidade),
     })
 

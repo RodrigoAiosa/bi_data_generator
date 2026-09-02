@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -40,8 +40,8 @@ MOTIVOS_ATRASO = ["Trânsito", "Problema mecânico", "Acidente", "Fiscalização
 TIPOS_DESPESA  = ["Pedágio", "Alimentação", "Hospedagem", "Manutenção emergencial", "Multa", "Lavagem", "Outros"]
 TIPOS_RECEITA  = ["Frete", "Adiantamento", "Ajuste de frete", "Devolução de despesa"]
 BANCOS         = ["Banco do Brasil", "Bradesco", "Itaú", "Santander", "Caixa", "Sicoob", "Sicredi"]
-MOTORISTAS     = [fake.name() for _ in range(40)]
-CLIENTES       = [fake.company() for _ in range(60)]
+MOTORISTAS     = fake_pool(fake, "name", 40)
+CLIENTES       = fake_pool(fake, "company", 60)
 CIDADES_BR = [
     ("São Paulo", "SP"), ("Campinas", "SP"), ("Santos", "SP"), ("Ribeirão Preto", "SP"),
     ("Rio de Janeiro", "RJ"), ("Belo Horizonte", "MG"), ("Uberlândia", "MG"),
@@ -93,7 +93,7 @@ def gerar_transporte(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "ativo":            random.choices([True, False], weights=[88, 12], k=n_veic),
         "data_aquisicao":   rand_dates(date(2010, 1, 1), end, n_veic),
         "valor_aquisicao":  rng.uniform(150_000, 600_000, n_veic).round(2),
-        "seguradora":       [fake.company() for _ in range(n_veic)],
+        "seguradora":       fake_pool(fake, "company", n_veic),
         "vencimento_seguro":rand_dates(end, date(end.year + 2, 12, 31), n_veic),
     })
 
@@ -102,11 +102,11 @@ def gerar_transporte(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     dim_motorista = pd.DataFrame({
         "id_motorista":     new_ids(n_mot),
         "nome":             MOTORISTAS,
-        "cpf":              [fake.cpf() for _ in range(n_mot)],
+        "cpf":              fake_pool(fake, "cpf", n_mot),
         "cnh":              [f"{rng.integers(10000000, 99999999)}" for _ in range(n_mot)],
         "categoria_cnh":    random.choices(["C", "D", "E"], weights=[20, 30, 50], k=n_mot),
         "vencimento_cnh":   rand_dates(end, date(end.year + 5, 12, 31), n_mot),
-        "telefone":         [fake.phone_number() for _ in range(n_mot)],
+        "telefone":         fake_pool(fake, "phone_number", n_mot),
         "uf_base":          [random.choice(CIDADES_BR)[1] for _ in range(n_mot)],
         "ativo":            random.choices([True, False], weights=[85, 15], k=n_mot),
         "data_admissao":    rand_dates(date(2010, 1, 1), end, n_mot),
@@ -120,7 +120,7 @@ def gerar_transporte(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     dim_cliente = pd.DataFrame({
         "id_cliente":       new_ids(n_cli),
         "razao_social":     CLIENTES,
-        "cnpj":             [fake.cnpj() for _ in range(n_cli)],
+        "cnpj":             fake_pool(fake, "cnpj", n_cli),
         "segmento":         random.choices(["Varejo", "Indústria", "Agronegócio", "Construção", "Alimentício", "Químico", "Farmacêutico"], k=n_cli),
         "uf":               [random.choice(CIDADES_BR)[1] for _ in range(n_cli)],
         "cidade":           [random.choice(CIDADES_BR)[0] for _ in range(n_cli)],
@@ -235,7 +235,7 @@ def gerar_transporte(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "custo_pecas":          rng.uniform(0, 15_000, n_man).round(2),
         "custo_mao_obra":       rng.uniform(100, 3_000, n_man).round(2),
         "custo_total":          rng.uniform(100, 18_000, n_man).round(2),
-        "oficina":              [fake.company() for _ in range(n_man)],
+        "oficina":              fake_pool(fake, "company", n_man),
         "tempo_parado_h":       rng.uniform(1, 120, n_man).round(1),
         "garantia_dias":        rng.integers(0, 365, n_man),
         "preventiva":           [t == "Preventiva" for t in random.choices(TIPOS_MANUTENCAO, weights=[60, 35, 5], k=n_man)],

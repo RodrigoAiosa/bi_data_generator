@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -33,12 +33,12 @@ def gerar_odontologia(n, start, end):
     n_paciente = min(max(n // 4, 100), 8000)
     dim_paciente = pd.DataFrame({
         "id_paciente":       new_ids(n_paciente),
-        "nome":              [fake.name() for _ in range(n_paciente)],
+        "nome":              fake_pool(fake, "name", n_paciente),
         "idade":             rng.integers(3, 90, n_paciente),
         "sexo":              random.choices(["F", "M"], k=n_paciente),
         "convenio":          random.choices(CONVENIOS, weights=[30,15,15,12,12,8,8], k=n_paciente),
-        "uf":                [fake.state_abbr() for _ in range(n_paciente)],
-        "cidade":            [fake.city() for _ in range(n_paciente)],
+        "uf":                fake_pool(fake, "state_abbr", n_paciente),
+        "cidade":            fake_pool(fake, "city", n_paciente),
     })
 
     status_consulta = random.choices(STATUS_CONSULTA, weights=[15, 8, 65, 7, 5], k=n)

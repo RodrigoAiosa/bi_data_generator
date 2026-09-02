@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,8 +16,8 @@ def gerar_curtume(n, start, end):
     n_curtume = min(max(n // 300, 3), 40)
     dim_curtume = pd.DataFrame({
         "id_curtume":        new_ids(n_curtume),
-        "cidade":            [fake.city() for _ in range(n_curtume)],
-        "uf":                [fake.state_abbr() for _ in range(n_curtume)],
+        "cidade":            fake_pool(fake, "city", n_curtume),
+        "uf":                fake_pool(fake, "state_abbr", n_curtume),
     })
 
     n_lote = min(max(n // 15, 30), 4000)
@@ -41,7 +41,7 @@ def gerar_curtume(n, start, end):
         "id_venda":          new_ids(n_venda),
         "id_data":           rand_dates(start, end, n_venda),
         "id_lote":           random.choices(dim_lote["id_lote"].tolist(), k=n_venda),
-        "cliente":           [fake.company() for _ in range(n_venda)],
+        "cliente":           fake_pool(fake, "company", n_venda),
         "m2_vendidos":       rng.integers(10, 2000, n_venda),
         "preco_m2":          rng.uniform(10, 80, n_venda).round(2),
     })

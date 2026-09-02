@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -20,13 +20,13 @@ def gerar_estacionamento(n, start, end):
         "nome":              [f"Estacionamento {fake.street_name()}" for _ in range(n_estacionamento)],
         "tipo":              random.choices(TIPOS_ESTACIONAMENTO, weights=[35, 25, 20, 15, 5], k=n_estacionamento),
         "vagas_totais":      rng.integers(10, 800, n_estacionamento),
-        "uf":                [fake.state_abbr() for _ in range(n_estacionamento)],
+        "uf":                fake_pool(fake, "state_abbr", n_estacionamento),
     })
 
     n_cliente = min(max(n // 6, 150), 10000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.name() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "name", n_cliente),
         "mensalista":        random.choices([True, False], weights=[20, 80], k=n_cliente),
     })
 

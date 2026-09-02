@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -25,7 +25,7 @@ def gerar_reciclagem(n, start, end):
     dim_cooperativa = pd.DataFrame({
         "id_cooperativa":    new_ids(n_cooperativa),
         "nome":              [f"Cooperativa {fake.city()}" for _ in range(n_cooperativa)],
-        "uf":                [fake.state_abbr() for _ in range(n_cooperativa)],
+        "uf":                fake_pool(fake, "state_abbr", n_cooperativa),
         "capacidade_ton_mes": rng.uniform(5, 500, n_cooperativa).round(1),
     })
 

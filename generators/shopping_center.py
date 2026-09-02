@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -15,8 +15,8 @@ def gerar_shopping_center(n, start, end):
     n_shopping = min(max(n // 300, 3), 40)
     dim_shopping = pd.DataFrame({
         "id_shopping":       new_ids(n_shopping),
-        "cidade":            [fake.city() for _ in range(n_shopping)],
-        "uf":                [fake.state_abbr() for _ in range(n_shopping)],
+        "cidade":            fake_pool(fake, "city", n_shopping),
+        "uf":                fake_pool(fake, "state_abbr", n_shopping),
         "num_lojas":         rng.integers(40, 400, n_shopping),
     })
 
@@ -24,7 +24,7 @@ def gerar_shopping_center(n, start, end):
     dim_lojista = pd.DataFrame({
         "id_lojista":        new_ids(n_lojista),
         "id_shopping":       random.choices(dim_shopping["id_shopping"].tolist(), k=n_lojista),
-        "nome_loja":         [fake.company() for _ in range(n_lojista)],
+        "nome_loja":         fake_pool(fake, "company", n_lojista),
         "segmento":          random.choices(SEGMENTOS, k=n_lojista),
     })
 

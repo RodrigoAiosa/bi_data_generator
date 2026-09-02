@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -13,15 +13,15 @@ def gerar_despachante_aduaneiro(n, start, end):
     n_despachante = min(max(n // 100, 5), 100)
     dim_despachante = pd.DataFrame({
         "id_despachante":    new_ids(n_despachante),
-        "nome":              [fake.name() for _ in range(n_despachante)],
-        "cidade":            [fake.city() for _ in range(n_despachante)],
-        "uf":                [fake.state_abbr() for _ in range(n_despachante)],
+        "nome":              fake_pool(fake, "name", n_despachante),
+        "cidade":            fake_pool(fake, "city", n_despachante),
+        "uf":                fake_pool(fake, "state_abbr", n_despachante),
     })
 
     n_cliente = min(max(n // 5, 100), 10000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome_empresa":      [fake.company() for _ in range(n_cliente)],
+        "nome_empresa":      fake_pool(fake, "company", n_cliente),
         "tipo":              random.choices(["Importador", "Exportador"], weights=[60, 40], k=n_cliente),
     })
 

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,8 +16,8 @@ def gerar_avicultura(n, start, end):
     n_granja = min(max(n // 100, 5), 100)
     dim_granja = pd.DataFrame({
         "id_granja":         new_ids(n_granja),
-        "cidade":            [fake.city() for _ in range(n_granja)],
-        "uf":                [fake.state_abbr() for _ in range(n_granja)],
+        "cidade":            fake_pool(fake, "city", n_granja),
+        "uf":                fake_pool(fake, "state_abbr", n_granja),
         "capacidade_aves":   rng.integers(5000, 200000, n_granja),
     })
 

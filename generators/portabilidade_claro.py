@@ -16,7 +16,7 @@ from datetime import date
 import numpy as np
 import pandas as pd
 
-from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng
+from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng, fake_pool
 
 OPERADORAS_CONCORRENTES = ["Vivo", "TIM", "Oi", "Algar Telecom", "Surf Telecom", "Correios Celular"]
 
@@ -121,8 +121,8 @@ def gerar_portabilidade_claro(n: int, start: date, end: date) -> dict[str, pd.Da
     # ── DimCliente ───────────────────────────────────────────────────────────
     dim_cliente = pd.DataFrame({
         "id_cliente":    new_ids(n_clientes),
-        "nome":          [fake.name() for _ in range(n_clientes)],
-        "cpf":           [fake.cpf() for _ in range(n_clientes)],
+        "nome":          fake_pool(fake, "name", n_clientes),
+        "cpf":           fake_pool(fake, "cpf", n_clientes),
         "uf":            random.choices(UFS, k=n_clientes),
         "faixa_etaria":  random.choices(
             ["18-24", "25-34", "35-44", "45-59", "60+"],

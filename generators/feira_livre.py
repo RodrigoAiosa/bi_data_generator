@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,7 +18,7 @@ def gerar_feira_livre(n, start, end):
     n_feirante = min(max(n // 40, 20), 800)
     dim_feirante = pd.DataFrame({
         "id_feirante":       new_ids(n_feirante),
-        "nome":              [fake.name() for _ in range(n_feirante)],
+        "nome":              fake_pool(fake, "name", n_feirante),
         "categoria":         random.choices(CATEGORIAS_FEIRANTE, k=n_feirante),
         "anos_atuacao":      rng.integers(1, 35, n_feirante),
     })

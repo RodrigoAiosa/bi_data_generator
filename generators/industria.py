@@ -6,7 +6,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -44,7 +44,7 @@ def gerar_industria(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_operador = pd.DataFrame({
         "id_operador": new_ids(n_operadores),
-        "nome":        [fake.name() for _ in range(n_operadores)],
+        "nome":        fake_pool(fake, "name", n_operadores),
         "turno":       random.choices(["Manhã","Tarde","Noite"], k=n_operadores),
         "nivel":       random.choices(["Operador I","Operador II","Técnico","Supervisor"], k=n_operadores),
     })

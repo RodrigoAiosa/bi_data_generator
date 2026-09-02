@@ -4,13 +4,24 @@ import pandas as pd
 import streamlit as st
 
 from generators.helpers import to_zip
+from ui.cache_utils import cache_por_chave
 
 
-def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame], extra_files: dict[str, str] | None = None) -> None:
+def render_resultado(
+    nome: str,
+    tabelas: dict[str, pd.DataFrame],
+    extra_files: dict[str, str] | None = None,
+    resultado_chave: tuple | None = None,
+) -> None:
     """Renderiza métricas, abas de preview e botão de download do ZIP.
 
     extra_files: arquivos de texto adicionais para incluir no .zip de download
-    (ex.: {"case_negocio.txt": "...", "gabarito.txt": "..."})."""
+    (ex.: {"case_negocio.txt": "...", "gabarito.txt": "..."}).
+
+    resultado_chave: identidade estável do resultado atual (ex.: geracao_id),
+    usada para cachear medidas DAX / TMDL / .zip entre reruns do Streamlit
+    (qualquer widget da página dispara um rerun completo do script). Se
+    None, essas etapas são sempre recalculadas (comportamento anterior)."""
 
     st.markdown(
         f'<div class="success-box">✅ Base <strong>{nome}</strong> gerada com sucesso!'
@@ -71,7 +82,12 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame], extra_files: d
 
     # ── Medidas DAX (geradas automaticamente) ──────────────────────────────
     from generators.medidas import gerar_bateria_medidas
-    medidas_por_fato = gerar_bateria_medidas(tabelas)
+    if resultado_chave is not None:
+        medidas_por_fato = cache_por_chave(
+            "_medidas_cache", ("medidas", resultado_chave), lambda: gerar_bateria_medidas(tabelas)
+        )
+    else:
+        medidas_por_fato = gerar_bateria_medidas(tabelas)
 
     total_medidas = sum(
         len(lista)
@@ -103,13 +119,25 @@ def render_resultado(nome: str, tabelas: dict[str, pd.DataFrame], extra_files: d
     st.markdown('<h3 class="section-header-plain">Download</h3>', unsafe_allow_html=True)
 
     from generators.tmdl_generator import gerar_tmdl
-    tmdl_conteudo = gerar_tmdl(nome, tabelas)
+    if resultado_chave is not None:
+        tmdl_conteudo = cache_por_chave(
+            "_tmdl_cache", ("tmdl", resultado_chave), lambda: gerar_tmdl(nome, tabelas)
+        )
+    else:
+        tmdl_conteudo = gerar_tmdl(nome, tabelas)
 
     arquivos_zip = {"model.tmdl": tmdl_conteudo}
     if extra_files:
         arquivos_zip.update(extra_files)
 
-    zip_bytes    = to_zip(tabelas, extra_files=arquivos_zip)
+    if resultado_chave is not None:
+        # extra_files (case de negócio, gabarito) é texto pequeno: incluir seu
+        # conteúdo na chave é barato e garante que o .zip é invalidado se ele
+        # mudar, mesmo com o mesmo resultado_chave (ex.: idioma trocado).
+        zip_chave = ("zip", resultado_chave, tuple(sorted(arquivos_zip.items())))
+        zip_bytes = cache_por_chave("_zip_cache", zip_chave, lambda: to_zip(tabelas, extra_files=arquivos_zip))
+    else:
+        zip_bytes = to_zip(tabelas, extra_files=arquivos_zip)
     nome_arquivo = f"Base_BI_{nome.replace(' ', '_')}.zip"
 
     from log_acesso import registrar_evento

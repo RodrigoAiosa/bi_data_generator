@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,8 +16,8 @@ def gerar_agua_mineral(n, start, end):
     n_fonte = min(max(n // 300, 3), 40)
     dim_fonte = pd.DataFrame({
         "id_fonte":          new_ids(n_fonte),
-        "cidade":            [fake.city() for _ in range(n_fonte)],
-        "uf":                [fake.state_abbr() for _ in range(n_fonte)],
+        "cidade":            fake_pool(fake, "city", n_fonte),
+        "uf":                fake_pool(fake, "state_abbr", n_fonte),
     })
 
     n_linha = min(max(n // 25, 15), 1500)
@@ -41,7 +41,7 @@ def gerar_agua_mineral(n, start, end):
         "id_distribuicao":   new_ids(n_dist),
         "id_data":           rand_dates(start, end, n_dist),
         "id_linha":          random.choices(dim_linha["id_linha"].tolist(), k=n_dist),
-        "cliente":           [fake.company() for _ in range(n_dist)],
+        "cliente":           fake_pool(fake, "company", n_dist),
         "unidades_distribuidas": rng.integers(50, 50000, n_dist),
         "valor_total":       rng.uniform(80, 40000, n_dist).round(2),
     })

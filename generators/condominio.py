@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -12,7 +12,7 @@ TIPOS_AREA    = ["Academia","Piscina","Salão de Festas","Quadra","Churrasqueira
 TIPOS_OCORR   = ["Barulho","Vazamento","Segurança","Estacionamento","Animais","Obra","Limpeza","Manutenção"]
 STATUS_OCORR  = ["Aberta","Em andamento","Encerrada","Cancelada"]
 TIPOS_DESPESA = ["Folha de Pagamento","Energia","Água","Seguro","Manutenção","Limpeza","Vigilância","Administração"]
-FORNECEDORES  = [fake.company() for _ in range(30)]
+FORNECEDORES  = fake_pool(fake, "company", 30)
 
 def gerar_condominio(n, start, end):
     n = max(int(n), 1)
@@ -21,13 +21,13 @@ def gerar_condominio(n, start, end):
         "id_condominio":    new_ids(n_cond),
         "nome":             [f"Cond. {fake.last_name()}" for _ in range(n_cond)],
         "tipo":             random.choices(TIPOS_COND, k=n_cond),
-        "uf":               [fake.state_abbr() for _ in range(n_cond)],
-        "cidade":           [fake.city() for _ in range(n_cond)],
+        "uf":               fake_pool(fake, "state_abbr", n_cond),
+        "cidade":           fake_pool(fake, "city", n_cond),
         "n_unidades":       rng.integers(20, 600, n_cond),
         "area_total_m2":    rng.uniform(500, 50_000, n_cond).round(0),
         "fundo_reserva":    rng.uniform(10_000, 500_000, n_cond).round(2),
         "taxa_condominio":  rng.uniform(300, 3_000, n_cond).round(2),
-        "adm_empresa":      [fake.company() for _ in range(n_cond)],
+        "adm_empresa":      fake_pool(fake, "company", n_cond),
     })
     n_unid = min(max(n//3,50),1000)
     dim_unidade = pd.DataFrame({
@@ -36,8 +36,8 @@ def gerar_condominio(n, start, end):
         "bloco":            [f"Bloco {random.choice('ABCDEFGH')}" for _ in range(n_unid)],
         "numero":           rng.integers(1, 300, n_unid),
         "tipo":             random.choices(["Apartamento","Casa","Sala Comercial","Loja"], k=n_unid),
-        "proprietario":     [fake.name() for _ in range(n_unid)],
-        "morador":          [fake.name() for _ in range(n_unid)],
+        "proprietario":     fake_pool(fake, "name", n_unid),
+        "morador":          fake_pool(fake, "name", n_unid),
         "area_m2":          rng.uniform(30, 400, n_unid).round(0),
         "ocupado":          random.choices([True,False], weights=[85,15], k=n_unid),
     })

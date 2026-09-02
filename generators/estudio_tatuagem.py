@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,7 +17,7 @@ def gerar_estudio_tatuagem(n, start, end):
     n_tatuador = min(max(n // 100, 4), 300)
     dim_tatuador = pd.DataFrame({
         "id_tatuador":       new_ids(n_tatuador),
-        "nome":              [fake.name() for _ in range(n_tatuador)],
+        "nome":              fake_pool(fake, "name", n_tatuador),
         "estilo_principal":  random.choices(ESTILOS, k=n_tatuador),
         "anos_experiencia":  rng.integers(1, 25, n_tatuador),
         "avaliacao_media":   rng.uniform(3.8, 5.0, n_tatuador).round(1),
@@ -26,7 +26,7 @@ def gerar_estudio_tatuagem(n, start, end):
     n_cliente = min(max(n // 3, 150), 30000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.name() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "name", n_cliente),
         "idade":             rng.integers(18, 70, n_cliente),
         "primeira_tatuagem": random.choices([True, False], weights=[35, 65], k=n_cliente),
     })

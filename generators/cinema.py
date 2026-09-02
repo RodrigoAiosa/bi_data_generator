@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,7 +19,7 @@ def gerar_cinema(n, start, end):
     n_filme = min(max(n // 20, 20), 600)
     dim_filme = pd.DataFrame({
         "id_filme":          new_ids(n_filme),
-        "titulo":            [fake.catch_phrase() for _ in range(n_filme)],
+        "titulo":            fake_pool(fake, "catch_phrase", n_filme),
         "genero":            random.choices(GENEROS, k=n_filme),
         "duracao_min":       rng.integers(80, 180, n_filme),
         "classificacao":     random.choices(CLASSIFICACOES, k=n_filme),

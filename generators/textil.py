@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -39,9 +39,9 @@ def gerar_textil(n, start, end):
     n_cli = min(max(n//6,30),200)
     dim_cliente = pd.DataFrame({
         "id_cliente":       new_ids(n_cli),
-        "nome":             [fake.company() for _ in range(n_cli)],
+        "nome":             fake_pool(fake, "company", n_cli),
         "tipo":             random.choices(CLIENTES_TIPO, k=n_cli),
-        "uf":               [fake.state_abbr() for _ in range(n_cli)],
+        "uf":               fake_pool(fake, "state_abbr", n_cli),
         "exporta":          random.choices([True,False], weights=[25,75], k=n_cli),
     })
     vol = rng.uniform(100, 50_000, n).round(0)

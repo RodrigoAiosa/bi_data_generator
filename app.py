@@ -7,6 +7,7 @@ Execute com:
 
 import random
 import time
+import uuid
 
 import numpy as np
 import pandas as pd
@@ -231,6 +232,7 @@ def _injetar_anomalias(tabelas: dict[str, pd.DataFrame]) -> tuple[dict[str, pd.D
 # mudaram, evitando regenerar do zero ao alternar de aba ou ligar/desligar
 # anomalia/deriva.
 from ui.cache_utils import gerar_bruto_com_cache as _gerar_bruto_com_cache
+from ui.cache_utils import cache_por_chave as _cache_por_chave
 
 
 # ── Barra de progresso ────────────────────────────────────────────────────────
@@ -311,7 +313,7 @@ def _formatar_gabarito(gabarito: list[dict], lang: str) -> str:
 
 # ── Render resultado com dicionário ──────────────────────────────────────────
 
-def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: bool, gabarito: list[dict]) -> None:
+def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: bool, gabarito: list[dict], geracao_id: str) -> None:
     lang = _get_lang()
 
     if anomalia:
@@ -334,13 +336,19 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: 
     # mesma base, inclui ele também no ZIP principal: a tabela em si
     # (vira um CSV a mais) e o gabarito causal como arquivo de texto.
     tabelas_para_zip = tabelas
+    causal_id = st.session_state.get("causal_id")
     if "causal_df" in st.session_state and "causal_gabarito" in st.session_state:
         tabelas_para_zip = dict(tabelas)
         nome_causal_limpo = nome.replace(" ", "_").replace("&", "e").replace("/", "_")
         tabelas_para_zip[f"fato_{nome_causal_limpo}_causais"] = st.session_state["causal_df"]
         extra_files["gabarito_causal.txt"] = montar_gabarito_causal_txt(st.session_state["causal_gabarito"])
+    else:
+        causal_id = None
 
-    render_resultado(nome, tabelas_para_zip, extra_files=extra_files)
+    # Chave estável do resultado atual: muda só quando uma nova geração (ou um
+    # novo cenário causal em cima dela) realmente acontece, não a cada rerun.
+    resultado_chave = (geracao_id, causal_id)
+    render_resultado(nome, tabelas_para_zip, extra_files=extra_files, resultado_chave=resultado_chave)
 
     # ── Gabarito (spoiler, só aparece se houver anomalia/drift ativos) ──────
     if gabarito:
@@ -360,7 +368,9 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: 
 
     st.markdown(f"**{label}**: {hint}")
 
-    dict_bytes    = gerar_dicionario(nome, tabelas)
+    dict_bytes    = _cache_por_chave(
+        "_dicionario_cache", ("dicionario", geracao_id), lambda: gerar_dicionario(nome, tabelas)
+    )
     dict_filename = f"Dicionario_{nome.replace(' ', '_')}.zip"
 
     st.download_button(
@@ -451,11 +461,18 @@ def main() -> None:
                 "anomalia": anomalia,
                 "drift": drift,
                 "gabarito": gabarito,
+                # Identidade estável desta geração: usada para cachear medidas
+                # DAX, TMDL, dicionário e o .zip de download entre reruns do
+                # Streamlit (qualquer widget da página dispara um rerun).
+                "geracao_id": uuid.uuid4().hex,
             }
 
         if "ultima_geracao" in st.session_state:
             dados = st.session_state["ultima_geracao"]
-            _render_resultado_completo(dados["nome"], dados["tabelas"], dados["anomalia"], dados["drift"], dados["gabarito"])
+            _render_resultado_completo(
+                dados["nome"], dados["tabelas"], dados["anomalia"], dados["drift"],
+                dados["gabarito"], dados["geracao_id"],
+            )
         else:
             render_estado_inicial()
 

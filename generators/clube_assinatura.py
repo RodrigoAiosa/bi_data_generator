@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -25,8 +25,8 @@ def gerar_clube_assinatura(n, start, end):
     n_assinante = min(max(n // 3, 200), 30000)
     dim_assinante = pd.DataFrame({
         "id_assinante":      new_ids(n_assinante),
-        "nome":              [fake.name() for _ in range(n_assinante)],
-        "uf":                [fake.state_abbr() for _ in range(n_assinante)],
+        "nome":              fake_pool(fake, "name", n_assinante),
+        "uf":                fake_pool(fake, "state_abbr", n_assinante),
     })
 
     status_assinatura = random.choices(STATUS_ASSINATURA, weights=[65, 20, 8, 7], k=n)

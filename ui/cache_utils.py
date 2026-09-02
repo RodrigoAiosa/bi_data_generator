@@ -13,7 +13,7 @@ app.py importa de ui/sidebar.py (não o contrário).
 
 import streamlit as st
 
-from config import SETORES
+from config import obter_gerador
 
 
 def _chave_cache(setor: str, n_linhas: int, data_inicio, data_fim) -> tuple:
@@ -36,7 +36,28 @@ def gerar_bruto_com_cache(setor: str, n_linhas: int, data_inicio, data_fim) -> d
     if cache is not None and cache["chave"] == chave:
         return cache["tabelas"]
 
-    fn = SETORES[setor]
+    fn = obter_gerador(setor)
     tabelas = fn(n_linhas, data_inicio, data_fim)
     st.session_state["_raw_cache"] = {"chave": chave, "tabelas": tabelas}
     return tabelas
+
+
+def cache_por_chave(slot: str, chave: tuple, compute_fn):
+    """
+    Cache genérico de 1 slot em `st.session_state`: reaproveita o valor
+    de `compute_fn()` enquanto `chave` não mudar.
+
+    Qualquer interação em QUALQUER widget da página dispara um rerun
+    completo do script Streamlit — então, sem isso, medidas DAX, TMDL e o
+    .zip de download eram recalculados do zero a cada rerun mesmo quando o
+    resultado exibido não tinha mudado (ex.: digitar em outra aba). Como
+    `compute_fn` só é chamada em caso de cache miss, o `to_zip` de uma
+    tabela fato de 100k linhas deixa de rodar a cada tecla digitada em
+    outro lugar da página.
+    """
+    cache = st.session_state.get(slot)
+    if cache is not None and cache["chave"] == chave:
+        return cache["valor"]
+    valor = compute_fn()
+    st.session_state[slot] = {"chave": chave, "valor": valor}
+    return valor

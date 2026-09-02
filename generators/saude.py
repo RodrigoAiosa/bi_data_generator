@@ -6,7 +6,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -49,8 +49,8 @@ def gerar_saude(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_paciente = pd.DataFrame({
         "id_paciente": new_ids(n_pacientes),
-        "nome":        [fake.name() for _ in range(n_pacientes)],
-        "cpf":         [fake.cpf()  for _ in range(n_pacientes)],
+        "nome":        fake_pool(fake, "name", n_pacientes),
+        "cpf":         fake_pool(fake, "cpf", n_pacientes),
         "sexo":        random.choices(["M","F"], k=n_pacientes),
         "idade":       rng.integers(0, 100, n_pacientes),
         "convenio":    random.choices(["SUS","Unimed","Bradesco Saúde","Amil","Particular"], k=n_pacientes),

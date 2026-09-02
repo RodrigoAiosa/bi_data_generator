@@ -6,7 +6,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,7 +21,7 @@ def gerar_logistica(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     dim_transportadora = pd.DataFrame({
         "id_transportadora": new_ids(n_trans),
         "nome":              [f"Transportadora {fake.last_name()}" for _ in range(n_trans)],
-        "cnpj":              [fake.cnpj() for _ in range(n_trans)],
+        "cnpj":              fake_pool(fake, "cnpj", n_trans),
         "tipo":              random.choices(["Rodoviário","Aéreo","Marítimo","Expresso"], k=n_trans),
         "uf_sede":           random.choices(UFS, k=n_trans),
     })
@@ -36,8 +36,8 @@ def gerar_logistica(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_cliente = pd.DataFrame({
         "id_cliente": new_ids(n_clientes),
-        "empresa":    [fake.company() for _ in range(n_clientes)],
-        "cnpj":       [fake.cnpj()   for _ in range(n_clientes)],
+        "empresa":    fake_pool(fake, "company", n_clientes),
+        "cnpj":       fake_pool(fake, "cnpj", n_clientes),
         "segmento":   random.choices(["Varejo","Indústria","E-commerce","Atacado"], k=n_clientes),
         "uf":         random.choices(UFS, k=n_clientes),
     })

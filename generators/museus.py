@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -29,7 +29,7 @@ def gerar_museus(n, start, end):
         "id_visitante":      new_ids(n_visitante),
         "faixa_etaria":      random.choices(FAIXAS_ETARIAS, weights=[15, 30, 40, 15], k=n_visitante),
         "tipo_ingresso":     random.choices(TIPOS_INGRESSO, weights=[45, 30, 15, 10], k=n_visitante),
-        "uf":                [fake.state_abbr() for _ in range(n_visitante)],
+        "uf":                fake_pool(fake, "state_abbr", n_visitante),
     })
 
     fato_visita = pd.DataFrame({

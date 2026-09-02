@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,8 +17,8 @@ def gerar_seguranca_eletronica(n, start, end):
     n_central = min(max(n // 300, 3), 40)
     dim_central = pd.DataFrame({
         "id_central":        new_ids(n_central),
-        "cidade":            [fake.city() for _ in range(n_central)],
-        "uf":                [fake.state_abbr() for _ in range(n_central)],
+        "cidade":            fake_pool(fake, "city", n_central),
+        "uf":                fake_pool(fake, "state_abbr", n_central),
     })
 
     n_cliente = min(max(n // 4, 200), 20000)

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,16 +16,16 @@ def gerar_manutencao_elevadores(n, start, end):
     n_tecnico = min(max(n // 60, 10), 1000)
     dim_tecnico = pd.DataFrame({
         "id_tecnico":        new_ids(n_tecnico),
-        "nome":              [fake.name() for _ in range(n_tecnico)],
-        "regiao":            [fake.state_abbr() for _ in range(n_tecnico)],
+        "nome":              fake_pool(fake, "name", n_tecnico),
+        "regiao":            fake_pool(fake, "state_abbr", n_tecnico),
     })
 
     n_elevador = min(max(n // 5, 200), 20000)
     dim_elevador = pd.DataFrame({
         "id_elevador":       new_ids(n_elevador),
-        "predio":            [fake.street_name() for _ in range(n_elevador)],
-        "cidade":            [fake.city() for _ in range(n_elevador)],
-        "uf":                [fake.state_abbr() for _ in range(n_elevador)],
+        "predio":            fake_pool(fake, "street_name", n_elevador),
+        "cidade":            fake_pool(fake, "city", n_elevador),
+        "uf":                fake_pool(fake, "state_abbr", n_elevador),
         "modelo":            random.choices(MODELOS, weights=[70, 15, 10, 5], k=n_elevador),
     })
 

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -15,15 +15,15 @@ def gerar_autoescola(n, start, end):
     n_unidade = min(max(n // 200, 3), 40)
     dim_unidade = pd.DataFrame({
         "id_unidade":        new_ids(n_unidade),
-        "cidade":            [fake.city() for _ in range(n_unidade)],
-        "uf":                [fake.state_abbr() for _ in range(n_unidade)],
+        "cidade":            fake_pool(fake, "city", n_unidade),
+        "uf":                fake_pool(fake, "state_abbr", n_unidade),
     })
 
     n_instrutor = min(max(n // 40, 10), 800)
     dim_instrutor = pd.DataFrame({
         "id_instrutor":      new_ids(n_instrutor),
         "id_unidade":        random.choices(dim_unidade["id_unidade"].tolist(), k=n_instrutor),
-        "nome":              [fake.name() for _ in range(n_instrutor)],
+        "nome":              fake_pool(fake, "name", n_instrutor),
         "categoria_habilitacao": random.choices(CATEGORIAS_CNH, k=n_instrutor),
     })
 
@@ -32,7 +32,7 @@ def gerar_autoescola(n, start, end):
         "id_data":           rand_dates(start, end, n),
         "id_instrutor":      random.choices(dim_instrutor["id_instrutor"].tolist(), k=n),
         "tipo_aula":         random.choices(["Teórica", "Prática"], weights=[30, 70], k=n),
-        "aluno":             [fake.name() for _ in range(n)],
+        "aluno":             fake_pool(fake, "name", n),
         "duracao_min":       random.choices([50, 60, 90], k=n),
         "valor":             rng.uniform(60, 220, n).round(2),
     })

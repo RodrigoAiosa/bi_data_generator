@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,7 +16,7 @@ def gerar_artesanato(n, start, end):
     n_artesao = min(max(n // 60, 8), 500)
     dim_artesao = pd.DataFrame({
         "id_artesao":        new_ids(n_artesao),
-        "nome":              [fake.name() for _ in range(n_artesao)],
+        "nome":              fake_pool(fake, "name", n_artesao),
         "especialidade":     random.choices(CATEGORIAS, k=n_artesao),
         "anos_atividade":    rng.integers(1, 40, n_artesao),
     })

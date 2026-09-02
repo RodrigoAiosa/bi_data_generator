@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,7 +16,7 @@ def gerar_pedagio(n, start, end):
     n_concessionaria = min(max(n // 500, 3), 25)
     dim_concessionaria = pd.DataFrame({
         "id_concessionaria": new_ids(n_concessionaria),
-        "nome_concessionaria": [fake.company() for _ in range(n_concessionaria)],
+        "nome_concessionaria": fake_pool(fake, "company", n_concessionaria),
         "rodovia":           [f"BR-{rng.integers(10, 500)}" for _ in range(n_concessionaria)],
     })
 
@@ -25,7 +25,7 @@ def gerar_pedagio(n, start, end):
         "id_praca":          new_ids(n_praca),
         "id_concessionaria": random.choices(dim_concessionaria["id_concessionaria"].tolist(), k=n_praca),
         "km":                rng.integers(1, 800, n_praca),
-        "uf":                [fake.state_abbr() for _ in range(n_praca)],
+        "uf":                fake_pool(fake, "state_abbr", n_praca),
     })
 
     fato_passagem = pd.DataFrame({

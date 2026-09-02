@@ -62,6 +62,25 @@ def dcalendario(start: date, end: date) -> pd.DataFrame:
     return df
 
 
+# ── Faker com pool (reduz custo de gerar dimensões grandes) ──────────────────
+def fake_pool(fake, attr: str, n: int, pool_size: int = 500):
+    """
+    Gera n valores de `fake.<attr>()`, reaproveitando um pool menor via
+    amostragem quando n é grande.
+
+    Faker é Python puro e relativamente lento (milhares de chamadas/s, não
+    mais que isso); chamar fake.nome()/fake.cpf()/fake.email() etc. uma vez
+    por linha ficava lento nas dimensões maiores (ex.: até 5000 clientes, ou
+    até n linhas inteiras nos setores sem limite de dimensão). Como os dados
+    são sintéticos, repetir nome/cidade/e-mail entre linhas de uma dimensão
+    não tem custo funcional — só precisa "parecer" dados reais.
+    """
+    if n <= pool_size:
+        return [getattr(fake, attr)() for _ in range(n)]
+    pool = [getattr(fake, attr)() for _ in range(pool_size)]
+    return [pool[i] for i in rng.integers(0, pool_size, n)]
+
+
 # ── Faker locale dinâmico ────────────────────────────────────────────────────
 def get_faker():
     """Retorna instância do Faker no locale do idioma atual."""

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,9 +21,9 @@ def gerar_homecare(n, start, end):
     n_paciente = min(max(n // 8, 100), 5000)
     dim_paciente = pd.DataFrame({
         "id_paciente":       new_ids(n_paciente),
-        "nome":              [fake.name() for _ in range(n_paciente)],
+        "nome":              fake_pool(fake, "name", n_paciente),
         "idade":             rng.integers(0, 100, n_paciente),
-        "uf":                [fake.state_abbr() for _ in range(n_paciente)],
+        "uf":                fake_pool(fake, "state_abbr", n_paciente),
         "plano_saude":       random.choices(PLANOS_SAUDE, weights=[15, 20, 18, 15, 20, 12], k=n_paciente),
         "grau_dependencia":  random.choices(GRAU_DEPENDENCIA, weights=[35, 40, 25], k=n_paciente),
     })
@@ -31,7 +31,7 @@ def gerar_homecare(n, start, end):
     n_profissional = min(max(n // 60, 15), 400)
     dim_profissional = pd.DataFrame({
         "id_profissional":   new_ids(n_profissional),
-        "nome":              [fake.name() for _ in range(n_profissional)],
+        "nome":              fake_pool(fake, "name", n_profissional),
         "funcao":            random.choices(FUNCOES, weights=[20, 20, 20, 25, 8, 7], k=n_profissional),
         "turno":             random.choices(TURNOS, k=n_profissional),
     })

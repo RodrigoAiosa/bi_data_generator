@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,8 +16,8 @@ def gerar_clube_social(n, start, end):
     n_clube = min(max(n // 300, 3), 40)
     dim_clube = pd.DataFrame({
         "id_clube":          new_ids(n_clube),
-        "cidade":            [fake.city() for _ in range(n_clube)],
-        "uf":                [fake.state_abbr() for _ in range(n_clube)],
+        "cidade":            fake_pool(fake, "city", n_clube),
+        "uf":                fake_pool(fake, "state_abbr", n_clube),
         "num_quadras":       rng.integers(2, 20, n_clube),
     })
 
@@ -25,7 +25,7 @@ def gerar_clube_social(n, start, end):
     dim_socio = pd.DataFrame({
         "id_socio":          new_ids(n_socio),
         "id_clube":          random.choices(dim_clube["id_clube"].tolist(), k=n_socio),
-        "nome":              [fake.name() for _ in range(n_socio)],
+        "nome":              fake_pool(fake, "name", n_socio),
         "categoria_plano":   random.choices(PLANOS, weights=[35, 50, 15], k=n_socio),
     })
 

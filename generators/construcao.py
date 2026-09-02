@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -25,7 +25,7 @@ def gerar_construcao(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "nome":       [f"Obra {fake.word().capitalize()} {i}" for i in range(1, n_projetos + 1)],
         "tipo":       random.choices(TIPOS_PROJETO, k=n_projetos),
         "status":     random.choices(STATUS_PROJETO, k=n_projetos),
-        "cidade":     [fake.city() for _ in range(n_projetos)],
+        "cidade":     fake_pool(fake, "city", n_projetos),
         "uf":         random.choices(["SP", "RJ", "MG", "RS", "PR", "SC", "BA", "CE", "PE", "GO"], k=n_projetos),
         "orcamento_previsto": rng.uniform(500000, 50000000, n_projetos).round(2)
     })
@@ -40,15 +40,15 @@ def gerar_construcao(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_fornecedor = pd.DataFrame({
         "id_fornecedor": new_ids(n_fornecedores),
-        "nome":          [fake.company() for _ in range(n_fornecedores)],
-        "cnpj":          [fake.cnpj() for _ in range(n_fornecedores)],
-        "cidade":        [fake.city() for _ in range(n_fornecedores)]
+        "nome":          fake_pool(fake, "company", n_fornecedores),
+        "cnpj":          fake_pool(fake, "cnpj", n_fornecedores),
+        "cidade":        fake_pool(fake, "city", n_fornecedores)
     })
 
     dim_equipe = pd.DataFrame({
         "id_equipe": new_ids(n_equipes),
         "nome":      [f"Equipe {fake.first_name()}" for _ in range(n_equipes)],
-        "lider":     [fake.name() for _ in range(n_equipes)],
+        "lider":     fake_pool(fake, "name", n_equipes),
         "especialidade": random.choices(["Alvenaria", "Elétrica", "Pintura", "Carpintaria", "Hidráulica"], k=n_equipes)
     })
 

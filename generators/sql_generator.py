@@ -501,22 +501,15 @@ def gerar_sql_insert(
         for batch_start in range(0, len(tdf), batch_size):
             batch = tdf.iloc[batch_start : batch_start + batch_size]
 
-            if dialect in ("postgresql", "mysql"):
-                # Multi-row INSERT
-                lines.append(f"INSERT INTO {table_ref} ({cols_str}) VALUES")
-                value_rows = []
-                for _, row in batch.iterrows():
-                    vals = ", ".join(_format_value(v, dialect) for v in row)
-                    value_rows.append(f"    ({vals})")
-                lines.append(",\n".join(value_rows) + ";")
-            else:
-                # SQL Server: INSERT com VALUES multi-row (suportado desde SQL 2008)
-                lines.append(f"INSERT INTO {table_ref} ({cols_str}) VALUES")
-                value_rows = []
-                for _, row in batch.iterrows():
-                    vals = ", ".join(_format_value(v, dialect) for v in row)
-                    value_rows.append(f"    ({vals})")
-                lines.append(",\n".join(value_rows) + ";")
+            # itertuples (não iterrows): evita reconstruir uma Series por
+            # linha e evita o upcast de dtype por linha do iterrows (que
+            # podia virar int em float quando a tabela tinha colunas mistas).
+            lines.append(f"INSERT INTO {table_ref} ({cols_str}) VALUES")
+            value_rows = [
+                "    (" + ", ".join(_format_value(v, dialect) for v in row) + ")"
+                for row in batch.itertuples(index=False, name=None)
+            ]
+            lines.append(",\n".join(value_rows) + ";")
 
             lines.append("")
 

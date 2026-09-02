@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,8 +17,8 @@ def gerar_incorporadora(n, start, end):
     dim_empreendimento = pd.DataFrame({
         "id_empreendimento": new_ids(n_empreendimento),
         "nome_empreendimento": [f"Residencial {fake.last_name()}" for _ in range(n_empreendimento)],
-        "cidade":            [fake.city() for _ in range(n_empreendimento)],
-        "uf":                [fake.state_abbr() for _ in range(n_empreendimento)],
+        "cidade":            fake_pool(fake, "city", n_empreendimento),
+        "uf":                fake_pool(fake, "state_abbr", n_empreendimento),
         "num_unidades":      rng.integers(20, 400, n_empreendimento),
     })
 
@@ -34,7 +34,7 @@ def gerar_incorporadora(n, start, end):
         "id_venda":          new_ids(n),
         "id_data":           rand_dates(start, end, n),
         "id_unidade":        random.choices(dim_unidade["id_unidade"].tolist(), k=n),
-        "comprador":         [fake.name() for _ in range(n)],
+        "comprador":         fake_pool(fake, "name", n),
         "valor_venda":       rng.uniform(120000, 3500000, n).round(2),
         "forma_pagamento":   random.choices(FORMAS_PAGAMENTO, weights=[15, 65, 20], k=n),
     })

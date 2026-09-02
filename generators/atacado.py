@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,8 +16,8 @@ def gerar_atacado(n, start, end):
     n_loja = min(max(n // 300, 5), 60)
     dim_loja = pd.DataFrame({
         "id_loja":           new_ids(n_loja),
-        "cidade":            [fake.city() for _ in range(n_loja)],
-        "uf":                [fake.state_abbr() for _ in range(n_loja)],
+        "cidade":            fake_pool(fake, "city", n_loja),
+        "uf":                fake_pool(fake, "state_abbr", n_loja),
         "tipo_loja":         random.choices(["Atacarejo", "Distribuidor B2B"], weights=[65, 35], k=n_loja),
     })
 
@@ -34,7 +34,7 @@ def gerar_atacado(n, start, end):
         "id_data":           rand_dates(start, end, n),
         "id_loja":           random.choices(dim_loja["id_loja"].tolist(), k=n),
         "id_produto":        random.choices(dim_produto["id_produto"].tolist(), k=n),
-        "cnpj_cliente":      [fake.cnpj() for _ in range(n)],
+        "cnpj_cliente":      fake_pool(fake, "cnpj", n),
         "quantidade":        rng.integers(1, 200, n),
         "valor_total":       rng.uniform(20, 12000, n).round(2),
     })

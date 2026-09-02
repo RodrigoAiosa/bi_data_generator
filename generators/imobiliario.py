@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -25,9 +25,9 @@ def gerar_imobiliario(n: int, start: date, end: date) -> dict[str, pd.DataFrame]
     
     dim_cliente = pd.DataFrame({
         "id_cliente": new_ids(n_clientes),
-        "nome":       [fake.name() for _ in range(n_clientes)],
-        "cpf":        [fake.cpf() for _ in range(n_clientes)],
-        "telefone":   [fake.phone_number() for _ in range(n_clientes)],
+        "nome":       fake_pool(fake, "name", n_clientes),
+        "cpf":        fake_pool(fake, "cpf", n_clientes),
+        "telefone":   fake_pool(fake, "phone_number", n_clientes),
         "tipo":       random.choices(["Comprador", "Inquilino", "Investidor"], k=n_clientes)
     })
 
@@ -50,7 +50,7 @@ def gerar_imobiliario(n: int, start: date, end: date) -> dict[str, pd.DataFrame]
 
     dim_corretor = pd.DataFrame({
         "id_corretor": new_ids(n_corretores),
-        "nome":        [fake.name() for _ in range(n_corretores)],
+        "nome":        fake_pool(fake, "name", n_corretores),
         "creci":       [f"CRECI-{rng.integers(10000, 99999)}" for _ in range(n_corretores)],
         "comissao_pct": rng.uniform(0.02, 0.06, n_corretores).round(3)
     })

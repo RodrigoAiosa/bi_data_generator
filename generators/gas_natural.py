@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -15,8 +15,8 @@ def gerar_gas_natural(n, start, end):
     n_distribuidora = min(max(n // 400, 3), 30)
     dim_distribuidora = pd.DataFrame({
         "id_distribuidora":  new_ids(n_distribuidora),
-        "cidade":            [fake.city() for _ in range(n_distribuidora)],
-        "uf":                [fake.state_abbr() for _ in range(n_distribuidora)],
+        "cidade":            fake_pool(fake, "city", n_distribuidora),
+        "uf":                fake_pool(fake, "state_abbr", n_distribuidora),
     })
 
     n_ligacao = min(max(n // 3, 300), 25000)
@@ -24,7 +24,7 @@ def gerar_gas_natural(n, start, end):
         "id_ligacao":        new_ids(n_ligacao),
         "id_distribuidora":  random.choices(dim_distribuidora["id_distribuidora"].tolist(), k=n_ligacao),
         "tipo_cliente":      random.choices(TIPOS_CLIENTE, weights=[75, 20, 5], k=n_ligacao),
-        "endereco":          [fake.street_address() for _ in range(n_ligacao)],
+        "endereco":          fake_pool(fake, "street_address", n_ligacao),
     })
 
     fato_consumo = pd.DataFrame({

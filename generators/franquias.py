@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,7 +16,7 @@ def gerar_franquias(n, start, end):
     n_marc = 10
     dim_marca = pd.DataFrame({
         "id_marca":         new_ids(n_marc),
-        "nome":             [fake.company() for _ in range(n_marc)],
+        "nome":             fake_pool(fake, "company", n_marc),
         "segmento":         random.choices(SEGMENTOS, k=n_marc),
         "taxa_inicial":     rng.uniform(30_000, 500_000, n_marc).round(2),
         "royalty_pct":      rng.uniform(3, 10, n_marc).round(1),
@@ -28,10 +28,10 @@ def gerar_franquias(n, start, end):
     dim_unidade = pd.DataFrame({
         "id_unidade":       new_ids(n_unid),
         "id_marca":         random.choices(dim_marca["id_marca"].tolist(), k=n_unid),
-        "franqueado":       [fake.name() for _ in range(n_unid)],
-        "cnpj":             [fake.cnpj() for _ in range(n_unid)],
-        "uf":               [fake.state_abbr() for _ in range(n_unid)],
-        "cidade":           [fake.city() for _ in range(n_unid)],
+        "franqueado":       fake_pool(fake, "name", n_unid),
+        "cnpj":             fake_pool(fake, "cnpj", n_unid),
+        "uf":               fake_pool(fake, "state_abbr", n_unid),
+        "cidade":           fake_pool(fake, "city", n_unid),
         "status":           random.choices(STATUS_UNID, weights=[80,8,5,5,2], k=n_unid),
         "data_abertura":    rand_dates(date(2005,1,1), end, n_unid),
         "investimento_ini": rng.uniform(80_000, 600_000, n_unid).round(2),

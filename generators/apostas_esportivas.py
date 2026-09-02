@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,9 +21,9 @@ def gerar_apostas_esportivas(n, start, end):
     n_jogador = min(max(n // 6, 200), 20000)
     dim_jogador = pd.DataFrame({
         "id_jogador":        new_ids(n_jogador),
-        "nome":              [fake.name() for _ in range(n_jogador)],
+        "nome":              fake_pool(fake, "name", n_jogador),
         "idade":             rng.integers(18, 75, n_jogador),
-        "uf":                [fake.state_abbr() for _ in range(n_jogador)],
+        "uf":                fake_pool(fake, "state_abbr", n_jogador),
         "nivel_vip":         random.choices(NIVEIS_VIP, weights=[45, 25, 15, 10, 5], k=n_jogador),
     })
 

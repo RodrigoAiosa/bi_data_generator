@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -32,7 +32,7 @@ def gerar_juridico(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_advogado = pd.DataFrame({
         "id_advogado":   new_ids(n_advogados),
-        "nome":          [fake.name() for _ in range(n_advogados)],
+        "nome":          fake_pool(fake, "name", n_advogados),
         "oab":           [f"{fake.state_abbr()}{fake.random_int(10000, 999999)}" for _ in range(n_advogados)],
         "especialidade": random.choices(AREAS_DIREITO, k=n_advogados),
         "senioridade":   random.choices(["Júnior", "Pleno", "Sênior", "Sócio"], weights=[25, 30, 30, 15], k=n_advogados),
@@ -45,7 +45,7 @@ def gerar_juridico(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "nome":          [fake.company() if random.random() > 0.4 else fake.name() for _ in range(n_clientes)],
         "tipo":          random.choices(TIPOS_CLIENTE, k=n_clientes),
         "cpf_cnpj":      [fake.cnpj() if random.random() > 0.4 else fake.cpf() for _ in range(n_clientes)],
-        "uf":            [fake.state_abbr() for _ in range(n_clientes)],
+        "uf":            fake_pool(fake, "state_abbr", n_clientes),
         "segmento":      random.choices(["Varejo", "Indústria", "Serviços", "Agro", "Saúde", "Financeiro", "Outro"], k=n_clientes),
         "canal_entrada": random.choices(["Indicação", "Marketing Digital", "Parceria", "Prospecção Ativa"], k=n_clientes),
     })
@@ -54,7 +54,7 @@ def gerar_juridico(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "id_tribunal": new_ids(n_tribunais),
         "sigla":       TRIBUNAIS,
         "tipo":        random.choices(["Estadual", "Federal", "Superior", "Trabalhista", "Administrativo"], k=n_tribunais),
-        "uf":          [fake.state_abbr() for _ in range(n_tribunais)],
+        "uf":          fake_pool(fake, "state_abbr", n_tribunais),
         "instancia":   random.choices(["1ª Instância", "2ª Instância", "Superior"], k=n_tribunais),
     })
 

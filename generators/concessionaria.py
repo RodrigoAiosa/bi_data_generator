@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -31,7 +31,7 @@ def gerar_concessionaria(n, start, end):
     n_vendedor = min(max(n // 100, 8), 150)
     dim_vendedor = pd.DataFrame({
         "id_vendedor":       new_ids(n_vendedor),
-        "nome":              [fake.name() for _ in range(n_vendedor)],
+        "nome":              fake_pool(fake, "name", n_vendedor),
         "filial":            random.choices([f"Filial {c}" for c in ["Centro","Norte","Sul","Shopping","Zona Leste"]], k=n_vendedor),
         "meta_mensal":       rng.integers(4, 25, n_vendedor),
     })

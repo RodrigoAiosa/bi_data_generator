@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,8 +21,8 @@ def gerar_circo(n, start, end):
     dim_cidade_turne = pd.DataFrame({
         "id_cidade_turne":   new_ids(n_cidade_turne),
         "id_trupe":          random.choices(dim_trupe["id_trupe"].tolist(), k=n_cidade_turne),
-        "cidade":            [fake.city() for _ in range(n_cidade_turne)],
-        "uf":                [fake.state_abbr() for _ in range(n_cidade_turne)],
+        "cidade":            fake_pool(fake, "city", n_cidade_turne),
+        "uf":                fake_pool(fake, "state_abbr", n_cidade_turne),
     })
 
     fato_sessao = pd.DataFrame({

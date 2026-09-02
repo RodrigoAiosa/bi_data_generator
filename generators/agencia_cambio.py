@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,8 +19,8 @@ def gerar_agencia_cambio(n, start, end):
     dim_agencia = pd.DataFrame({
         "id_agencia":        new_ids(n_agencia),
         "nome":              [f"Casa de Câmbio {fake.last_name()}" for _ in range(n_agencia)],
-        "cidade":            [fake.city() for _ in range(n_agencia)],
-        "uf":                [fake.state_abbr() for _ in range(n_agencia)],
+        "cidade":            fake_pool(fake, "city", n_agencia),
+        "uf":                fake_pool(fake, "state_abbr", n_agencia),
         "tipo":              random.choices(["Loja Física", "Aeroporto", "Digital"], weights=[55, 20, 25], k=n_agencia),
     })
 

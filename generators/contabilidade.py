@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -20,7 +20,7 @@ def gerar_contabilidade(n, start, end):
     n_contador = min(max(n // 80, 5), 60)
     dim_contador = pd.DataFrame({
         "id_contador":       new_ids(n_contador),
-        "nome":              [fake.name() for _ in range(n_contador)],
+        "nome":              fake_pool(fake, "name", n_contador),
         "especialidade":     random.choices(ESPECIALIDADES, k=n_contador),
         "anos_experiencia":  rng.integers(1, 30, n_contador),
     })
@@ -28,7 +28,7 @@ def gerar_contabilidade(n, start, end):
     n_cliente = min(max(n // 8, 40), 3000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "razao_social":      [fake.company() for _ in range(n_cliente)],
+        "razao_social":      fake_pool(fake, "company", n_cliente),
         "regime_tributario": random.choices(REGIMES, weights=[55, 25, 10, 10], k=n_cliente),
         "setor_atividade":   random.choices(SETORES_CLIENTE, k=n_cliente),
         "ativo":             random.choices([True, False], weights=[88, 12], k=n_cliente),

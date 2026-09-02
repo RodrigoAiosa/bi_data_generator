@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,7 +17,7 @@ def gerar_seguranca_trabalho(n, start, end):
     n_empresa_cliente = min(max(n // 100, 8), 800)
     dim_empresa_cliente = pd.DataFrame({
         "id_empresa_cliente": new_ids(n_empresa_cliente),
-        "nome":              [fake.company() for _ in range(n_empresa_cliente)],
+        "nome":              fake_pool(fake, "company", n_empresa_cliente),
         "setor":             random.choices(["Indústria", "Construção", "Serviços", "Logística"], k=n_empresa_cliente),
     })
 
@@ -25,7 +25,7 @@ def gerar_seguranca_trabalho(n, start, end):
     dim_funcionario = pd.DataFrame({
         "id_funcionario":    new_ids(n_funcionario),
         "id_empresa_cliente": random.choices(dim_empresa_cliente["id_empresa_cliente"].tolist(), k=n_funcionario),
-        "cargo":             [fake.job() for _ in range(n_funcionario)],
+        "cargo":             fake_pool(fake, "job", n_funcionario),
     })
 
     fato_exame = pd.DataFrame({

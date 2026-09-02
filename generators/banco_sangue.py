@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,14 +16,14 @@ def gerar_banco_sangue(n, start, end):
     n_unidade = min(max(n // 200, 5), 50)
     dim_unidade = pd.DataFrame({
         "id_unidade":        new_ids(n_unidade),
-        "cidade":            [fake.city() for _ in range(n_unidade)],
-        "uf":                [fake.state_abbr() for _ in range(n_unidade)],
+        "cidade":            fake_pool(fake, "city", n_unidade),
+        "uf":                fake_pool(fake, "state_abbr", n_unidade),
     })
 
     n_doador = min(max(n // 3, 200), 15000)
     dim_doador = pd.DataFrame({
         "id_doador":         new_ids(n_doador),
-        "nome":              [fake.name() for _ in range(n_doador)],
+        "nome":              fake_pool(fake, "name", n_doador),
         "tipo_sanguineo":    random.choices(TIPOS_SANGUINEOS, weights=PESOS_TIPO, k=n_doador),
         "idade":             rng.integers(16, 69, n_doador),
     })

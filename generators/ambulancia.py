@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,7 +19,7 @@ def gerar_ambulancia(n, start, end):
     n_ambulancia = min(max(n // 80, 5), 120)
     dim_ambulancia = pd.DataFrame({
         "id_ambulancia":     new_ids(n_ambulancia),
-        "placa":             [fake.license_plate() for _ in range(n_ambulancia)],
+        "placa":             fake_pool(fake, "license_plate", n_ambulancia),
         "tipo":              random.choices(TIPOS_AMBULANCIA, weights=[45, 30, 20, 5], k=n_ambulancia),
         "ano_fabricacao":    rng.integers(2010, 2025, n_ambulancia),
         "status":            random.choices(["Ativa", "Em Manutenção", "Baixada"], weights=[85, 12, 3], k=n_ambulancia),
@@ -28,7 +28,7 @@ def gerar_ambulancia(n, start, end):
     n_paramedico = min(max(n // 50, 8), 300)
     dim_paramedico = pd.DataFrame({
         "id_paramedico":     new_ids(n_paramedico),
-        "nome":              [fake.name() for _ in range(n_paramedico)],
+        "nome":              fake_pool(fake, "name", n_paramedico),
         "funcao":            random.choices(["Socorrista", "Enfermeiro", "Médico", "Condutor"], weights=[35, 30, 15, 20], k=n_paramedico),
         "anos_experiencia":  rng.integers(1, 30, n_paramedico),
     })

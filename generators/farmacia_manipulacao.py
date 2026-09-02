@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,14 +19,14 @@ def gerar_farmacia_manipulacao(n, start, end):
     n_farmaceutico = min(max(n // 100, 5), 60)
     dim_farmaceutico = pd.DataFrame({
         "id_farmaceutico":   new_ids(n_farmaceutico),
-        "nome":              [fake.name() for _ in range(n_farmaceutico)],
+        "nome":              fake_pool(fake, "name", n_farmaceutico),
         "especialidade":     random.choices(ESPECIALIDADES, k=n_farmaceutico),
     })
 
     n_cliente = min(max(n // 6, 80), 6000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.name() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "name", n_cliente),
         "idade":             rng.integers(1, 95, n_cliente),
     })
 

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -27,9 +27,9 @@ def gerar_turismo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     
     dim_viajante = pd.DataFrame({
         "id_viajante": new_ids(n_viajantes),
-        "nome":        [fake.name() for _ in range(n_viajantes)],
-        "cpf":         [fake.cpf() for _ in range(n_viajantes)],
-        "email":       [fake.email() for _ in range(n_viajantes)],
+        "nome":        fake_pool(fake, "name", n_viajantes),
+        "cpf":         fake_pool(fake, "cpf", n_viajantes),
+        "email":       fake_pool(fake, "email", n_viajantes),
         "faixa_etaria": random.choices(["18-25", "26-35", "36-50", "51+"], k=n_viajantes),
         "nacionalidade": random.choices(["Brasileira", "Estrangeira"], weights=[0.8, 0.2], k=n_viajantes)
     })
@@ -46,7 +46,7 @@ def gerar_turismo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     dim_agencia = pd.DataFrame({
         "id_agencia": new_ids(n_agencias),
         "nome":       [f"Agência {fake.company()}" for _ in range(n_agencias)],
-        "cidade":     [fake.city() for _ in range(n_agencias)],
+        "cidade":     fake_pool(fake, "city", n_agencias),
         "tipo":       random.choices(["Online", "Física", "Franquia"], k=n_agencias)
     })
 

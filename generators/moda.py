@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -33,8 +33,8 @@ def gerar_moda(n, start, end):
         "id_loja":      new_ids(n_loja),
         "nome":         [f"Loja {fake.city()}" for _ in range(n_loja)],
         "canal":        random.choices(CANAIS, k=n_loja),
-        "uf":           [fake.state_abbr() for _ in range(n_loja)],
-        "cidade":       [fake.city() for _ in range(n_loja)],
+        "uf":           fake_pool(fake, "state_abbr", n_loja),
+        "cidade":       fake_pool(fake, "city", n_loja),
         "area_m2":      rng.uniform(30, 500, n_loja).round(0),
         "meta_mensal":  rng.uniform(20_000, 500_000, n_loja).round(2),
         "ativa":        random.choices([True,False], weights=[90,10], k=n_loja),

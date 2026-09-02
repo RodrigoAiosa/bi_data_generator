@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -13,8 +13,8 @@ def gerar_boliche(n, start, end):
     n_unidade = min(max(n // 300, 3), 40)
     dim_unidade = pd.DataFrame({
         "id_unidade":        new_ids(n_unidade),
-        "cidade":            [fake.city() for _ in range(n_unidade)],
-        "uf":                [fake.state_abbr() for _ in range(n_unidade)],
+        "cidade":            fake_pool(fake, "city", n_unidade),
+        "uf":                fake_pool(fake, "state_abbr", n_unidade),
         "num_pistas":        rng.integers(4, 24, n_unidade),
     })
 
@@ -29,7 +29,7 @@ def gerar_boliche(n, start, end):
         "id_partida":        new_ids(n),
         "id_data":           rand_dates(start, end, n),
         "id_pista":          random.choices(dim_pista["id_pista"].tolist(), k=n),
-        "cliente":           [fake.name() for _ in range(n)],
+        "cliente":           fake_pool(fake, "name", n),
         "num_jogadores":     rng.integers(1, 8, n),
         "pontuacao_media":   rng.integers(50, 250, n),
         "valor":             rng.uniform(30, 300, n).round(2),

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,7 +19,7 @@ def gerar_posto_combustivel(n, start, end):
     dim_posto = pd.DataFrame({
         "id_posto":          new_ids(n_posto),
         "nome_posto":        [f"Posto {fake.last_name()}" for _ in range(n_posto)],
-        "cidade":            [fake.city() for _ in range(n_posto)],
+        "cidade":            fake_pool(fake, "city", n_posto),
         "bandeira":          random.choices(BANDEIRAS, weights=[25, 30, 25, 10, 10], k=n_posto),
     })
 

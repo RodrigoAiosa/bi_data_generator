@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,7 +19,7 @@ def gerar_metalurgia(n, start, end):
     dim_unidade = pd.DataFrame({
         "id_unidade":        new_ids(n_unidade),
         "nome":              [f"Usina {fake.city()}" for _ in range(n_unidade)],
-        "uf":                [fake.state_abbr() for _ in range(n_unidade)],
+        "uf":                fake_pool(fake, "state_abbr", n_unidade),
         "tipo_forno":        random.choices(TIPOS_FORNO, k=n_unidade),
     })
 

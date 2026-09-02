@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,7 +19,7 @@ def gerar_pecuaria(n, start, end):
     dim_fazenda = pd.DataFrame({
         "id_fazenda":        new_ids(n_fazenda),
         "nome":              [f"Fazenda {fake.last_name()}" for _ in range(n_fazenda)],
-        "uf":                [fake.state_abbr() for _ in range(n_fazenda)],
+        "uf":                fake_pool(fake, "state_abbr", n_fazenda),
         "area_ha":           rng.uniform(50, 15000, n_fazenda).round(1),
         "tipo_criacao":      random.choices(TIPOS_CRIACAO, weights=[50, 25, 25], k=n_fazenda),
     })

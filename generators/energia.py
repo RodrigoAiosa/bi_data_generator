@@ -6,7 +6,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -25,8 +25,8 @@ def gerar_energia(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_consumidor = pd.DataFrame({
         "id_consumidor": new_ids(n_consumidores),
-        "nome":          [fake.name() for _ in range(n_consumidores)],
-        "cpf_cnpj":      [fake.cpf()  for _ in range(n_consumidores)],
+        "nome":          fake_pool(fake, "name", n_consumidores),
+        "cpf_cnpj":      fake_pool(fake, "cpf", n_consumidores),
         "classe":        random.choices(
             ["Residencial","Comercial","Industrial","Rural","Poder Público"],
             weights=[55, 25, 10, 5, 5], k=n_consumidores,

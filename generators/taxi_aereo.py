@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -29,7 +29,7 @@ def gerar_taxi_aereo(n, start, end):
     n_piloto = min(max(n // 150, 6), 120)
     dim_piloto = pd.DataFrame({
         "id_piloto":         new_ids(n_piloto),
-        "nome":              [fake.name() for _ in range(n_piloto)],
+        "nome":              fake_pool(fake, "name", n_piloto),
         "horas_certificadas": rng.integers(500, 15000, n_piloto),
         "categoria":         random.choices(["Comandante", "Copiloto"], weights=[55, 45], k=n_piloto),
         "ativo":             random.choices([True, False], weights=[92, 8], k=n_piloto),
@@ -41,8 +41,8 @@ def gerar_taxi_aereo(n, start, end):
         "id_data":           rand_dates(start, end, n),
         "id_aeronave":       random.choices(dim_aeronave["id_aeronave"].tolist(), k=n),
         "id_piloto":         random.choices(dim_piloto["id_piloto"].tolist(), k=n),
-        "origem":            [fake.city() for _ in range(n)],
-        "destino":           [fake.city() for _ in range(n)],
+        "origem":            fake_pool(fake, "city", n),
+        "destino":           fake_pool(fake, "city", n),
         "distancia_km":      dist_km.round(1),
         "horas_voo":         (dist_km / rng.uniform(350, 700, n)).round(2),
         "tipo_cliente":      random.choices(TIPOS_CLIENTE, weights=[45, 25, 20, 10], k=n),

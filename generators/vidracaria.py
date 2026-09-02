@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -15,8 +15,8 @@ def gerar_vidracaria(n, start, end):
     n_fabrica = min(max(n // 250, 3), 40)
     dim_fabrica = pd.DataFrame({
         "id_fabrica":        new_ids(n_fabrica),
-        "cidade":            [fake.city() for _ in range(n_fabrica)],
-        "uf":                [fake.state_abbr() for _ in range(n_fabrica)],
+        "cidade":            fake_pool(fake, "city", n_fabrica),
+        "uf":                fake_pool(fake, "state_abbr", n_fabrica),
     })
 
     n_produto = min(max(n // 25, 15), 2000)
@@ -31,7 +31,7 @@ def gerar_vidracaria(n, start, end):
         "id_pedido":         new_ids(n),
         "id_data":           rand_dates(start, end, n),
         "id_produto":        random.choices(dim_produto["id_produto"].tolist(), k=n),
-        "cliente":           [fake.name() for _ in range(n)],
+        "cliente":           fake_pool(fake, "name", n),
         "m2":                rng.uniform(0.5, 40, n).round(2),
         "valor_total":       rng.uniform(150, 15000, n).round(2),
         "instalacao_inclusa": random.choices([True, False], weights=[55, 45], k=n),

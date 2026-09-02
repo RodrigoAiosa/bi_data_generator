@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,16 +16,16 @@ def gerar_cerealista(n, start, end):
     n_armazem = min(max(n // 150, 5), 60)
     dim_armazem = pd.DataFrame({
         "id_armazem":        new_ids(n_armazem),
-        "cidade":            [fake.city() for _ in range(n_armazem)],
-        "uf":                [fake.state_abbr() for _ in range(n_armazem)],
+        "cidade":            fake_pool(fake, "city", n_armazem),
+        "uf":                fake_pool(fake, "state_abbr", n_armazem),
         "capacidade_toneladas": rng.integers(1000, 80000, n_armazem),
     })
 
     n_produtor = min(max(n // 5, 100), 12000)
     dim_produtor = pd.DataFrame({
         "id_produtor":       new_ids(n_produtor),
-        "nome_produtor":     [fake.company() for _ in range(n_produtor)],
-        "uf":                [fake.state_abbr() for _ in range(n_produtor)],
+        "nome_produtor":     fake_pool(fake, "company", n_produtor),
+        "uf":                fake_pool(fake, "state_abbr", n_produtor),
     })
 
     fato_recebimento = pd.DataFrame({

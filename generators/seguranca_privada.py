@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,7 +21,7 @@ def gerar_seguranca_privada(n, start, end):
     n_vigilante = min(max(n // 40, 15), 1500)
     dim_vigilante = pd.DataFrame({
         "id_vigilante":      new_ids(n_vigilante),
-        "nome":              [fake.name() for _ in range(n_vigilante)],
+        "nome":              fake_pool(fake, "name", n_vigilante),
         "funcao":            random.choices(FUNCOES, weights=[40, 20, 12, 18, 10], k=n_vigilante),
         "turno":             random.choices(TURNOS, k=n_vigilante),
         "certificacao":      random.choices(CERTIFICACOES, weights=[35, 45, 10, 10], k=n_vigilante),
@@ -30,9 +30,9 @@ def gerar_seguranca_privada(n, start, end):
     n_cliente = min(max(n // 15, 30), 3000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.company() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "company", n_cliente),
         "tipo_local":        random.choices(TIPOS_LOCAL, k=n_cliente),
-        "uf":                [fake.state_abbr() for _ in range(n_cliente)],
+        "uf":                fake_pool(fake, "state_abbr", n_cliente),
     })
 
     fato_escalacao = pd.DataFrame({

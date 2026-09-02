@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,7 +18,7 @@ def gerar_vending_machine(n, start, end):
     dim_maquina = pd.DataFrame({
         "id_maquina":        new_ids(n_maquina),
         "localizacao":       random.choices(TIPOS_LOCALIZACAO, k=n_maquina),
-        "cidade":            [fake.city() for _ in range(n_maquina)],
+        "cidade":            fake_pool(fake, "city", n_maquina),
         "capacidade_itens":  rng.integers(30, 200, n_maquina),
         "aceita_pagamento_digital": random.choices([True, False], weights=[80, 20], k=n_maquina),
         "instalada_em":      rand_dates(start, end, n_maquina),

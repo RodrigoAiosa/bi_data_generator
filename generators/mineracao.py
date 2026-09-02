@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -36,10 +36,10 @@ def gerar_mineracao(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     dim_mina = pd.DataFrame({
         "id_mina":        new_ids(n_minas),
         "nome":           [f"Mina {fake.last_name()} {fake.random_int(1, 99)}" for _ in range(n_minas)],
-        "empresa":        [fake.company() for _ in range(n_minas)],
-        "cnpj":           [fake.cnpj() for _ in range(n_minas)],
+        "empresa":        fake_pool(fake, "company", n_minas),
+        "cnpj":           fake_pool(fake, "cnpj", n_minas),
         "uf":             random.choices(UFS_MINERACAO, k=n_minas),
-        "municipio":      [fake.city() for _ in range(n_minas)],
+        "municipio":      fake_pool(fake, "city", n_minas),
         "profundidade_m": rng.uniform(0, 3000, n_minas).round(0),
         "area_ha":        rng.uniform(5, 20000, n_minas).round(1),
         "status_licenca": random.choices(["Ativa", "Suspensa", "Em Renovação", "Encerrada"], weights=[60, 15, 20, 5], k=n_minas),

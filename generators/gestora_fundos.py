@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,7 +16,7 @@ def gerar_gestora_fundos(n, start, end):
     n_gestora = min(max(n // 500, 3), 30)
     dim_gestora = pd.DataFrame({
         "id_gestora":        new_ids(n_gestora),
-        "nome_gestora":      [fake.company() for _ in range(n_gestora)],
+        "nome_gestora":      fake_pool(fake, "company", n_gestora),
     })
 
     n_fundo = min(max(n // 50, 10), 400)
@@ -31,7 +31,7 @@ def gerar_gestora_fundos(n, start, end):
     n_cotista = min(max(n // 3, 200), 15000)
     dim_cotista = pd.DataFrame({
         "id_cotista":        new_ids(n_cotista),
-        "nome":              [fake.name() for _ in range(n_cotista)],
+        "nome":              fake_pool(fake, "name", n_cotista),
         "perfil":            random.choices(PERFIS, weights=[35, 40, 25], k=n_cotista),
     })
 

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,15 +18,15 @@ def gerar_barbearia(n, start, end):
     n_unidade = min(max(n // 200, 3), 50)
     dim_unidade = pd.DataFrame({
         "id_unidade":        new_ids(n_unidade),
-        "cidade":            [fake.city() for _ in range(n_unidade)],
-        "bairro":            [fake.neighborhood() for _ in range(n_unidade)],
+        "cidade":            fake_pool(fake, "city", n_unidade),
+        "bairro":            fake_pool(fake, "neighborhood", n_unidade),
     })
 
     n_barbeiro = min(max(n // 30, 8), 400)
     dim_barbeiro = pd.DataFrame({
         "id_barbeiro":       new_ids(n_barbeiro),
         "id_unidade":        random.choices(dim_unidade["id_unidade"].tolist(), k=n_barbeiro),
-        "nome":              [fake.name_male() for _ in range(n_barbeiro)],
+        "nome":              fake_pool(fake, "name_male", n_barbeiro),
         "anos_experiencia":  rng.integers(1, 25, n_barbeiro),
         "avaliacao":         rng.uniform(3.5, 5.0, n_barbeiro).round(1),
     })

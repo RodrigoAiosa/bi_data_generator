@@ -5,7 +5,7 @@ from datetime import date
 
 import pandas as pd
 
-from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng
+from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng, fake_pool
 
 ESPECIES = ["Cão", "Gato", "Ave", "Roedor", "Réptil", "Peixe"]
 RACAS = {
@@ -46,17 +46,17 @@ def gerar_pet(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     # ── DimTutor ─────────────────────────────────────────────────────────────
     dim_tutor = pd.DataFrame({
         "id_tutor": new_ids(n_tutores),
-        "nome":     [fake.name() for _ in range(n_tutores)],
-        "cpf":      [fake.cpf() for _ in range(n_tutores)],
+        "nome":     fake_pool(fake, "name", n_tutores),
+        "cpf":      fake_pool(fake, "cpf", n_tutores),
         "uf":       random.choices(UFS, k=n_tutores),
-        "cidade":   [fake.city() for _ in range(n_tutores)],
+        "cidade":   fake_pool(fake, "city", n_tutores),
     })
 
     # ── DimPet ───────────────────────────────────────────────────────────────
     especies_pet = random.choices(ESPECIES, weights=[45, 35, 8, 6, 3, 3], k=n_pets)
     dim_pet = pd.DataFrame({
         "id_pet":      new_ids(n_pets),
-        "nome_pet":    [fake.first_name() for _ in range(n_pets)],
+        "nome_pet":    fake_pool(fake, "first_name", n_pets),
         "especie":     especies_pet,
         "raca":        [random.choice(RACAS[e]) for e in especies_pet],
         "porte":       random.choices(PORTES, weights=[40, 40, 20], k=n_pets),
@@ -94,7 +94,7 @@ def gerar_pet(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "id_pet":            random.choices(dim_pet["id_pet"].tolist(), k=n),
         "id_servico":        ids_servico,
         "categoria_servico": categoria_evento,
-        "veterinario":       [fake.name() for _ in range(n)],
+        "veterinario":       fake_pool(fake, "name", n),
         "valor_cobrado":     (valor_base * variacao).round(2),
         "forma_pagamento":   random.choices(FORMAS_PAGAMENTO, weights=[40, 30, 10, 15, 5], k=n),
         "retorno_necessario":random.choices([True, False], weights=[25, 75], k=n),

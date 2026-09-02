@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -20,7 +20,7 @@ def gerar_cooperativa_credito(n, start, end):
         "id_cooperado":      new_ids(n_cooperado),
         "nome":              [fake.name() if random.random() < 0.85 else fake.company() for _ in range(n_cooperado)],
         "tipo_pessoa":       random.choices(TIPOS_PESSOA, weights=[85, 15], k=n_cooperado),
-        "uf":                [fake.state_abbr() for _ in range(n_cooperado)],
+        "uf":                fake_pool(fake, "state_abbr", n_cooperado),
         "tempo_associacao_anos": rng.integers(0, 30, n_cooperado),
     })
 

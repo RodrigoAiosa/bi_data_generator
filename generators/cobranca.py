@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,7 +17,7 @@ def gerar_cobranca(n, start, end):
     n_carteira = min(max(n // 200, 5), 60)
     dim_carteira = pd.DataFrame({
         "id_carteira":       new_ids(n_carteira),
-        "nome_credor":       [fake.company() for _ in range(n_carteira)],
+        "nome_credor":       fake_pool(fake, "company", n_carteira),
         "tipo_divida":       random.choices(TIPOS_DIVIDA, k=n_carteira),
     })
 
@@ -25,7 +25,7 @@ def gerar_cobranca(n, start, end):
     dim_devedor = pd.DataFrame({
         "id_devedor":        new_ids(n_devedor),
         "id_carteira":       random.choices(dim_carteira["id_carteira"].tolist(), k=n_devedor),
-        "nome":              [fake.name() for _ in range(n_devedor)],
+        "nome":              fake_pool(fake, "name", n_devedor),
         "valor_original":    rng.uniform(200, 40000, n_devedor).round(2),
     })
 

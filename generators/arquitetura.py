@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,22 +17,22 @@ def gerar_arquitetura(n, start, end):
     n_arq = min(max(n//15,10),100)
     dim_arquiteto = pd.DataFrame({
         "id_arquiteto":     new_ids(n_arq),
-        "nome":             [fake.name() for _ in range(n_arq)],
+        "nome":             fake_pool(fake, "name", n_arq),
         "cau":              [f"CAU-A{rng.integers(100000,999999)}" for _ in range(n_arq)],
         "especialidade":    random.choices(TIPOS_PROJETO, k=n_arq),
         "anos_exp":         rng.integers(1, 35, n_arq),
         "valor_hora":       rng.uniform(80, 800, n_arq).round(2),
         "ativo":            random.choices([True,False], weights=[90,10], k=n_arq),
-        "cidade":           [fake.city() for _ in range(n_arq)],
-        "uf":               [fake.state_abbr() for _ in range(n_arq)],
+        "cidade":           fake_pool(fake, "city", n_arq),
+        "uf":               fake_pool(fake, "state_abbr", n_arq),
     })
     n_cli = min(max(n//6,30),300)
     dim_cliente = pd.DataFrame({
         "id_cliente":       new_ids(n_cli),
-        "nome":             [fake.name() for _ in range(n_cli)],
+        "nome":             fake_pool(fake, "name", n_cli),
         "tipo":             random.choices(["PF","PJ"], weights=[55,45], k=n_cli),
         "segmento":         random.choices(TIPOS_PROJETO, k=n_cli),
-        "uf":               [fake.state_abbr() for _ in range(n_cli)],
+        "uf":               fake_pool(fake, "state_abbr", n_cli),
         "origem":           random.choices(["Indicação","Instagram","Site","Google","LinkedIn"], k=n_cli),
     })
     n_proj = min(max(n//3,40),400)

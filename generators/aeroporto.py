@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,15 +16,15 @@ def gerar_aeroporto(n, start, end):
     dim_aeroporto = pd.DataFrame({
         "id_aeroporto":      new_ids(n_aeroporto),
         "nome_aeroporto":    [f"Aeroporto de {fake.city()}" for _ in range(n_aeroporto)],
-        "cidade":            [fake.city() for _ in range(n_aeroporto)],
-        "uf":                [fake.state_abbr() for _ in range(n_aeroporto)],
+        "cidade":            fake_pool(fake, "city", n_aeroporto),
+        "uf":                fake_pool(fake, "state_abbr", n_aeroporto),
         "num_terminais":     rng.integers(1, 6, n_aeroporto),
     })
 
     n_companhia = min(max(n // 300, 6), 30)
     dim_companhia = pd.DataFrame({
         "id_companhia":      new_ids(n_companhia),
-        "nome_companhia":    [fake.company() for _ in range(n_companhia)],
+        "nome_companhia":    fake_pool(fake, "company", n_companhia),
         "pais_origem":       random.choices(["Brasil", "EUA", "Chile", "Argentina", "Portugal", "Panamá"], k=n_companhia),
     })
 

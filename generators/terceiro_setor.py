@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -31,7 +31,7 @@ def gerar_terceiro_setor(n, start, end):
         "id_doador":         new_ids(n_doador),
         "nome":              [fake.name() if random.random() < 0.7 else fake.company() for _ in range(n_doador)],
         "tipo_doador":       random.choices(TIPOS_DOADOR, weights=[55, 30, 10, 5], k=n_doador),
-        "uf":                [fake.state_abbr() for _ in range(n_doador)],
+        "uf":                fake_pool(fake, "state_abbr", n_doador),
     })
 
     fato_doacao = pd.DataFrame({

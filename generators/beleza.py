@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,7 +21,7 @@ def gerar_beleza(n, start, end):
         "id_produto":       new_ids(n_prod),
         "nome":             [f"{fake.last_name()} {random.choice(['Sérum','Creme','Óleo','Shampoo','Máscara','Gel'])}" for _ in range(n_prod)],
         "categoria":        random.choices(CATEGORIAS, k=n_prod),
-        "marca":            [fake.company() for _ in range(n_prod)],
+        "marca":            fake_pool(fake, "company", n_prod),
         "custo":            rng.uniform(5, 200, n_prod).round(2),
         "preco_venda":      rng.uniform(20, 800, n_prod).round(2),
         "certificacao":     random.choices(CERTIFICACOES, k=n_prod),
@@ -33,8 +33,8 @@ def gerar_beleza(n, start, end):
         "id_salao":         new_ids(n_sal),
         "nome":             [f"Studio {fake.last_name()}" for _ in range(n_sal)],
         "tipo":             random.choices(["Salão Completo","Barbearia","Clínica Estética","Nail Design","Hair Bar"], k=n_sal),
-        "uf":               [fake.state_abbr() for _ in range(n_sal)],
-        "cidade":           [fake.city() for _ in range(n_sal)],
+        "uf":               fake_pool(fake, "state_abbr", n_sal),
+        "cidade":           fake_pool(fake, "city", n_sal),
         "n_profissionais":  rng.integers(1, 30, n_sal),
         "avaliacao":        rng.uniform(3.0, 5.0, n_sal).round(1),
         "ativo":            random.choices([True,False], weights=[90,10], k=n_sal),

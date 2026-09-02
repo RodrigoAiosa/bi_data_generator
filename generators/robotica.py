@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,7 +16,7 @@ def gerar_robotica(n, start, end):
     n_fabrica_cliente = min(max(n // 100, 8), 800)
     dim_fabrica_cliente = pd.DataFrame({
         "id_fabrica_cliente": new_ids(n_fabrica_cliente),
-        "nome":              [fake.company() for _ in range(n_fabrica_cliente)],
+        "nome":              fake_pool(fake, "company", n_fabrica_cliente),
         "setor_industrial":  random.choices(SETORES_INDUSTRIAIS, k=n_fabrica_cliente),
     })
 

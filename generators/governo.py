@@ -5,7 +5,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -53,7 +53,7 @@ def gerar_governo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "poder":            random.choices(PODERES, weights=[60, 15, 20, 5], k=n_org),
         "area":             random.choices(AREAS_GOVERNO, k=n_org),
         "uf":               random.choices(UFS, k=n_org),
-        "cnpj":             [fake.cnpj() for _ in range(n_org)],
+        "cnpj":             fake_pool(fake, "cnpj", n_org),
         "orcamento_anual":  rng.uniform(1_000_000, 10_000_000_000, n_org).round(2),
         "n_servidores":     rng.integers(10, 50_000, n_org),
     })
@@ -62,9 +62,9 @@ def gerar_governo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     n_forn = min(max(n // 6, 100), 800)
     dim_fornecedor = pd.DataFrame({
         "id_fornecedor":    new_ids(n_forn),
-        "nome":             [fake.company() for _ in range(n_forn)],
-        "cnpj":             [fake.cnpj() for _ in range(n_forn)],
-        "uf":               [fake.state_abbr() for _ in range(n_forn)],
+        "nome":             fake_pool(fake, "company", n_forn),
+        "cnpj":             fake_pool(fake, "cnpj", n_forn),
+        "uf":               fake_pool(fake, "state_abbr", n_forn),
         "porte":            random.choices(["MEI", "ME", "EPP", "Médio", "Grande"], weights=[10, 20, 25, 25, 20], k=n_forn),
         "situacao_cadastral": random.choices(["Regular", "Irregular", "Suspenso"], weights=[85, 10, 5], k=n_forn),
         "data_cadastro":    rand_dates(date(2000, 1, 1), end, n_forn),

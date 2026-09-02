@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -32,10 +32,10 @@ def gerar_locadora(n, start, end):
     n_cliente = min(max(n // 6, 100), 12000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.name() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "name", n_cliente),
         "tipo_cliente":      random.choices(["Pessoa Física", "Pessoa Jurídica"], weights=[75, 25], k=n_cliente),
-        "uf":                [fake.state_abbr() for _ in range(n_cliente)],
-        "cidade":            [fake.city() for _ in range(n_cliente)],
+        "uf":                fake_pool(fake, "state_abbr", n_cliente),
+        "cidade":            fake_pool(fake, "city", n_cliente),
         "score_credito":     rng.integers(300, 1000, n_cliente),
         "cliente_frequente":  random.choices([True, False], weights=[30, 70], k=n_cliente),
     })

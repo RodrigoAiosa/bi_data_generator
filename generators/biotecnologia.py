@@ -7,7 +7,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -48,7 +48,7 @@ def gerar_biotecnologia(n: int, start: date, end: date) -> dict[str, pd.DataFram
     # ── DimCientista ────────────────────────────────────────
     dim_cientista = pd.DataFrame({
         "id_cientista": new_ids(n_cientistas),
-        "nome": [fake.name() for _ in range(n_cientistas)],
+        "nome": fake_pool(fake, "name", n_cientistas),
         "especialidade": random.choices(["Genética", "Biologia Molecular", "Bioinformática", "Bioquímica", "Imunologia"], k=n_cientistas),
         "titulacao": random.choices(["PhD", "Doutor", "Pós-Doc", "Especialista", "Mestre"], weights=[25, 30, 20, 15, 10], k=n_cientistas),
         "anos_exp": rng.integers(0, 30, n_cientistas),

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -15,14 +15,14 @@ def gerar_distribuidora_bebidas(n, start, end):
     n_centro = min(max(n // 300, 3), 40)
     dim_centro = pd.DataFrame({
         "id_centro":         new_ids(n_centro),
-        "cidade":            [fake.city() for _ in range(n_centro)],
-        "uf":                [fake.state_abbr() for _ in range(n_centro)],
+        "cidade":            fake_pool(fake, "city", n_centro),
+        "uf":                fake_pool(fake, "state_abbr", n_centro),
     })
 
     n_marca = min(max(n // 40, 15), 500)
     dim_marca = pd.DataFrame({
         "id_marca":          new_ids(n_marca),
-        "nome_marca":        [fake.company() for _ in range(n_marca)],
+        "nome_marca":        fake_pool(fake, "company", n_marca),
         "categoria":         random.choices(CATEGORIAS, k=n_marca),
     })
 
@@ -31,7 +31,7 @@ def gerar_distribuidora_bebidas(n, start, end):
         "id_data":           rand_dates(start, end, n),
         "id_centro":         random.choices(dim_centro["id_centro"].tolist(), k=n),
         "id_marca":          random.choices(dim_marca["id_marca"].tolist(), k=n),
-        "cliente":           [fake.company() for _ in range(n)],
+        "cliente":           fake_pool(fake, "company", n),
         "caixas":            rng.integers(1, 400, n),
         "valor_total":       rng.uniform(50, 25000, n).round(2),
     })

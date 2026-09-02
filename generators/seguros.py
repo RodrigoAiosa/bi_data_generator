@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,17 +21,17 @@ def gerar_seguros(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     
     dim_segurado = pd.DataFrame({
         "id_segurado": new_ids(n_segurados),
-        "nome":        [fake.name() for _ in range(n_segurados)],
-        "cpf":         [fake.cpf() for _ in range(n_segurados)],
+        "nome":        fake_pool(fake, "name", n_segurados),
+        "cpf":         fake_pool(fake, "cpf", n_segurados),
         "idade":       rng.integers(18, 85, n_segurados),
         "sexo":        random.choices(["M", "F"], k=n_segurados),
-        "cidade":      [fake.city() for _ in range(n_segurados)],
+        "cidade":      fake_pool(fake, "city", n_segurados),
         "uf":          random.choices(["SP", "RJ", "MG", "RS", "PR", "SC", "BA", "CE", "PE", "GO"], k=n_segurados)
     })
 
     dim_corretor = pd.DataFrame({
         "id_corretor": new_ids(n_corretores),
-        "nome":        [fake.name() for _ in range(n_corretores)],
+        "nome":        fake_pool(fake, "name", n_corretores),
         "registro_susep": [f"SUSEP-{rng.integers(100000, 999999)}" for _ in range(n_corretores)],
         "agencia":     [f"Agência {fake.company()}" for _ in range(n_corretores)]
     })

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -24,13 +24,13 @@ def gerar_agencia_publicidade(n, start, end):
         "nome":              [f"{fake.company()}" for _ in range(n_cliente)],
         "segmento":          random.choices(SEGMENTOS, k=n_cliente),
         "porte":             random.choices(PORTES, weights=[30, 35, 25, 10], k=n_cliente),
-        "uf":                [fake.state_abbr() for _ in range(n_cliente)],
+        "uf":                fake_pool(fake, "state_abbr", n_cliente),
     })
 
     n_equipe = min(max(n // 80, 10), 150)
     dim_equipe = pd.DataFrame({
         "id_profissional":   new_ids(n_equipe),
-        "nome":              [fake.name() for _ in range(n_equipe)],
+        "nome":              fake_pool(fake, "name", n_equipe),
         "funcao":            random.choices(FUNCOES, k=n_equipe),
         "senioridade":       random.choices(SENIORIDADE, weights=[30, 35, 25, 10], k=n_equipe),
     })

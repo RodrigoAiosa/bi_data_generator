@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,7 +18,7 @@ def gerar_transporte_escolar(n, start, end):
     n_veiculo = min(max(n // 250, 4), 90)
     dim_veiculo = pd.DataFrame({
         "id_veiculo":        new_ids(n_veiculo),
-        "placa":             [fake.license_plate() for _ in range(n_veiculo)],
+        "placa":             fake_pool(fake, "license_plate", n_veiculo),
         "tipo":              random.choices(TIPOS_VEICULO, weights=[45, 30, 15, 10], k=n_veiculo),
         "capacidade_lugares": rng.integers(8, 45, n_veiculo),
         "ano_fabricacao":    rng.integers(2008, 2025, n_veiculo),
@@ -27,7 +27,7 @@ def gerar_transporte_escolar(n, start, end):
     n_motorista = min(max(n // 300, 4), 100)
     dim_motorista = pd.DataFrame({
         "id_motorista":      new_ids(n_motorista),
-        "nome":              [fake.name() for _ in range(n_motorista)],
+        "nome":              fake_pool(fake, "name", n_motorista),
         "anos_experiencia":  rng.integers(1, 30, n_motorista),
         "possui_curso_transporte_escolar": random.choices([True, False], weights=[95, 5], k=n_motorista),
     })
@@ -35,10 +35,10 @@ def gerar_transporte_escolar(n, start, end):
     n_aluno = min(max(n // 4, 100), 15000)
     dim_aluno = pd.DataFrame({
         "id_aluno":          new_ids(n_aluno),
-        "nome":              [fake.name() for _ in range(n_aluno)],
+        "nome":              fake_pool(fake, "name", n_aluno),
         "nivel_ensino":      random.choices(NIVEIS_ENSINO, weights=[20, 35, 30, 15], k=n_aluno),
         "turno":             random.choices(TURNOS, weights=[45, 40, 15], k=n_aluno),
-        "bairro":            [fake.street_name() for _ in range(n_aluno)],
+        "bairro":            fake_pool(fake, "street_name", n_aluno),
         "ativo":             random.choices([True, False], weights=[90, 10], k=n_aluno),
     })
 

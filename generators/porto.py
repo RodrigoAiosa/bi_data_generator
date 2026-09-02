@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,7 +18,7 @@ def gerar_porto(n, start, end):
     dim_terminal = pd.DataFrame({
         "id_terminal":       new_ids(n_terminal),
         "nome":              [f"Terminal {fake.city()}" for _ in range(n_terminal)],
-        "uf":                [fake.state_abbr() for _ in range(n_terminal)],
+        "uf":                fake_pool(fake, "state_abbr", n_terminal),
         "num_beracos":       rng.integers(1, 8, n_terminal),
         "capacidade_teu_ano": rng.integers(50000, 2000000, n_terminal),
     })
@@ -28,7 +28,7 @@ def gerar_porto(n, start, end):
         "id_navio":          new_ids(n_navio),
         "nome":              [f"MV {fake.last_name()}" for _ in range(n_navio)],
         "tipo":              random.choices(TIPOS_NAVIO, weights=[35, 20, 15, 10, 10, 10], k=n_navio),
-        "bandeira":          [fake.country() for _ in range(n_navio)],
+        "bandeira":          fake_pool(fake, "country", n_navio),
         "capacidade_dwt":    rng.integers(5000, 300000, n_navio),
     })
 

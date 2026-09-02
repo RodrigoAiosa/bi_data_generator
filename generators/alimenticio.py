@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -38,8 +38,8 @@ def gerar_alimenticio(n: int, start: date, end: date) -> dict[str, pd.DataFrame]
     dim_planta = pd.DataFrame({
         "id_planta":    new_ids(n_plantas),
         "nome":         [f"Planta {fake.city()}" for _ in range(n_plantas)],
-        "empresa":      [fake.company() for _ in range(n_plantas)],
-        "cnpj":         [fake.cnpj() for _ in range(n_plantas)],
+        "empresa":      fake_pool(fake, "company", n_plantas),
+        "cnpj":         fake_pool(fake, "cnpj", n_plantas),
         "uf":           random.choices(UFS_PLANTAS, k=n_plantas),
         "capacidade_ton_dia": rng.uniform(10, 5000, n_plantas).round(1),
         "n_funcionarios":     rng.integers(20, 5000, n_plantas),
@@ -49,8 +49,8 @@ def gerar_alimenticio(n: int, start: date, end: date) -> dict[str, pd.DataFrame]
 
     dim_fornecedor = pd.DataFrame({
         "id_fornecedor":   new_ids(n_fornecedores),
-        "nome":            [fake.company() for _ in range(n_fornecedores)],
-        "cnpj":            [fake.cnpj() for _ in range(n_fornecedores)],
+        "nome":            fake_pool(fake, "company", n_fornecedores),
+        "cnpj":            fake_pool(fake, "cnpj", n_fornecedores),
         "tipo_materia":    random.choices(["Grão", "Proteína Animal", "Vegetal", "Embalagem", "Aditivo"], k=n_fornecedores),
         "uf":              random.choices(UFS_PLANTAS, k=n_fornecedores),
         "prazo_entrega_d": rng.integers(1, 30, n_fornecedores),

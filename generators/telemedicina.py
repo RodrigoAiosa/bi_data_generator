@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -20,7 +20,7 @@ def gerar_telemedicina(n, start, end):
     n_medico = min(max(n // 60, 20), 2500)
     dim_medico = pd.DataFrame({
         "id_medico":         new_ids(n_medico),
-        "nome":              [fake.name() for _ in range(n_medico)],
+        "nome":              fake_pool(fake, "name", n_medico),
         "especialidade":     random.choices(ESPECIALIDADES, k=n_medico),
         "anos_experiencia":  rng.integers(1, 35, n_medico),
         "avaliacao_media":   rng.uniform(3.5, 5.0, n_medico).round(1),
@@ -30,10 +30,10 @@ def gerar_telemedicina(n, start, end):
     n_paciente = min(max(n // 3, 200), 40000)
     dim_paciente = pd.DataFrame({
         "id_paciente":       new_ids(n_paciente),
-        "nome":              [fake.name() for _ in range(n_paciente)],
+        "nome":              fake_pool(fake, "name", n_paciente),
         "idade":             rng.integers(1, 95, n_paciente),
         "sexo":              random.choices(["F", "M"], k=n_paciente),
-        "uf":                [fake.state_abbr() for _ in range(n_paciente)],
+        "uf":                fake_pool(fake, "state_abbr", n_paciente),
         "plano_assinatura":  random.choices(["Avulso", "Mensal", "Anual", "Corporativo"], weights=[30, 35, 15, 20], k=n_paciente),
     })
 

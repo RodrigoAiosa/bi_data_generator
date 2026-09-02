@@ -5,7 +5,7 @@ from datetime import date
 
 import pandas as pd
 
-from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng
+from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng, fake_pool
 
 MODELOS_AERONAVE = [
     ("Airbus A320",   180), ("Airbus A321",   220), ("Boeing 737-800", 189),
@@ -66,8 +66,8 @@ def gerar_aviacao(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     # ── DimPassageiro ────────────────────────────────────────────────────────
     dim_passageiro = pd.DataFrame({
         "id_passageiro":       new_ids(n_passageiros),
-        "nome":                [fake.name() for _ in range(n_passageiros)],
-        "cpf":                 [fake.cpf() for _ in range(n_passageiros)],
+        "nome":                fake_pool(fake, "name", n_passageiros),
+        "cpf":                 fake_pool(fake, "cpf", n_passageiros),
         "programa_fidelidade": random.choices([True, False], weights=[35, 65], k=n_passageiros),
         "categoria_fidelidade":random.choices(
             ["Nenhuma", "Prata", "Ouro", "Diamante"], weights=[65, 20, 10, 5], k=n_passageiros

@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -28,12 +28,12 @@ def gerar_audiovisual(n, start, end):
         "duracao_min":      rng.integers(3, 180, n_proj),
         "data_inicio":      rand_dates(start, end, n_proj),
         "data_entrega":     rand_dates(start, end, n_proj),
-        "diretor":          [fake.name() for _ in range(n_proj)],
+        "diretor":          fake_pool(fake, "name", n_proj),
     })
     n_rec = min(max(n//4,40),300)
     dim_recurso = pd.DataFrame({
         "id_recurso":       new_ids(n_rec),
-        "nome":             [fake.name() for _ in range(n_rec)],
+        "nome":             fake_pool(fake, "name", n_rec),
         "funcao":           random.choices(DEPARTAMENTOS, k=n_rec),
         "diaria":           rng.uniform(200, 5_000, n_rec).round(2),
         "pj":               random.choices([True,False], weights=[70,30], k=n_rec),

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -29,9 +29,9 @@ def gerar_viveiro_paisagismo(n, start, end):
     n_cliente = min(max(n // 8, 100), 20000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.name() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "name", n_cliente),
         "tipo_cliente":      random.choices(["Pessoa Física", "Empresa", "Construtora", "Paisagista"], weights=[55, 20, 15, 10], k=n_cliente),
-        "cidade":            [fake.city() for _ in range(n_cliente)],
+        "cidade":            fake_pool(fake, "city", n_cliente),
     })
 
     planta_idx = random.choices(range(n_planta), k=n)

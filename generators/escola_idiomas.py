@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,7 +18,7 @@ def gerar_escola_idiomas(n, start, end):
     n_prof = min(max(n // 70, 6), 90)
     dim_professor = pd.DataFrame({
         "id_professor":      new_ids(n_prof),
-        "nome":              [fake.name() for _ in range(n_prof)],
+        "nome":              fake_pool(fake, "name", n_prof),
         "idioma_principal":  random.choices(IDIOMAS, weights=[50, 20, 10, 8, 7, 5], k=n_prof),
         "anos_experiencia":  rng.integers(1, 20, n_prof),
     })
@@ -26,7 +26,7 @@ def gerar_escola_idiomas(n, start, end):
     n_aluno = min(max(n // 5, 150), 9000)
     dim_aluno = pd.DataFrame({
         "id_aluno":          new_ids(n_aluno),
-        "nome":              [fake.name() for _ in range(n_aluno)],
+        "nome":              fake_pool(fake, "name", n_aluno),
         "idade":             rng.integers(6, 70, n_aluno),
         "nivel_atual":       random.choices(NIVEIS, k=n_aluno),
     })

@@ -7,7 +7,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -43,7 +43,7 @@ def gerar_economia_circular(n: int, start: date, end: date) -> dict[str, pd.Data
     dim_parceiro = pd.DataFrame({
         "id_parceiro": new_ids(n_parceiros),
         "nome": [f"{fake.company()}" for _ in range(n_parceiros)],
-        "cnpj": [fake.cnpj() for _ in range(n_parceiros)],
+        "cnpj": fake_pool(fake, "cnpj", n_parceiros),
         "segmento": random.choices(["Comércio", "Indústria", "Condomínio", "Eventos", "Órgão Público", "Agronegócio"], k=n_parceiros),
         "uf": random.choices(UFS_BRASIL, k=n_parceiros),
         "volume_mensal_kg": rng.uniform(100, 100000, n_parceiros).round(0),
@@ -55,7 +55,7 @@ def gerar_economia_circular(n: int, start: date, end: date) -> dict[str, pd.Data
     n_coletor = max(5, min(n // 10, 50))
     dim_coletor = pd.DataFrame({
         "id_coletor": new_ids(n_coletor),
-        "nome": [fake.name() for _ in range(n_coletor)],
+        "nome": fake_pool(fake, "name", n_coletor),
         "tipo": random.choices(["Cooperativa", "Empresa Privada", "Associação", "Iniciativa Comunitária"], k=n_coletor),
         "capacidade_kg_dia": rng.integers(100, 5000, n_coletor),
         "uf": random.choices(UFS_BRASIL, k=n_coletor),

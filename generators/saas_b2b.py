@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -52,10 +52,10 @@ def gerar_saas_b2b(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     dim_cliente = pd.DataFrame({
         "id_cliente":      new_ids(n_clientes),
-        "nome":            [fake.company() for _ in range(n_clientes)],
-        "cnpj":            [fake.cnpj() for _ in range(n_clientes)],
+        "nome":            fake_pool(fake, "company", n_clientes),
+        "cnpj":            fake_pool(fake, "cnpj", n_clientes),
         "segmento":        random.choices(SEGMENTOS_CLIENTE, k=n_clientes),
-        "uf":              [fake.state_abbr() for _ in range(n_clientes)],
+        "uf":              fake_pool(fake, "state_abbr", n_clientes),
         "n_funcionarios":  rng.integers(1, 10000, n_clientes),
         "canal_aquisicao": random.choices(CANAIS_AQUISICAO, k=n_clientes),
         "id_plano_atual":  random.choices(dim_plano["id_plano"].tolist(), k=n_clientes),

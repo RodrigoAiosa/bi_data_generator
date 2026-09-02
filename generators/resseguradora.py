@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -15,7 +15,7 @@ def gerar_resseguradora(n, start, end):
     n_seguradora = min(max(n // 200, 5), 100)
     dim_seguradora = pd.DataFrame({
         "id_seguradora":     new_ids(n_seguradora),
-        "nome_seguradora":   [fake.company() for _ in range(n_seguradora)],
+        "nome_seguradora":   fake_pool(fake, "company", n_seguradora),
     })
 
     n_tratado = min(max(n // 30, 15), 1500)

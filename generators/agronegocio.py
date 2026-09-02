@@ -6,7 +6,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -34,7 +34,7 @@ def gerar_agronegocio(n: int, start: date, end: date) -> dict[str, pd.DataFrame]
     dim_propriedade = pd.DataFrame({
         "id_propriedade": new_ids(n_propriedades),
         "nome":           [f"Fazenda {fake.last_name()}" for _ in range(n_propriedades)],
-        "cnpj_cpf":       [fake.cpf() for _ in range(n_propriedades)],
+        "cnpj_cpf":       fake_pool(fake, "cpf", n_propriedades),
         "area_ha":        rng.uniform(10, 50000, n_propriedades).round(1),
         "uf":             random.choices(UFS_AGRO, k=n_propriedades),
         "bioma":          random.choices(["Cerrado","Amazônia","Mata Atlântica","Pampa","Pantanal"], k=n_propriedades),

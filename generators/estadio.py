@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,8 +16,8 @@ def gerar_estadio(n, start, end):
     n_arena = min(max(n // 300, 3), 40)
     dim_arena = pd.DataFrame({
         "id_arena":          new_ids(n_arena),
-        "cidade":            [fake.city() for _ in range(n_arena)],
-        "uf":                [fake.state_abbr() for _ in range(n_arena)],
+        "cidade":            fake_pool(fake, "city", n_arena),
+        "uf":                fake_pool(fake, "state_abbr", n_arena),
         "capacidade":        rng.integers(5000, 80000, n_arena),
     })
 

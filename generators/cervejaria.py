@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -25,7 +25,7 @@ def gerar_cervejaria(n, start, end):
     dim_ponto_venda = pd.DataFrame({
         "id_pontovenda":     new_ids(n_ponto),
         "tipo":              random.choices(TIPOS_PONTO_VENDA, weights=[35, 25, 10, 20, 10], k=n_ponto),
-        "cidade":            [fake.city() for _ in range(n_ponto)],
+        "cidade":            fake_pool(fake, "city", n_ponto),
     })
 
     n_lote = min(max(n // 5, 100), 20000)

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -15,14 +15,14 @@ def gerar_controle_pragas(n, start, end):
     n_tecnico = min(max(n // 40, 10), 800)
     dim_tecnico = pd.DataFrame({
         "id_tecnico":        new_ids(n_tecnico),
-        "nome":              [fake.name() for _ in range(n_tecnico)],
+        "nome":              fake_pool(fake, "name", n_tecnico),
         "especialidade":     random.choices(["Urbana", "Agrícola", "Industrial"], weights=[60, 15, 25], k=n_tecnico),
     })
 
     n_cliente = min(max(n // 3, 200), 20000)
     dim_cliente = pd.DataFrame({
         "id_cliente":        new_ids(n_cliente),
-        "nome":              [fake.name() for _ in range(n_cliente)],
+        "nome":              fake_pool(fake, "name", n_cliente),
         "tipo":              random.choices(["Residencial", "Comercial", "Industrial"], weights=[55, 30, 15], k=n_cliente),
     })
 

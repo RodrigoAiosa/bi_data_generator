@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -15,8 +15,8 @@ def gerar_bike_sharing(n, start, end):
     n_estacao = min(max(n // 100, 8), 500)
     dim_estacao = pd.DataFrame({
         "id_estacao":        new_ids(n_estacao),
-        "cidade":            [fake.city() for _ in range(n_estacao)],
-        "uf":                [fake.state_abbr() for _ in range(n_estacao)],
+        "cidade":            fake_pool(fake, "city", n_estacao),
+        "uf":                fake_pool(fake, "state_abbr", n_estacao),
         "capacidade_docas":  rng.integers(8, 40, n_estacao),
     })
 

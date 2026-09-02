@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -16,15 +16,15 @@ def gerar_fisioterapia(n, start, end):
     n_clinica = min(max(n // 150, 5), 80)
     dim_clinica = pd.DataFrame({
         "id_clinica":        new_ids(n_clinica),
-        "cidade":            [fake.city() for _ in range(n_clinica)],
-        "uf":                [fake.state_abbr() for _ in range(n_clinica)],
+        "cidade":            fake_pool(fake, "city", n_clinica),
+        "uf":                fake_pool(fake, "state_abbr", n_clinica),
     })
 
     n_fisio = min(max(n // 30, 15), 1500)
     dim_fisioterapeuta = pd.DataFrame({
         "id_fisioterapeuta": new_ids(n_fisio),
         "id_clinica":        random.choices(dim_clinica["id_clinica"].tolist(), k=n_fisio),
-        "nome":              [fake.name() for _ in range(n_fisio)],
+        "nome":              fake_pool(fake, "name", n_fisio),
         "especialidade":     random.choices(ESPECIALIDADES, k=n_fisio),
     })
 
@@ -32,7 +32,7 @@ def gerar_fisioterapia(n, start, end):
         "id_sessao":         new_ids(n),
         "id_data":           rand_dates(start, end, n),
         "id_fisioterapeuta": random.choices(dim_fisioterapeuta["id_fisioterapeuta"].tolist(), k=n),
-        "paciente":          [fake.name() for _ in range(n)],
+        "paciente":          fake_pool(fake, "name", n),
         "tipo_tratamento":   random.choices(TIPOS_TRATAMENTO, k=n),
         "valor":             rng.uniform(60, 350, n).round(2),
         "convenio":          random.choices([True, False], weights=[60, 40], k=n),

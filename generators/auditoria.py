@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,7 +18,7 @@ def gerar_auditoria(n, start, end):
     n_auditor = min(max(n // 40, 6), 200)
     dim_auditor = pd.DataFrame({
         "id_auditor":        new_ids(n_auditor),
-        "nome":              [fake.name() for _ in range(n_auditor)],
+        "nome":              fake_pool(fake, "name", n_auditor),
         "certificacao":      random.choices(["CPA", "CISA", "CIA", "Nenhuma"], weights=[30, 20, 25, 25], k=n_auditor),
         "senioridade":       random.choices(["Júnior", "Pleno", "Sênior", "Gerente"], weights=[25, 35, 25, 15], k=n_auditor),
     })
@@ -26,7 +26,7 @@ def gerar_auditoria(n, start, end):
     n_cliente = min(max(n // 20, 30), 3000)
     dim_cliente = pd.DataFrame({
         "id_clientepj":      new_ids(n_cliente),
-        "razao_social":      [fake.company() for _ in range(n_cliente)],
+        "razao_social":      fake_pool(fake, "company", n_cliente),
         "setor_atuacao":     random.choices(["Indústria", "Varejo", "Serviços", "Financeiro", "Tecnologia"], k=n_cliente),
         "porte":             random.choices(["Pequeno", "Médio", "Grande"], weights=[40, 40, 20], k=n_cliente),
     })

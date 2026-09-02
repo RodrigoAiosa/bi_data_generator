@@ -5,7 +5,7 @@ from datetime import date
 
 import pandas as pd
 
-from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng
+from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng, fake_pool
 
 JOGOS = [
     ("Valor Tático",       "FPS Tático",     ["PC", "Console"]),
@@ -44,7 +44,7 @@ def gerar_games(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     # ── DimJogador ───────────────────────────────────────────────────────────
     dim_jogador = pd.DataFrame({
         "id_jogador":       new_ids(n_jogadores),
-        "nickname":         [fake.user_name() for _ in range(n_jogadores)],
+        "nickname":         fake_pool(fake, "user_name", n_jogadores),
         "pais":             random.choices(PAISES, weights=[55, 8, 6, 12, 8, 6, 5], k=n_jogadores),
         "faixa_etaria":     random.choices(
             ["13-17", "18-24", "25-34", "35-44", "45+"], weights=[10, 35, 32, 16, 7], k=n_jogadores

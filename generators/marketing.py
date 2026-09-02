@@ -5,7 +5,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -24,7 +24,7 @@ DISPOSITIVOS = ["Mobile", "Desktop", "Tablet"]
 SETORES_CLIENTE = ["Varejo", "E-commerce", "Saúde", "Educação", "Financeiro",
                    "Tecnologia", "Imobiliário", "Turismo", "Alimentação", "Moda"]
 
-GESTORES = [fake.name() for _ in range(15)]
+GESTORES = fake_pool(fake, "name", 15)
 
 
 def gerar_marketing(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
@@ -64,7 +64,7 @@ def gerar_marketing(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
     n_cli = min(max(n // 10, 100), 500)
     dim_cliente = pd.DataFrame({
         "id_cliente":       new_ids(n_cli),
-        "nome_empresa":     [fake.company() for _ in range(n_cli)],
+        "nome_empresa":     fake_pool(fake, "company", n_cli),
         "setor":            random.choices(SETORES_CLIENTE, k=n_cli),
         "porte":            random.choices(["PME", "Médio", "Grande", "Enterprise"], weights=[40, 30, 20, 10], k=n_cli),
         "budget_mensal":    rng.uniform(2_000, 500_000, n_cli).round(2),

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -22,7 +22,7 @@ def gerar_academia(n, start, end):
     n_instrutor = min(max(n // 100, 6), 90)
     dim_instrutor = pd.DataFrame({
         "id_instrutor":      new_ids(n_instrutor),
-        "nome":              [fake.name() for _ in range(n_instrutor)],
+        "nome":              fake_pool(fake, "name", n_instrutor),
         "especialidade":     random.choices(ESPECIALIDADES_PT, k=n_instrutor),
         "anos_experiencia":  rng.integers(1, 25, n_instrutor),
         "avaliacao":         rng.uniform(3.5, 5.0, n_instrutor).round(1),
@@ -32,13 +32,13 @@ def gerar_academia(n, start, end):
     n_aluno = min(max(n // 5, 150), 10000)
     dim_aluno = pd.DataFrame({
         "id_aluno":          new_ids(n_aluno),
-        "nome":              [fake.name() for _ in range(n_aluno)],
+        "nome":              fake_pool(fake, "name", n_aluno),
         "idade":             rng.integers(14, 80, n_aluno),
         "sexo":              random.choices(["F", "M"], k=n_aluno),
         "plano":             random.choices(PLANOS, weights=[40, 20, 15, 15, 10], k=n_aluno),
         "objetivo":          random.choices(OBJETIVOS, k=n_aluno),
-        "uf":                [fake.state_abbr() for _ in range(n_aluno)],
-        "cidade":            [fake.city() for _ in range(n_aluno)],
+        "uf":                fake_pool(fake, "state_abbr", n_aluno),
+        "cidade":            fake_pool(fake, "city", n_aluno),
         "ativo":             random.choices([True, False], weights=[78, 22], k=n_aluno),
     })
 

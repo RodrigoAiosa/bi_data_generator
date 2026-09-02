@@ -5,7 +5,7 @@ from datetime import date
 
 import pandas as pd
 
-from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng
+from .helpers import dcalendario, get_faker, new_ids, rand_dates, rng, fake_pool
 
 UFS = ["SP", "RJ", "MG", "RS", "PR", "BA", "SC", "PE", "CE", "GO", "AM", "PA"]
 TIPOS_LIGACAO = ["Residencial", "Comercial", "Industrial", "Público"]
@@ -34,7 +34,7 @@ def gerar_saneamento(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
         "id_imovel":       new_ids(n_imoveis),
         "tipo_ligacao":    random.choices(TIPOS_LIGACAO, weights=[70, 20, 7, 3], k=n_imoveis),
         "uf":              random.choices(UFS, k=n_imoveis),
-        "cidade":          [fake.city() for _ in range(n_imoveis)],
+        "cidade":          fake_pool(fake, "city", n_imoveis),
         "possui_esgoto":   random.choices([True, False], weights=[78, 22], k=n_imoveis),
         "hidrometro_digital": random.choices([True, False], weights=[35, 65], k=n_imoveis),
     })

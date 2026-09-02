@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -18,7 +18,7 @@ def gerar_radio_podcast(n, start, end):
     n_apresentador = min(max(n // 150, 8), 200)
     dim_apresentador = pd.DataFrame({
         "id_apresentador":   new_ids(n_apresentador),
-        "nome":              [fake.name() for _ in range(n_apresentador)],
+        "nome":              fake_pool(fake, "name", n_apresentador),
         "anos_carreira":     rng.integers(1, 30, n_apresentador),
     })
 

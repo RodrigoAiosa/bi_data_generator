@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -20,7 +20,7 @@ def gerar_multipropriedade(n, start, end):
         "id_resort":         new_ids(n_resort),
         "nome":              [f"Resort {fake.city()}" for _ in range(n_resort)],
         "categoria":         random.choices(CATEGORIAS_RESORT, weights=[45, 25, 20, 10], k=n_resort),
-        "uf":                [fake.state_abbr() for _ in range(n_resort)],
+        "uf":                fake_pool(fake, "state_abbr", n_resort),
         "estrelas":          random.choices([3, 4, 5], weights=[15, 45, 40], k=n_resort),
     })
 
@@ -36,8 +36,8 @@ def gerar_multipropriedade(n, start, end):
     n_proprietario = min(max(n // 8, 100), 8000)
     dim_proprietario = pd.DataFrame({
         "id_proprietario":   new_ids(n_proprietario),
-        "nome":              [fake.name() for _ in range(n_proprietario)],
-        "uf":                [fake.state_abbr() for _ in range(n_proprietario)],
+        "nome":              fake_pool(fake, "name", n_proprietario),
+        "uf":                fake_pool(fake, "state_abbr", n_proprietario),
         "num_fracoes_possuidas": random.choices([1, 2, 3, 4], weights=[60, 25, 10, 5], k=n_proprietario),
         "ano_adesao":        rng.integers(2010, 2024, n_proprietario),
     })

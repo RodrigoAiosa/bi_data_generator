@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,10 +21,10 @@ def gerar_viagem_corp(n, start, end):
     n_viaj = min(max(n//5,50),500)
     dim_viajante = pd.DataFrame({
         "id_viajante":      new_ids(n_viaj),
-        "nome":             [fake.name() for _ in range(n_viaj)],
+        "nome":             fake_pool(fake, "name", n_viaj),
         "departamento":     random.choices(DEPARTAMENTOS, k=n_viaj),
         "cargo":            random.choices(["Analista","Gerente","Diretor","VP","C-Level","Coordenador"], k=n_viaj),
-        "empresa":          [fake.company() for _ in range(n_viaj)],
+        "empresa":          fake_pool(fake, "company", n_viaj),
         "limite_diaria":    rng.uniform(150, 800, n_viaj).round(2),
         "cartao_corp":      random.choices([True,False], weights=[70,30], k=n_viaj),
         "ativo":            random.choices([True,False], weights=[90,10], k=n_viaj),
@@ -32,7 +32,7 @@ def gerar_viagem_corp(n, start, end):
     n_dest = 60
     dim_destino = pd.DataFrame({
         "id_destino":       new_ids(n_dest),
-        "cidade":           [fake.city() for _ in range(n_dest)],
+        "cidade":           fake_pool(fake, "city", n_dest),
         "pais":             random.choices(["Brasil","EUA","Portugal","Argentina","Chile","Alemanha","UK","França","Colômbia"], k=n_dest),
         "tipo":             random.choices(TIPOS_VIAGEM, weights=[65,35], k=n_dest),
         "fuso_dif":         rng.integers(-5, 5, n_dest),

@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -17,7 +17,7 @@ def gerar_limpeza(n, start, end):
     n_funcionario = min(max(n // 15, 20), 3000)
     dim_funcionario = pd.DataFrame({
         "id_funcionario":    new_ids(n_funcionario),
-        "nome":              [fake.name() for _ in range(n_funcionario)],
+        "nome":              fake_pool(fake, "name", n_funcionario),
         "cargo":             random.choices(["Auxiliar de Limpeza", "Supervisor", "Encarregado"], weights=[80, 15, 5], k=n_funcionario),
         "ativo":             random.choices([True, False], weights=[90, 10], k=n_funcionario),
     })
@@ -25,7 +25,7 @@ def gerar_limpeza(n, start, end):
     n_contrato = min(max(n // 20, 20), 2000)
     dim_contrato = pd.DataFrame({
         "id_contrato":       new_ids(n_contrato),
-        "cliente":           [fake.company() for _ in range(n_contrato)],
+        "cliente":           fake_pool(fake, "company", n_contrato),
         "tipo_contrato":     random.choices(TIPOS_CONTRATO, weights=[65, 20, 15], k=n_contrato),
         "valor_mensal":      rng.uniform(1500, 60000, n_contrato).round(2),
     })

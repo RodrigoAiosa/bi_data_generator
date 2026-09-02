@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,13 +19,13 @@ def gerar_laboratorio(n, start, end):
     n_pac = min(max(n//3,100),2000)
     dim_paciente = pd.DataFrame({
         "id_paciente":  new_ids(n_pac),
-        "nome":         [fake.name() for _ in range(n_pac)],
-        "cpf":          [fake.cpf() for _ in range(n_pac)],
+        "nome":         fake_pool(fake, "name", n_pac),
+        "cpf":          fake_pool(fake, "cpf", n_pac),
         "data_nasc":    rand_dates(date(1940,1,1), date(2010,12,31), n_pac),
         "sexo":         random.choices(["M","F"], k=n_pac),
         "convenio":     random.choices(CONVENIOS, k=n_pac),
-        "cidade":       [fake.city() for _ in range(n_pac)],
-        "uf":           [fake.state_abbr() for _ in range(n_pac)],
+        "cidade":       fake_pool(fake, "city", n_pac),
+        "uf":           fake_pool(fake, "state_abbr", n_pac),
     })
     n_exam = len(EXAMES)
     dim_exame = pd.DataFrame({

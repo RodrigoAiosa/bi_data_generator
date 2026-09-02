@@ -2,7 +2,7 @@
 import random
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -21,7 +21,7 @@ def gerar_editora(n, start, end):
         "id_livro":          new_ids(n_livro),
         "titulo":            [f"{fake.catch_phrase()}" for _ in range(n_livro)],
         "genero":            random.choices(GENEROS, k=n_livro),
-        "autor":             [fake.name() for _ in range(n_livro)],
+        "autor":             fake_pool(fake, "name", n_livro),
         "formato":           random.choices(FORMATOS, weights=[45, 40, 15], k=n_livro),
         "preco":             preco,
     })

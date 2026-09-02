@@ -3,7 +3,7 @@ import random
 from datetime import date
 import pandas as pd
 from faker import Faker
-from .helpers import dcalendario, new_ids, rand_dates, rng
+from .helpers import dcalendario, new_ids, rand_dates, rng, fake_pool
 
 fake = Faker("pt_BR")
 
@@ -19,20 +19,20 @@ def gerar_saude_mental(n, start, end):
     n_prof = min(max(n//15,20),200)
     dim_profissional = pd.DataFrame({
         "id_profissional":  new_ids(n_prof),
-        "nome":             [fake.name() for _ in range(n_prof)],
+        "nome":             fake_pool(fake, "name", n_prof),
         "crp_crm":          [f"CRP-{rng.integers(10000,99999)}" for _ in range(n_prof)],
         "especialidade":    random.choices(ESPECIALIDADES, k=n_prof),
         "modalidade":       random.choices(MODALIDADES, k=n_prof),
         "valor_sessao":     rng.uniform(80, 600, n_prof).round(2),
         "anos_experiencia": rng.integers(1, 30, n_prof),
         "ativo":            random.choices([True,False], weights=[90,10], k=n_prof),
-        "cidade":           [fake.city() for _ in range(n_prof)],
-        "uf":               [fake.state_abbr() for _ in range(n_prof)],
+        "cidade":           fake_pool(fake, "city", n_prof),
+        "uf":               fake_pool(fake, "state_abbr", n_prof),
     })
     n_pac = min(max(n//3,100),2000)
     dim_paciente = pd.DataFrame({
         "id_paciente":      new_ids(n_pac),
-        "nome":             [fake.name() for _ in range(n_pac)],
+        "nome":             fake_pool(fake, "name", n_pac),
         "data_nasc":        rand_dates(date(1960,1,1), date(2010,12,31), n_pac),
         "sexo":             random.choices(["M","F","Não-binário"], weights=[35,55,10], k=n_pac),
         "diagnostico":      random.choices(DIAGNOSTICOS, k=n_pac),
