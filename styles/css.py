@@ -268,6 +268,12 @@ div[data-testid="stHorizontalBlock"]:has(.stat-card) {
     gap: 12px;
     margin: 20px 0;
 }
+@media (max-width: 900px) {
+    .sector-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 560px) {
+    .sector-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+}
 .flip-wrapper {
     perspective: 800px;
     height: 120px;
@@ -280,7 +286,7 @@ div[data-testid="stHorizontalBlock"]:has(.stat-card) {
     transform-style: preserve-3d;
     transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.flip-wrapper:hover .flip-inner { transform: rotateY(180deg); }
+.flip-wrapper:hover .flip-inner, .flip-wrapper:active .flip-inner { transform: rotateY(180deg); }
 .flip-front, .flip-back {
     position: absolute;
     inset: 0;
@@ -329,6 +335,12 @@ div[data-testid="stHorizontalBlock"]:has(.stat-card) {
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin: 20px 0;
+}
+@media (max-width: 900px) {
+    .steps-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .steps-grid { grid-template-columns: 1fr; }
 }
 .step-card {
     background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%);
