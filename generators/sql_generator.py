@@ -1,7 +1,10 @@
 """generators/sql_generator.py — Gera scripts DDL SQL a partir das tabelas do setor."""
 
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 import pandas as pd
+
+_FUSO_BR = ZoneInfo("America/Sao_Paulo")
 
 # Mapeamento de dtype pandas → tipo SQL (compatível com SQL Server, PostgreSQL e MySQL)
 _DTYPE_SQL = {
@@ -168,7 +171,7 @@ def gerar_sql(nome_setor: str, tabelas: dict[str, pd.DataFrame], dialect: str = 
     lines.append(f"-- BI Data Generator PRO")
     lines.append(f"-- Setor: {nome_setor}")
     lines.append(f"-- Dialeto: {dialect.upper()}")
-    lines.append(f"-- Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    lines.append(f"-- Gerado em: {datetime.now(_FUSO_BR).strftime('%d/%m/%Y %H:%M')}")
     lines.append(f"-- {sep}")
     lines.append("")
 
@@ -452,7 +455,7 @@ def gerar_sql_insert(
     lines.append(f"-- BI Data Generator PRO — INSERT DATA")
     lines.append(f"-- Setor      : {nome_setor}")
     lines.append(f"-- Dialeto    : {dialect.upper()}")
-    lines.append(f"-- Gerado em  : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    lines.append(f"-- Gerado em  : {datetime.now(_FUSO_BR).strftime('%d/%m/%Y %H:%M')}")
     total_rows = sum(len(df) for df in tabelas.values())
     lines.append(f"-- Total linhas: {total_rows:,}")
     lines.append(f"-- {sep}")
