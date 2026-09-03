@@ -92,7 +92,10 @@ _TABS_GUIA_TEXTO = {
         "- 🧮 **DAX Sandbox** — escreva uma medida DAX e veja o resultado calculado DE VERDADE contra "
         "os dados do setor, com diagrama do modelo e explicação passo a passo do cálculo.\n"
         "- 💬 **Pergunte aos Dados** — escreva uma pergunta de negócio em português (ex.: 'qual foi "
-        "o total de vendas?') e veja a medida DAX equivalente e a resposta calculada de verdade."
+        "o total de vendas?') e veja a medida DAX equivalente e a resposta calculada de verdade.\n"
+        "- 🖥️ **Carrossel Power BI** — envie o .pbix do seu relatório, marque as páginas e baixe um "
+        "HTML autônomo (com barra de progresso) que alterna sozinho entre elas — ótimo pra deixar "
+        "rodando num monitor/TV de sala."
     ),
     "en": (
         "- 🏭 **Sector Generator** — generates a ready-to-use synthetic BI dataset, choosing from "
@@ -111,7 +114,10 @@ _TABS_GUIA_TEXTO = {
         "- 🧮 **DAX Sandbox** — write a DAX measure and see the result calculated FOR REAL against "
         "the sector's data, with a model diagram and a step-by-step explanation of the calculation.\n"
         "- 💬 **Ask Your Data** — write a business question in plain language (e.g., 'what was the "
-        "total sales?') and see the equivalent DAX measure and the real calculated answer."
+        "total sales?') and see the equivalent DAX measure and the real calculated answer.\n"
+        "- 🖥️ **Power BI Carousel** — upload your report's .pbix, check which pages to include, and "
+        "download a standalone HTML (with a progress bar) that automatically cycles through them — "
+        "great for leaving running on a lobby monitor/TV."
     ),
 }
 
