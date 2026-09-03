@@ -182,8 +182,10 @@ def gerar_html_carrossel(paginas_com_url: list[tuple[str, str, str]], intervalo_
     """
     Gera um HTML autônomo (sem dependências externas) que alterna entre as
     páginas automaticamente a cada `intervalo_seg` segundos, trocando o
-    'src' de um <iframe> em tela cheia. Basta abrir o arquivo num navegador
-    (ex.: numa TV/monitor de sala) e deixar rodando.
+    'src' de um <iframe> em tela cheia. Mostra também uma barra de
+    progresso na parte inferior indicando o tempo restante até a próxima
+    troca de página. Basta abrir o arquivo num navegador (ex.: numa TV/
+    monitor de sala) e deixar rodando.
 
     paginas_com_url: lista de (nome, page_id, url_completa), na ordem de exibição.
     """
@@ -202,28 +204,58 @@ def gerar_html_carrossel(paginas_com_url: list[tuple[str, str, str]], intervalo_
   html, body {{ margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }}
   iframe {{ width: 100%; height: 100%; border: none; display: block; }}
   #rotulo-pagina {{
-    position: fixed; left: 12px; bottom: 12px;
+    position: fixed; left: 12px; bottom: 14px;
     background: rgba(0,0,0,0.65); color: #fff;
     font-family: Arial, sans-serif; font-size: 14px;
     padding: 6px 12px; border-radius: 6px;
     z-index: 10; pointer-events: none;
+  }}
+  #barra-container {{
+    position: fixed; bottom: 0; left: 0;
+    width: 100%; height: 6px;
+    background: rgba(255,255,255,0.12);
+    z-index: 10;
+  }}
+  #barra-progresso {{
+    height: 100%; width: 100%;
+    background: #F2C811; /* amarelo Power BI */
+    transform-origin: left;
   }}
 </style>
 </head>
 <body>
 <iframe id="frame-relatorio" src="" allowfullscreen></iframe>
 <div id="rotulo-pagina"></div>
+<div id="barra-container">
+  <div id="barra-progresso"></div>
+</div>
 
 <script>
   const PAGINAS = {dados_js};
   const INTERVALO_MS = {intervalo_ms};
   let indiceAtual = 0;
+  const barra = document.getElementById("barra-progresso");
 
   function mostrarPagina(indice) {{
     const pagina = PAGINAS[indice];
     document.getElementById("frame-relatorio").src = pagina.url;
     document.getElementById("rotulo-pagina").textContent =
       (indice + 1) + " / " + PAGINAS.length + " — " + pagina.nome;
+    reiniciarBarra();
+  }}
+
+  function reiniciarBarra() {{
+    // Remove a transição, volta a barra pra 100% instantaneamente
+    barra.style.transition = "none";
+    barra.style.transform = "scaleX(1)";
+
+    // Força o navegador a aplicar o estado acima antes de animar
+    // (senão a transição não reinicia corretamente)
+    void barra.offsetWidth;
+
+    // Agora anima até 0% ao longo do INTERVALO_MS, em ritmo constante
+    barra.style.transition = `transform ${{INTERVALO_MS}}ms linear`;
+    barra.style.transform = "scaleX(0)";
   }}
 
   mostrarPagina(indiceAtual);
