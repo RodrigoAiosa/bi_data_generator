@@ -1,16 +1,18 @@
 """
 generators/carrossel_pbi.py
 
-Lê o arquivo Report/definition/pages/pages.json de um projeto Power BI
-(formato PBIR — a estrutura de pastas que o Power BI Desktop usa desde a
-versão que introduziu o PBIP) e devolve, na ordem definida em "pageOrder",
-o nome de cada página (lido de definition/pages/{id}/page.json) junto com
-o ID da pasta — o valor que vai no parâmetro "pageName" de uma URL de
-embed do Power BI Service.
+Lê as páginas de um relatório Power BI a partir do próprio arquivo .pbix
+(o formato binário padrão — internamente um ZIP contendo Report/Layout,
+um JSON em UTF-16LE com a lista de seções) ou, alternativamente, de um
+ZIP no formato de projeto mais novo (.pbip com PBIR, pasta
+Report/definition/pages/). Devolve, na ordem do relatório, o nome de
+exibição de cada página junto com o ID interno (page_id) — o valor que
+vai no parâmetro "pageName" de uma URL de embed do Power BI Service.
 
-A partir dessa lista, monta as URLs completas de embed e gera um arquivo
-HTML autônomo que alterna entre as páginas automaticamente, a cada N
-segundos, trocando o "src" de um <iframe> em tela cheia.
+A partir da lista de páginas selecionadas pelo usuário, monta as URLs
+completas de embed e gera um arquivo HTML autônomo que alterna entre
+elas automaticamente, a cada N segundos, trocando o "src" de um
+<iframe> em tela cheia.
 """
 
 from __future__ import annotations
@@ -21,39 +23,58 @@ import zipfile
 
 
 class ArquivoInvalidoError(Exception):
-    """Erro amigável quando o ZIP enviado não tem a estrutura esperada."""
+    """Erro amigável quando o arquivo enviado não tem a estrutura esperada."""
 
 
-def extrair_paginas_do_zip(zip_bytes: bytes) -> list[tuple[str, str]]:
+def _extrair_do_layout_classico(zf: zipfile.ZipFile, nomes: list[str]) -> list[tuple[str, str]] | None:
     """
-    Recebe os bytes de um .zip contendo (em qualquer nível de pasta) o
-    caminho 'definition/pages/pages.json' de um relatório Power BI (PBIR),
-    e devolve uma lista ordenada de (nome_da_pagina, page_id).
-
-    Aceita tanto um ZIP do projeto inteiro (.pbip com as pastas .Report e
-    .SemanticModel) quanto um ZIP só da pasta .Report — a busca é feita
-    pelo final do caminho, não pelo caminho exato, então funciona
-    independente de como a pessoa organizou o ZIP.
+    Tenta ler o formato PADRÃO de um .pbix: um único arquivo 'Report/Layout'
+    (em UTF-16LE, às vezes com BOM) contendo um JSON com a lista de
+    'sections' — cada uma com 'name' (o page_id usado no pageName da URL
+    de embed) e 'displayName' (o nome exibido na aba do relatório).
+    Devolve None se não encontrar esse arquivo (não é um erro — pode ser
+    que o arquivo enviado use o formato de pasta PBIR, tratado à parte).
     """
+    caminho_layout = next(
+        (n for n in nomes if n.replace("\\", "/").lower() == "report/layout"),
+        None,
+    )
+    if caminho_layout is None:
+        return None
+
+    bruto = zf.read(caminho_layout)
     try:
-        zf = zipfile.ZipFile(io.BytesIO(zip_bytes))
-    except zipfile.BadZipFile:
-        raise ArquivoInvalidoError(
-            "O arquivo enviado não é um .zip válido. Compacte a pasta do seu "
-            "projeto Power BI (ou pelo menos a pasta 'Report') em um .zip e tente de novo."
-        )
+        texto = bruto.decode("utf-16")  # detecta BOM automaticamente, se houver
+    except UnicodeDecodeError:
+        texto = bruto.decode("utf-16-le")
 
-    nomes = zf.namelist()
+    try:
+        layout = json.loads(texto)
+    except json.JSONDecodeError as e:
+        raise ArquivoInvalidoError(f"O arquivo Report/Layout não é um JSON válido: {e}")
+
+    secoes = layout.get("sections", [])
+    if not secoes:
+        raise ArquivoInvalidoError("O Report/Layout foi encontrado, mas não tem nenhuma página em 'sections'.")
+
+    secoes_ordenadas = sorted(secoes, key=lambda s: s.get("ordinal", 0))
+    return [(s.get("displayName") or s.get("name", "?"), s["name"]) for s in secoes_ordenadas]
+
+
+def _extrair_do_pbir(zf: zipfile.ZipFile, nomes: list[str]) -> list[tuple[str, str]] | None:
+    """
+    Tenta ler o formato de PASTA mais novo (.pbip com PBIR, ou um .pbix com
+    PBIR habilitado): Report/definition/pages/pages.json (lista 'pageOrder')
+    + um definition/pages/{id}/page.json por página (campo 'displayName').
+    Devolve None se não encontrar pages.json (trata-se à parte do formato
+    clássico acima).
+    """
     caminho_pages_json = next(
         (n for n in nomes if n.replace("\\", "/").lower().endswith("definition/pages/pages.json")),
         None,
     )
     if caminho_pages_json is None:
-        raise ArquivoInvalidoError(
-            "Não encontrei o arquivo 'definition/pages/pages.json' dentro do ZIP. "
-            "Confirme que o ZIP contém a pasta 'Report/definition/pages' do seu "
-            "projeto Power BI (formato .pbip com PBIR, não o .pbix binário antigo)."
-        )
+        return None
 
     try:
         pages_json = json.loads(zf.read(caminho_pages_json).decode("utf-8"))
@@ -73,7 +94,7 @@ def extrair_paginas_do_zip(zip_bytes: bytes) -> list[tuple[str, str]]:
             ),
             None,
         )
-        nome_pagina = page_id  # fallback caso não ache o page.json ou o displayName
+        nome_pagina = page_id
         if caminho_page_json:
             try:
                 page_json = json.loads(zf.read(caminho_page_json).decode("utf-8"))
@@ -83,6 +104,43 @@ def extrair_paginas_do_zip(zip_bytes: bytes) -> list[tuple[str, str]]:
         paginas.append((nome_pagina, page_id))
 
     return paginas
+
+
+def extrair_paginas_do_zip(arquivo_bytes: bytes) -> list[tuple[str, str]]:
+    """
+    Recebe os bytes de um arquivo Power BI e devolve uma lista ordenada de
+    (nome_da_pagina, page_id). Aceita:
+    - um .pbix de verdade (o formato binário padrão do Power BI Desktop,
+      com Report/Layout no formato clássico);
+    - um .pbix com PBIR habilitado, ou o ZIP de um projeto .pbip inteiro
+      (ou só da pasta .Report), no formato de pasta mais novo
+      (Report/definition/pages/pages.json).
+    A detecção é automática — não precisa informar qual formato é.
+    """
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(arquivo_bytes))
+    except zipfile.BadZipFile:
+        raise ArquivoInvalidoError(
+            "Não consegui abrir o arquivo enviado como um pacote Power BI válido. "
+            "Confirme que é um arquivo .pbix (ou o .zip do projeto .pbip) e tente de novo."
+        )
+
+    nomes = zf.namelist()
+
+    paginas = _extrair_do_layout_classico(zf, nomes)
+    if paginas is not None:
+        return paginas
+
+    paginas = _extrair_do_pbir(zf, nomes)
+    if paginas is not None:
+        return paginas
+
+    raise ArquivoInvalidoError(
+        "Não encontrei as páginas do relatório dentro do arquivo — nem 'Report/Layout' "
+        "(formato .pbix padrão) nem 'Report/definition/pages/pages.json' (formato de "
+        "projeto .pbip/PBIR). Confirme que o arquivo enviado é mesmo um .pbix exportado "
+        "do Power BI Desktop, ou o .zip de um projeto .pbip."
+    )
 
 
 def montar_url_embed(

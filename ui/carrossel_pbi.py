@@ -1,10 +1,10 @@
 """
 ui/carrossel_pbi.py: Aba "🖥️ Carrossel Power BI".
 
-Envie o ZIP do seu projeto Power BI (formato .pbip/PBIR — a pasta que tem
-Report/definition/pages/pages.json), informe o reportId e o ctid do
+Envie o arquivo .pbix do seu relatório (ou o .zip de um projeto .pbip),
+marque quais páginas quer incluir, informe o reportId e o ctid do
 relatório publicado no Power BI Service, e baixe um arquivo HTML pronto
-que alterna sozinho entre as páginas do relatório a cada N segundos —
+que alterna sozinho entre as páginas selecionadas a cada N segundos —
 útil para deixar num monitor/TV de sala em modo apresentação.
 """
 
@@ -21,11 +21,11 @@ from generators.carrossel_pbi import (
 def render_carrossel_pbi() -> None:
     st.markdown("## 🖥️ Carrossel Power BI")
     st.caption(
-        "Envie o **ZIP do seu projeto Power BI** (formato .pbip com PBIR — precisa conter "
-        "`Report/definition/pages/pages.json`), informe o **reportId** e o **ctid** do "
+        "Envie o **arquivo .pbix** do seu relatório (ou o .zip de um projeto .pbip), "
+        "marque quais páginas quer incluir, informe o **reportId** e o **ctid** do "
         "relatório já publicado no Power BI Service, e baixe um HTML pronto que alterna "
-        "sozinho entre as páginas do relatório a cada X segundos — ótimo para deixar rodando "
-        "num monitor ou TV de sala em modo apresentação."
+        "sozinho entre as páginas selecionadas a cada X segundos — ótimo para deixar "
+        "rodando num monitor ou TV de sala em modo apresentação."
     )
 
     with st.expander("❓ Onde encontro o reportId e o ctid?"):
@@ -37,12 +37,49 @@ def render_carrossel_pbi() -> None:
         )
 
     arquivo = st.file_uploader(
-        "ZIP do projeto Power BI",
-        type=["zip"],
-        key="carrossel_zip",
-        help="Compacte a pasta do seu projeto .pbip (ou pelo menos a pasta 'Report') em um .zip.",
+        "Arquivo .pbix (ou .zip de um projeto .pbip)",
+        type=["pbix", "zip"],
+        key="carrossel_arquivo",
+        help="Envie o .pbix exportado do Power BI Desktop normalmente. Também aceita o "
+             ".zip de um projeto .pbip (com PBIR), se você usar esse formato.",
     )
 
+    if not arquivo:
+        st.info("Envie o arquivo para começar.")
+        return
+
+    try:
+        paginas = extrair_paginas_do_zip(arquivo.getvalue())
+    except ArquivoInvalidoError as e:
+        st.error(str(e))
+        return
+
+    st.success(f"✅ {len(paginas)} página(s) encontrada(s) no relatório.")
+
+    col_sel1, col_sel2 = st.columns(2)
+    with col_sel1:
+        marcar_todas = st.button("☑️ Marcar todas", use_container_width=True, key="carrossel_marcar_todas")
+    with col_sel2:
+        desmarcar_todas = st.button("⬜ Desmarcar todas", use_container_width=True, key="carrossel_desmarcar_todas")
+
+    st.markdown("**Marque as páginas que quer incluir no carrossel:**")
+    paginas_selecionadas = []
+    for i, (nome, page_id) in enumerate(paginas):
+        chave = f"carrossel_pagina_{i}_{page_id}"
+        if marcar_todas:
+            st.session_state[chave] = True
+        if desmarcar_todas:
+            st.session_state[chave] = False
+        st.session_state.setdefault(chave, True)
+        marcada = st.checkbox(f"{nome}  \u2003`{page_id}`", key=chave)
+        if marcada:
+            paginas_selecionadas.append((nome, page_id))
+
+    if not paginas_selecionadas:
+        st.warning("Marque pelo menos uma página para continuar.")
+        return
+
+    st.divider()
     col1, col2 = st.columns(2)
     with col1:
         report_id = st.text_input("reportId", key="carrossel_report_id", placeholder="a416b3a1-5446-422b-9d1c-9ac5c3089fd7")
@@ -57,31 +94,16 @@ def render_carrossel_pbi() -> None:
     with col5:
         auto_auth = st.checkbox("autoAuth", value=True, key="carrossel_autoauth")
 
-    if not arquivo:
-        st.info("Envie o ZIP do projeto para começar.")
-        return
-
-    try:
-        paginas = extrair_paginas_do_zip(arquivo.getvalue())
-    except ArquivoInvalidoError as e:
-        st.error(str(e))
-        return
-
-    st.success(f"✅ {len(paginas)} página(s) encontrada(s) no projeto.")
-
     if not report_id.strip() or not ctid.strip():
         st.warning("Preencha o **reportId** e o **ctid** acima para gerar as URLs de embed e o HTML do carrossel.")
-        with st.expander("📄 Páginas encontradas (ordem do relatório)", expanded=True):
-            for i, (nome, page_id) in enumerate(paginas, 1):
-                st.markdown(f"{i}. **{nome}** — `{page_id}`")
         return
 
     paginas_com_url = [
         (nome, page_id, montar_url_embed(report_id.strip(), ctid.strip(), page_id, chromeless, auto_auth))
-        for nome, page_id in paginas
+        for nome, page_id in paginas_selecionadas
     ]
 
-    with st.expander("📄 Páginas e URLs de embed geradas", expanded=True):
+    with st.expander(f"📄 {len(paginas_com_url)} página(s) selecionada(s) — URLs de embed geradas", expanded=True):
         for i, (nome, page_id, url) in enumerate(paginas_com_url, 1):
             st.markdown(f"**{i}. {nome}**")
             st.code(url, language="text")
