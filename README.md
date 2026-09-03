@@ -4,7 +4,7 @@ Gerador de **dados fictícios em modelo estrela** (fato + dimensões + calendár
 
 Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário, medidas DAX sugeridas, modelo TMDL pronto para o Power BI, dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
 
-O app principal tem **9 abas**: o Gerador de Setores (200 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada), o Formatar M (o mesmo princípio, mas para código Power Query), o Auditor de Modelo (cole o TMDL de um modelo seu e receba uma nota de qualidade), o DAX Sandbox (escreva uma medida DAX e veja o resultado calculado de verdade contra os dados) e o Pergunte aos Dados (escreva uma pergunta de negócio em português e veja a medida DAX equivalente e a resposta calculada de verdade).
+O app principal tem **10 abas**: o Gerador de Setores (200 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada), o Formatar M (o mesmo princípio, mas para código Power Query), o Auditor de Modelo (cole o TMDL de um modelo seu e receba uma nota de qualidade), o DAX Sandbox (escreva uma medida DAX e veja o resultado calculado de verdade contra os dados), o Pergunte aos Dados (escreva uma pergunta de negócio em português e veja a medida DAX equivalente e a resposta calculada de verdade) e o Carrossel Power BI (envie o ZIP do seu projeto e baixe um HTML que alterna sozinho entre as páginas do relatório publicado).
 
 > Aplicação construída em **Streamlit** e distribuída publicamente em:
 > 🔗 **https://rodrigoaiosa.streamlit.app**
@@ -179,7 +179,7 @@ streamlit run app.py
 
 ## 🖱 Como usar o app
 
-O app abre com **9 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox" e "💬 Pergunte aos Dados".
+O app abre com **10 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox", "💬 Pergunte aos Dados" e "🖥️ Carrossel Power BI".
 
 ### Aba 🏭 Gerador de Setores
 
@@ -230,6 +230,10 @@ Veja a seção [DAX Sandbox](#-dax-sandbox) para o passo a passo completo.
 ### Aba 💬 Pergunte aos Dados
 
 Veja a seção [Pergunte aos Dados](#-pergunte-aos-dados) para o passo a passo completo.
+
+### Aba 🖥️ Carrossel Power BI
+
+Envie o ZIP do seu projeto Power BI (precisa conter `Report/definition/pages/pages.json`), informe o `reportId` e o `ctid` do relatório publicado no Power BI Service, e baixe um HTML pronto que alterna sozinho entre as páginas do relatório a cada X segundos — útil para deixar rodando num monitor/TV de sala em modo apresentação. Ferramenta autônoma, não depende de nenhum setor gerado.
 
 ---
 

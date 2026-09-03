@@ -40,6 +40,7 @@ from ui.sugestao_proximo_passo import sugerir
 from ui.auditor_modelo import render_auditor_modelo
 from ui.dax_sandbox import render_dax_sandbox
 from ui.pergunte_dados import render_pergunte_dados
+from ui.carrossel_pbi import render_carrossel_pbi
 
 st.set_page_config(**PAGE_CONFIG)
 
@@ -422,8 +423,8 @@ def main() -> None:
         st.markdown(_TABS_GUIA_TEXTO[lang])
     st.session_state["tabs_guia_visto"] = True
 
-    tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_dax, tab_m, tab_auditor, tab_sandbox, tab_pergunte = st.tabs(
-        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox", "💬 Pergunte aos Dados"]
+    tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_dax, tab_m, tab_auditor, tab_sandbox, tab_pergunte, tab_carrossel = st.tabs(
+        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox", "💬 Pergunte aos Dados", "🖥️ Carrossel Power BI"]
     )
 
     with tab_gerador:
@@ -499,6 +500,9 @@ def main() -> None:
 
     with tab_pergunte:
         render_pergunte_dados(setor, n_linhas, data_inicio, data_fim)
+
+    with tab_carrossel:
+        render_carrossel_pbi()
 
 
 if __name__ == "__main__":
