@@ -4,7 +4,7 @@ Gerador de **dados fictícios em modelo estrela** (fato + dimensões + calendár
 
 Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário, medidas DAX sugeridas, modelo TMDL pronto para o Power BI, dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
 
-O app principal tem **10 abas**: o Gerador de Setores (200 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada), o Formatar M (o mesmo princípio, mas para código Power Query), o Auditor de Modelo (cole o TMDL de um modelo seu e receba uma nota de qualidade), o DAX Sandbox (escreva uma medida DAX e veja o resultado calculado de verdade contra os dados), o Pergunte aos Dados (escreva uma pergunta de negócio em português e veja a medida DAX equivalente e a resposta calculada de verdade) e o Carrossel Power BI (envie o ZIP do seu projeto e baixe um HTML que alterna sozinho entre as páginas do relatório publicado).
+O app principal tem **10 abas**: o Gerador de Setores (200 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada), o Formatar M (o mesmo princípio, mas para código Power Query), o Auditor de Modelo (cole o TMDL de um modelo seu e receba uma nota de qualidade), o DAX Sandbox (escreva uma medida DAX e veja o resultado calculado de verdade contra os dados), o Pergunte aos Dados (escreva uma pergunta de negócio em português e veja a medida DAX equivalente e a resposta calculada de verdade) e o Carrossel Power BI (envie o .pbix do seu relatório, marque as páginas e baixe um HTML com barra de progresso que alterna sozinho entre elas).
 
 > Aplicação construída em **Streamlit** e distribuída publicamente em:
 > 🔗 **https://rodrigoaiosa.streamlit.app**
@@ -32,6 +32,7 @@ O app principal tem **10 abas**: o Gerador de Setores (200 bases prontas), o Aut
 - [Auditor de Modelo](#-auditor-de-modelo)
 - [DAX Sandbox](#-dax-sandbox)
 - [Pergunte aos Dados](#-pergunte-aos-dados)
+- [Carrossel Power BI](#-carrossel-power-bi)
 - [Sugestão de próximo passo entre abas](#-sugestão-de-próximo-passo-entre-abas)
 - [Log de acesso e painel de uso](#-log-de-acesso-e-painel-de-uso)
 - [Internacionalização (PT/EN)](#-internacionalização-ptEN)
@@ -233,7 +234,7 @@ Veja a seção [Pergunte aos Dados](#-pergunte-aos-dados) para o passo a passo c
 
 ### Aba 🖥️ Carrossel Power BI
 
-Envie o ZIP do seu projeto Power BI (precisa conter `Report/definition/pages/pages.json`), informe o `reportId` e o `ctid` do relatório publicado no Power BI Service, e baixe um HTML pronto que alterna sozinho entre as páginas do relatório a cada X segundos — útil para deixar rodando num monitor/TV de sala em modo apresentação. Ferramenta autônoma, não depende de nenhum setor gerado.
+Veja a seção [Carrossel Power BI](#-carrossel-power-bi) para o passo a passo completo.
 
 ---
 
@@ -700,6 +701,7 @@ Depois de concluir uma ação relevante em qualquer uma das abas (gerar uma base
 - **Auditor de Modelo** (`ui/auditor_modelo.py`): cole o TMDL de um modelo Power BI seu de verdade e receba uma nota de qualidade com achados acionáveis (medida duplicada, divisão sem `DIVIDE()`, coluna calculada que poderia ser medida, relacionamento inativo não utilizado, entre outras checagens).
 - **DAX Sandbox** (`ui/dax_sandbox.py` + `generators/dax_engine.py`): escreva uma medida DAX e veja o resultado calculado de verdade contra os dados do setor escolhido — não é só formatação de texto, é o subconjunto pedagógico (SUM, AVERAGE, COUNTROWS, DIVIDE, CALCULATE com filtro inclusive cruzando pra uma dimensão relacionada) rodando de verdade, com diagrama do modelo e passo a passo do cálculo.
 - **Pergunte aos Dados** (`ui/pergunte_dados.py` + `generators/qa_engine.py`): escreva uma pergunta de negócio em português (ex.: "qual foi o total de vendas?") e veja a medida DAX equivalente e a resposta calculada de verdade — motor de reconhecimento de padrões (sem LLM), que recusa honestamente perguntas fora do escopo (previsão, causa) em vez de arriscar uma resposta errada.
+- **Carrossel Power BI** (`ui/carrossel_pbi.py` + `generators/carrossel_pbi.py`): envie o .pbix do seu relatório (ou o .zip de um projeto .pbip), marque as páginas, cole o link do relatório publicado e baixe um HTML autônomo com barra de progresso que alterna sozinho entre as páginas selecionadas — pronto para deixar rodando num monitor/TV de sala.
 - **Progresso pessoal no Simulador PL-300** (sem ranking): painel com melhor nota, média geral e gráfico de evolução, combinando o histórico da sessão atual com arquivos `.csv` de tentativas anteriores reimportados, sem precisar de login.
 - **Sugestão de próximo passo entre abas** (`ui/sugestao_proximo_passo.py`): depois de uma ação concluída em qualquer aba, uma sugestão discreta aponta pra próxima ferramenta que provavelmente faz sentido usar.
 - **Log de acesso** (`log_acesso.py`): registra uso real do app numa planilha Google Sheets, com um painel de análise separado ([`dash_bi_data_generator`](https://github.com/RodrigoAiosa/dash_bi_data_generator)).
@@ -994,6 +996,30 @@ Complementa o DAX Sandbox no sentido inverso: em vez de você escrever a medida 
 | Ticket médio | *"Qual é o ticket médio?"* |
 
 Perguntas fora desse escopo (previsão, explicação de causa, ou que mencionem uma medida que não existe no setor escolhido) são recusadas com uma mensagem clara, nunca respondidas por adivinhação.
+
+---
+
+## 🖥️ Carrossel Power BI
+
+Ferramenta autônoma (não depende de nenhum setor gerado): envie o **arquivo .pbix** do seu relatório publicado, marque quais páginas quer incluir, cole o link do relatório e baixe um arquivo HTML pronto que alterna sozinho entre as páginas selecionadas — com uma barra de progresso na parte inferior mostrando o tempo restante até a próxima troca. Ideal para deixar rodando num monitor ou TV de sala em modo apresentação.
+
+### Como usar
+
+1. Exporte (ou já tenha) o **.pbix** do relatório que você quer exibir — o mesmo arquivo que você abre no Power BI Desktop. Também aceita o `.zip` de um projeto `.pbip` (formato PBIR), se você usar esse formato mais novo.
+2. **Publique o relatório** no Power BI Service (se ainda não publicou) e vá em **Arquivo → Inserir relatório → Site ou portal**.
+3. Envie o .pbix na aba, **marque as páginas** que quer incluir no carrossel (todas vêm marcadas por padrão; dá para desmarcar as que não quer, ou usar os botões "Marcar todas"/"Desmarcar todas").
+4. **Cole o link** (ou o código `<iframe>` inteiro) obtido no passo 2 — a ferramenta identifica sozinha o `reportId` e o `ctid` de dentro dele, não precisa recortar nada.
+5. Ajuste o intervalo de troca (em segundos) e clique em **"📥 Baixar carrossel.html"**.
+6. Abra o arquivo baixado em qualquer navegador (de preferência já autenticado no Power BI, já que os relatórios usam `autoAuth`) e deixe em tela cheia.
+
+### Formatos de arquivo aceitos
+
+A extração de páginas reconhece automaticamente dois formatos, sem precisar informar qual é:
+
+- **`.pbix` padrão** (o formato binário comum do Power BI Desktop) — lê o arquivo interno `Report/Layout` (JSON em UTF-16LE com a lista de páginas).
+- **`.pbip`/PBIR** (o formato de projeto mais novo, em pastas) — lê `Report/definition/pages/pages.json` e os `page.json` de cada página.
+
+Se o arquivo enviado não tiver nenhum dos dois, ou se o link colado não contiver um `reportId`/`ctid` reconhecível, a ferramenta explica exatamente o que faltou, em vez de gerar um HTML quebrado.
 
 ---
 
