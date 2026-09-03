@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import io
 import json
+import re
 import zipfile
 
 
@@ -141,6 +142,22 @@ def extrair_paginas_do_zip(arquivo_bytes: bytes) -> list[tuple[str, str]]:
         "projeto .pbip/PBIR). Confirme que o arquivo enviado é mesmo um .pbix exportado "
         "do Power BI Desktop, ou o .zip de um projeto .pbip."
     )
+
+
+def extrair_report_id_ctid(texto: str) -> tuple[str, str] | None:
+    """
+    Extrai o reportId e o ctid de um link ou trecho de código colado pelo
+    usuário — aceita tanto uma URL solta (https://app.powerbi.com/reportEmbed
+    ?reportId=...&ctid=...) quanto o <iframe> completo que o Power BI
+    Service gera em "Arquivo → Inserir relatório → Site ou portal" (o link
+    fica dentro do atributo src="..." do iframe). Devolve None se não
+    encontrar os dois valores no formato esperado (GUID).
+    """
+    m_report = re.search(r"reportId=([0-9a-fA-F]{8}-[0-9a-fA-F-]{27})", texto)
+    m_ctid = re.search(r"ctid=([0-9a-fA-F]{8}-[0-9a-fA-F-]{27})", texto)
+    if m_report and m_ctid:
+        return m_report.group(1), m_ctid.group(1)
+    return None
 
 
 def montar_url_embed(

@@ -2,10 +2,10 @@
 ui/carrossel_pbi.py: Aba "🖥️ Carrossel Power BI".
 
 Envie o arquivo .pbix do seu relatório (ou o .zip de um projeto .pbip),
-marque quais páginas quer incluir, informe o reportId e o ctid do
-relatório publicado no Power BI Service, e baixe um arquivo HTML pronto
-que alterna sozinho entre as páginas selecionadas a cada N segundos —
-útil para deixar num monitor/TV de sala em modo apresentação.
+marque quais páginas quer incluir, cole o link (ou o código de inserção)
+do relatório publicado no Power BI Service, e baixe um arquivo HTML
+pronto que alterna sozinho entre as páginas selecionadas a cada N
+segundos — útil para deixar num monitor/TV de sala em modo apresentação.
 """
 
 import streamlit as st
@@ -13,6 +13,7 @@ import streamlit as st
 from generators.carrossel_pbi import (
     ArquivoInvalidoError,
     extrair_paginas_do_zip,
+    extrair_report_id_ctid,
     gerar_html_carrossel,
     montar_url_embed,
 )
@@ -22,18 +23,18 @@ def render_carrossel_pbi() -> None:
     st.markdown("## 🖥️ Carrossel Power BI")
     st.caption(
         "Envie o **arquivo .pbix** do seu relatório (ou o .zip de um projeto .pbip), "
-        "marque quais páginas quer incluir, informe o **reportId** e o **ctid** do "
-        "relatório já publicado no Power BI Service, e baixe um HTML pronto que alterna "
-        "sozinho entre as páginas selecionadas a cada X segundos — ótimo para deixar "
-        "rodando num monitor ou TV de sala em modo apresentação."
+        "marque quais páginas quer incluir, cole o **link do relatório publicado** no "
+        "Power BI Service, e baixe um HTML pronto que alterna sozinho entre as páginas "
+        "selecionadas a cada X segundos — ótimo para deixar rodando num monitor ou TV de "
+        "sala em modo apresentação."
     )
 
-    with st.expander("❓ Onde encontro o reportId e o ctid?"):
+    with st.expander("❓ Onde encontro esse link?"):
         st.markdown(
             "No Power BI Service, abra o relatório publicado e vá em **Arquivo → Inserir "
-            "relatório → Site ou portal**. Na URL/código gerado, copie os valores depois de "
-            "`reportId=` e `ctid=` — são dois GUIDs, algo como "
-            "`a416b3a1-5446-422b-9d1c-9ac5c3089fd7`."
+            "relatório → Site ou portal**. Cole aqui embaixo o link (ou o código `<iframe>` "
+            "inteiro) que aparece lá — a ferramenta identifica sozinha o `reportId` e o "
+            "`ctid` dentro dele, não precisa recortar nada."
         )
 
     arquivo = st.file_uploader(
@@ -80,11 +81,12 @@ def render_carrossel_pbi() -> None:
         return
 
     st.divider()
-    col1, col2 = st.columns(2)
-    with col1:
-        report_id = st.text_input("reportId", key="carrossel_report_id", placeholder="a416b3a1-5446-422b-9d1c-9ac5c3089fd7")
-    with col2:
-        ctid = st.text_input("ctid (tenant)", key="carrossel_ctid", placeholder="3606e3a2-62f5-40ac-ad22-0d6c80989030")
+    link_relatorio = st.text_area(
+        "Link (ou código de inserção) do relatório publicado",
+        key="carrossel_link",
+        placeholder="https://app.powerbi.com/reportEmbed?reportId=...&autoAuth=true&ctid=...",
+        height=100,
+    )
 
     col3, col4, col5 = st.columns(3)
     with col3:
@@ -94,12 +96,23 @@ def render_carrossel_pbi() -> None:
     with col5:
         auto_auth = st.checkbox("autoAuth", value=True, key="carrossel_autoauth")
 
-    if not report_id.strip() or not ctid.strip():
-        st.warning("Preencha o **reportId** e o **ctid** acima para gerar as URLs de embed e o HTML do carrossel.")
+    if not link_relatorio.strip():
+        st.warning("Cole acima o link (ou código de inserção) do relatório para gerar o HTML do carrossel.")
         return
 
+    ids = extrair_report_id_ctid(link_relatorio)
+    if ids is None:
+        st.error(
+            "Não encontrei o `reportId` e o `ctid` nesse texto. Confirme que colou o link "
+            "(ou o `<iframe>`) obtido em **Arquivo → Inserir relatório → Site ou portal**, "
+            "no Power BI Service — não o link do arquivo .pbix nem outro tipo de "
+            "compartilhamento."
+        )
+        return
+    report_id, ctid = ids
+
     paginas_com_url = [
-        (nome, page_id, montar_url_embed(report_id.strip(), ctid.strip(), page_id, chromeless, auto_auth))
+        (nome, page_id, montar_url_embed(report_id, ctid, page_id, chromeless, auto_auth))
         for nome, page_id in paginas_selecionadas
     ]
 
