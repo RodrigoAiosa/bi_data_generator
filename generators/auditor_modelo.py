@@ -34,13 +34,16 @@ def _extrair_medidas(texto: str) -> list:
     linhas = texto.split("\n")
     i = 0
     while i < len(linhas):
-        m = re.match(r"^\s*measure\s+'([^']+)'\s*=\s*(.*)$", linhas[i])
+        # Aceita tanto measure 'Nome Com Espaço' (aspas obrigatórias quando o
+        # nome tem espaço/caractere especial) quanto measure NomeSimples (sem
+        # aspas, válido quando o nome não tem espaço) — os dois são TMDL real.
+        m = re.match(r"^\s*measure\s+(?:'([^']+)'|(\S+))\s*=\s*(.*)$", linhas[i])
         if not m:
             i += 1
             continue
 
-        nome = m.group(1)
-        resto = m.group(2).strip()
+        nome = m.group(1) if m.group(1) is not None else m.group(2)
+        resto = m.group(3).strip()
 
         if resto == "```":
             corpo_linhas = []
@@ -87,12 +90,13 @@ def _extrair_colunas(texto: str) -> list:
             tabela_atual = m_tabela.group(1)
             continue
 
-        m_coluna = re.match(r"^\t\tcolumn\s+(\S+)", linha)
+        m_coluna = re.match(r"^\t\tcolumn\s+(?:'([^']+)'|(\S+))", linha)
         if m_coluna:
             if bloco_coluna:
                 colunas.append(bloco_coluna)
+            nome_coluna = m_coluna.group(1) if m_coluna.group(1) is not None else m_coluna.group(2)
             bloco_coluna = {
-                "tabela": tabela_atual, "nome": m_coluna.group(1).strip("'\""),
+                "tabela": tabela_atual, "nome": nome_coluna.strip("'\""),
                 "calculada": False, "hidden": False,
             }
             continue
@@ -102,7 +106,9 @@ def _extrair_colunas(texto: str) -> list:
                 bloco_coluna["calculada"] = True
             if re.search(r"\bisHidden:\s*true", linha, re.IGNORECASE):
                 bloco_coluna["hidden"] = True
-            if re.match(r"^\t\t(measure|column|table)\b", linha) and not re.match(r"^\t\tcolumn\s+" + re.escape(bloco_coluna["nome"]), linha):
+            if re.match(r"^\t\t(measure|column|table)\b", linha) and not re.match(
+                r"^\t\tcolumn\s+'?" + re.escape(bloco_coluna["nome"]) + r"'?", linha
+            ):
                 colunas.append(bloco_coluna)
                 bloco_coluna = None
 
@@ -140,7 +146,11 @@ def _checar_divisao_direta(medidas: list) -> list:
         formula = m["formula"]
         if "DIVIDE(" in formula.upper():
             continue
-        if re.search(r"[\]\)]\s*/\s*[\[\(]", formula):
+        # Remove o conteúdo de strings literais (entre aspas duplas) antes de
+        # checar — sem isso, um texto/data dentro de aspas (ex.: "25/12/2024")
+        # é confundido com uma divisão de verdade.
+        formula_sem_strings = re.sub(r'"[^"]*"', '""', formula)
+        if re.search(r"[\]\)\d]\s*/\s*[\[\(\w]", formula_sem_strings):
             achados.append({
                 "severidade": "média", "categoria": "Divisão sem DIVIDE()",
                 "medida": m["nome"],
