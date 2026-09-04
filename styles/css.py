@@ -270,9 +270,11 @@ div[data-testid="stHorizontalBlock"]:has(.stat-card) {
 }
 @media (max-width: 900px) {
     .sector-grid { grid-template-columns: repeat(3, 1fr); }
+    .flip-wrapper { height: 132px; }
 }
 @media (max-width: 560px) {
     .sector-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .flip-wrapper { height: 144px; }
 }
 .flip-wrapper {
     perspective: 800px;
@@ -299,6 +301,7 @@ div[data-testid="stHorizontalBlock"]:has(.stat-card) {
     justify-content: center;
     padding: 14px 12px;
     text-align: center;
+    overflow: hidden;
 }
 .flip-front {
     background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%);
@@ -318,6 +321,9 @@ div[data-testid="stHorizontalBlock"]:has(.stat-card) {
     font-size: 0.8rem;
     font-weight: 700;
     color: #e2e0dd;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
 }
 .flip-back-title {
     font-family: 'Syne', sans-serif !important;
