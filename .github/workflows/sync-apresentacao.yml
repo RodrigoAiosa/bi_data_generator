@@ -1,0 +1,66 @@
+name: Sincronizar apresentação
+
+# Roda toda vez que algo que pode mudar os números da apresentação
+# (quantidade de setores, medidas DAX ou abas) é alterado na branch main.
+# Se os números da apresentação (assets/BI_Data_Generator_Apresentacao.pptx)
+# estiverem desatualizados, o workflow atualiza e comita de volta sozinho.
+#
+# O que ele NÃO faz: se uma aba/ferramenta nova for adicionada, ele avisa
+# no log do Actions (fica visível na aba "Actions" do repositório) mas não
+# cria automaticamente o card/slide novo — isso continua exigindo trabalho
+# manual de design (texto, layout), igual foi feito pra "Pergunte aos Dados"
+# e "Carrossel Power BI".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "config.py"
+      - "app.py"
+      - "generators/**.py"
+      - "assets/BI_Data_Generator_Apresentacao.pptx"
+  workflow_dispatch: {}  # permite rodar manualmente pela aba Actions também
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: |
+          pip install -r requirements.txt
+          pip install python-pptx
+
+      - name: Rodar a sincronização
+        id: sync
+        run: python scripts/sync_apresentacao.py
+
+      - name: Verificar se o arquivo mudou
+        id: diff
+        run: |
+          if git diff --quiet -- assets/BI_Data_Generator_Apresentacao.pptx; then
+            echo "mudou=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "mudou=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comitar a apresentação atualizada
+        if: steps.diff.outputs.mudou == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/BI_Data_Generator_Apresentacao.pptx
+          git commit -m "chore(apresentacao): sincroniza numeros automaticamente [skip ci]"
+          git push
