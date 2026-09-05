@@ -96,6 +96,16 @@ def _semantic_model_files(nome_limpo: str, tabelas: dict[str, pd.DataFrame]) -> 
     base = f"{nome_limpo}.SemanticModel"
     arquivos: dict[str, str] = {
         f"{base}/.platform": _platform_json("SemanticModel", nome_limpo),
+        # definition.pbism é um arquivo OBRIGATÓRIO na raiz da pasta .SemanticModel
+        # (não dentro de definition/) — sem ele o Power BI Desktop recusa abrir o
+        # projeto com "DatasetDefinition: Required artifact is missing". Schema
+        # confirmado na documentação oficial de PBIP (Microsoft Learn): apenas
+        # 'version' e 'datasetReference' (null/null quando o modelo é local, não
+        # uma referência a um semantic model já publicado no serviço).
+        f"{base}/definition.pbism": json.dumps(
+            {"version": "1.0", "datasetReference": {"byPath": None, "byConnection": None}},
+            indent=2, ensure_ascii=False,
+        ) + "\n",
         f"{base}/definition/database.tmdl": f"database {nome_limpo}\n\tcompatibilityLevel: {_COMPATIBILITY_LEVEL}\n",
     }
 
