@@ -43,6 +43,22 @@ SLIDER_MAX = 100000
 SLIDER_DEFAULT = 5000
 SLIDER_STEP = 100
 
+
+# ── Mês de início do ano fiscal (global, session_state) ──────────────────────
+# Mesmo padrão de generators/i18n.get_lang()/set_lang(): um getter/setter
+# fininho sobre st.session_state, pra generators/helpers.dcalendario() ler
+# sem precisar receber esse parâmetro em cada uma das ~200 chamadas
+# `dcalendario(start, end)` espalhadas pelos geradores de setor.
+def get_mes_fiscal() -> int:
+    """Mês (1-12) em que o ano fiscal começa. Default 1 (ano fiscal = ano civil)."""
+    import streamlit as st
+    return st.session_state.get("mes_fiscal", 1)
+
+
+def set_mes_fiscal(mes: int) -> None:
+    import streamlit as st
+    st.session_state["mes_fiscal"] = mes
+
 # ═══════════════════════════════════════════════════════════════
 # Dicionário de setores disponíveis (200 setores) — ordem alfabética
 # ═══════════════════════════════════════════════════════════════

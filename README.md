@@ -82,7 +82,8 @@ bi_data_generator/
 │   ├── medidas.py              # Gera a bateria de medidas DAX sugeridas por tabela fato
 │   ├── sql_generator.py        # Gera DDL / INSERT / script completo (SQL Server, PostgreSQL, MySQL)
 │   ├── relatorios_gerenciais.py # Gera as views SQL de Relatórios Gerenciais para qualquer setor
-│   ├── tmdl_generator.py       # Gera o modelo TMDL (tabelas, relacionamentos e medidas) para o Power BI
+│   ├── tmdl_generator.py       # Gera o modelo TMDL "createOrReplace" (tabelas, relacionamentos e medidas) para colar no Tabular Editor
+│   ├── pbip_generator.py       # Gera um projeto .pbip completo (Report + SemanticModel em TMDL nativo) pronto pra abrir direto no Power BI Desktop
 │   ├── case_negocio.py         # Gera o case de negócio fictício que acompanha cada base
 │   ├── concept_drift.py        # Injeta deriva temporal (concept drift) genérica na tabela fato
 │   ├── dax_formatter.py         # Motor de formatação de expressões DAX (tokenizador + quebra de linha)
@@ -613,7 +614,7 @@ Cada base gerada segue o padrão de modelagem dimensional (esquema estrela):
 
 - **Tabela Fato** (`Fato*`): uma linha por evento/transação, com chaves estrangeiras (`sk_*` / `id_*`) para as dimensões e colunas numéricas (valores, quantidades, métricas).
 - **Tabelas Dimensão** (`Dim*` ou nome do setor): chave primária e atributos descritivos (nomes, categorias, localizações etc.).
-- **Tabela `dCalendario`**: gerada automaticamente para o período escolhido, com colunas `Data`, `Ano`, `Mes`, `MesAno` e `IdMesAno`, pronta para relacionar com Power Query/Power BI.
+- **Tabela `dCalendario`**: gerada automaticamente para o período escolhido, com colunas `Data`, `Ano`, `Mes`, `MesAno`, `IdMesAno`, granularidade de semana ISO 8601 (`SemanaISO`, `AnoSemanaISO`, `IdSemanaISO`) e ano fiscal (`AnoFiscal`, `MesFiscal`, `TrimestreFiscal` — mês de início configurável na sidebar, default Janeiro = ano fiscal igual ao civil), pronta para relacionar com Power Query/Power BI.
 - **Tabelas Bridge** (`Bridge*`): quando o setor exige, tabelas de associação para relacionamentos N:N.
 
 **Dica de modelagem sugerida pelo próprio app:** importe os CSVs no Power BI e crie relacionamentos usando as colunas `sk_*` (chave estrangeira) da tabela Fato até a chave primária correspondente em cada dimensão, e conecte `dCalendario[Data]` ao campo de data da tabela Fato.
@@ -637,6 +638,7 @@ Depois de concluir uma ação relevante em qualquer uma das abas (gerar uma base
 - **Barra de progresso real**, com etapas (dimensões, fato, métricas, compactação).
 - **Medidas DAX sugeridas automaticamente** (`generators/medidas.py`), organizadas por categoria e prontas para colar no Power BI. Somando os 200 setores, já são **10.696 medidas diferentes** que o motor sabe escrever sozinho, sem depender de nenhuma IA.
 - **Modelo TMDL** (`generators/tmdl_generator.py`): tabelas, relacionamentos e medidas prontos para importar no Power BI (Tabular Editor), com resolução automática de ambiguidade de relacionamento, inclusive em cadeias fato-para-fato.
+- **Template de projeto Power BI** (`generators/pbip_generator.py`): reaproveita o mesmo modelo (tabelas, relacionamentos e medidas) já em formato de projeto `.pbip` (Report + SemanticModel em TMDL nativo), pronto para abrir direto no Power BI Desktop (Arquivo → Abrir → Procurar) sem precisar colar nada no Tabular Editor. Basta apontar o parâmetro `CaminhoPasta` para onde os CSVs foram extraídos e atualizar.
 - **Dicionário de dados** (`generators/dicionario.py`): explica o significado de cada tabela e coluna com base em padrões de nome (`id_`, `valor_`, `qtd_`, `status`, `data_`, etc.), disponível em PT/EN e exportado como ZIP.
 - **Case de negócio automático** (`generators/case_negocio.py`): cada base vem com um parágrafo de contexto fictício, adaptado ao setor e ao modo ativo (anomalia, deriva temporal ou nenhum dos dois), transformando a geração num exercício com objetivo real.
 - **Gabarito de anomalias e deriva temporal**: quando algum desses modos está ativo, um expansor colapsado (tipo spoiler) revela exatamente o que foi alterado e onde, útil para quem ensina conferir se a análise encontrou o problema certo.
@@ -1027,8 +1029,6 @@ Python 3.10+ é recomendado devido ao uso de type hints modernos (`dict[str, pd.
 Ideias que fazem sentido para evolução do projeto (não implementadas ainda):
 
 - Exportação direta em formato Parquet/Delta Table;
-- Templates prontos de `.pbit` (Power BI) por setor;
-- Mais opções de granularidade temporal na `dCalendario` (semana ISO, ano fiscal);
 - Testes automatizados por gerador de setor;
 - Documentação por gerador (schema de colunas de cada setor).
 

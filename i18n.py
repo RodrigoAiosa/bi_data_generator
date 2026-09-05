@@ -23,6 +23,9 @@ _STRINGS: dict[str, dict[str, str]] = {
     "end_label":         {"pt": "Fim", "en": "End"},
     "volume_label":      {"pt": "Volume de dados", "en": "Data volume"},
     "volume_hint":       {"pt": "{n} linhas na tabela fato", "en": "{n} rows in fact table"},
+    "fiscal_label":      {"pt": "Início do ano fiscal", "en": "Fiscal year start"},
+    "fiscal_hint":       {"pt": "Afeta as colunas AnoFiscal/MesFiscal/TrimestreFiscal da dCalendario.",
+                          "en": "Affects the dCalendario columns AnoFiscal/MesFiscal/TrimestreFiscal."},
     "gerar_btn":         {"pt": "Gerar base agora", "en": "Generate dataset"},
     "date_error":        {"pt": "⚠ Data fim deve ser após a data início.", "en": "⚠ End date must be after start date."},
 

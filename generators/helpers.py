@@ -42,8 +42,15 @@ def new_ids(n: int, prefix: str = "") -> list[int]:
 
 
 # ── dCalendario (idioma dinâmico) ────────────────────────────────────────────
-def dcalendario(start: date, end: date) -> pd.DataFrame:
-    """Gera dCalendario compatível com Power Query, no idioma atual."""
+def dcalendario(start: date, end: date, mes_inicio_fiscal: int | None = None) -> pd.DataFrame:
+    """Gera dCalendario compatível com Power Query, no idioma atual.
+
+    mes_inicio_fiscal: mês (1-12) em que o ano fiscal começa. Quando não
+    informado, usa a configuração global do usuário (config.get_mes_fiscal,
+    default 1 = Janeiro, ou seja, ano fiscal = ano civil) — mesmo padrão do
+    idioma dinâmico logo abaixo, pra não precisar mudar a assinatura de
+    chamada de `dcalendario(start, end)` nos ~200 geradores de setor.
+    """
     try:
         from i18n import get_lang, MESES
         lang = get_lang()
@@ -52,12 +59,40 @@ def dcalendario(start: date, end: date) -> pd.DataFrame:
         meses = {1:"Jan",2:"Fev",3:"Mar",4:"Abr",5:"Mai",6:"Jun",
                  7:"Jul",8:"Ago",9:"Set",10:"Out",11:"Nov",12:"Dez"}
 
+    if mes_inicio_fiscal is None:
+        try:
+            from config import get_mes_fiscal
+            mes_inicio_fiscal = get_mes_fiscal()
+        except Exception:
+            mes_inicio_fiscal = 1
+
     days = pd.date_range(start=start, end=end, freq="D")
     df = pd.DataFrame({"Data": days})
     df["Ano"]     = df["Data"].dt.year
     df["Mes"]     = df["Data"].dt.month
     df["MesAno"]  = df["Mes"].map(meses) + "/" + df["Ano"].astype(str).str[-2:]
     df["IdMesAno"] = df["Ano"] * 100 + df["Mes"]
+
+    # Semana ISO 8601: AnoSemanaISO pode divergir do ano civil na virada do
+    # ano (ex.: 31/12/2029 cai na semana 1 de 2030 pelo padrão ISO), por
+    # isso IdSemanaISO usa o par (AnoSemanaISO, SemanaISO), não Ano/SemanaISO.
+    iso = df["Data"].dt.isocalendar()
+    df["SemanaISO"]    = iso["week"].astype("int64")
+    df["AnoSemanaISO"] = iso["year"].astype("int64")
+    df["IdSemanaISO"]  = df["AnoSemanaISO"] * 100 + df["SemanaISO"]
+
+    # Ano fiscal: rotulado pelo ano civil em que o exercício COMEÇA (ex.:
+    # início em Abril -> Jan-Mar/2024 pertence ao AnoFiscal 2023, Abr/2024
+    # em diante já é AnoFiscal 2024). Com mes_inicio_fiscal=1 (default),
+    # AnoFiscal/MesFiscal/TrimestreFiscal ficam idênticos a Ano/Mes/trimestre
+    # civil — zero mudança de comportamento pra quem não mexe nessa opção.
+    if mes_inicio_fiscal == 1:
+        df["AnoFiscal"] = df["Ano"]
+    else:
+        df["AnoFiscal"] = df["Ano"] - (df["Mes"] < mes_inicio_fiscal).astype("int64")
+    df["MesFiscal"] = (df["Mes"] - mes_inicio_fiscal) % 12 + 1
+    df["TrimestreFiscal"] = (df["MesFiscal"] - 1) // 3 + 1
+
     df["Data"]    = df["Data"].dt.date
     return df
 

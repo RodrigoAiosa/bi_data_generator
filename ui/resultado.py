@@ -154,6 +154,42 @@ def render_resultado(
     st.caption("O .zip inclui os CSVs de cada tabela + `model.tmdl` com todas as tabelas, "
                "relacionamentos e medidas DAX prontos para importar no Power BI (Tabular Editor / TMDL).")
 
+    # ── Template de projeto Power BI (.pbip) ────────────────────────────────
+    from generators.pbip_generator import gerar_pbip
+
+    if resultado_chave is not None:
+        pbip_arquivos = cache_por_chave(
+            "_pbip_cache", ("pbip", resultado_chave), lambda: gerar_pbip(nome, tabelas)
+        )
+    else:
+        pbip_arquivos = gerar_pbip(nome, tabelas)
+
+    if resultado_chave is not None:
+        pbip_zip_chave = ("pbip_zip", resultado_chave, tuple(sorted(pbip_arquivos.items())))
+        pbip_zip_bytes = cache_por_chave(
+            "_pbip_zip_cache", pbip_zip_chave, lambda: to_zip(tabelas, extra_files=pbip_arquivos)
+        )
+    else:
+        pbip_zip_bytes = to_zip(tabelas, extra_files=pbip_arquivos)
+
+    nome_pbip_zip = f"Template_PBI_{nome.replace(' ', '_')}.zip"
+
+    st.download_button(
+        label=f"📥 Baixar template Power BI (.pbip) — {nome_pbip_zip}",
+        data=pbip_zip_bytes,
+        file_name=nome_pbip_zip,
+        mime="application/zip",
+        use_container_width=True,
+        on_click=lambda: registrar_evento("baixou_pbip", setor=nome),
+    )
+    st.caption(
+        "Projeto Power BI (.pbip) já com tabelas, relacionamentos e medidas DAX montados — "
+        "abra direto no Power BI Desktop (Arquivo → Abrir → Procurar, selecione o arquivo "
+        "`.pbip`), sem precisar colar nada no Tabular Editor. Depois de abrir, extraia os CSVs "
+        "deste mesmo .zip numa pasta e aponte o parâmetro **CaminhoPasta** (Transformar Dados → "
+        "Gerenciar Parâmetros) para ela antes de clicar em Atualizar."
+    )
+
     st.markdown("""
     <div class="info-box">
         <strong>💡 Dica Power BI:</strong> Importe os CSVs e crie relações usando as colunas

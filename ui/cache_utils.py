@@ -13,11 +13,14 @@ app.py importa de ui/sidebar.py (não o contrário).
 
 import streamlit as st
 
-from config import obter_gerador
+from config import obter_gerador, get_mes_fiscal
 
 
 def _chave_cache(setor: str, n_linhas: int, data_inicio, data_fim) -> tuple:
-    return (setor, n_linhas, str(data_inicio), str(data_fim))
+    # Inclui mes_fiscal: dCalendario (gerada dentro de `fn(...)`) depende
+    # dessa configuração global, então trocar o mês de início do ano fiscal
+    # sem mudar setor/volume/datas precisa invalidar o cache também.
+    return (setor, n_linhas, str(data_inicio), str(data_fim), get_mes_fiscal())
 
 
 def gerar_bruto_com_cache(setor: str, n_linhas: int, data_inicio, data_fim) -> dict:

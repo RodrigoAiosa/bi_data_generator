@@ -56,6 +56,23 @@ confiar cegamente neste arquivo pra esses valores específicos.
   (pra colar no Tabular Editor) — **tudo vem indentado 1 nível a mais** do
   que um `.tmdl` nativo de projeto PBIP exigiria. Se for reaproveitar essas
   funções pra outro formato, precisa "dedentar" 1 tab de cada linha.
+- `generators/pbip_generator.py` — gera um projeto `.pbip` completo (Report
+  em branco + SemanticModel em TMDL nativo, 1 arquivo por tabela em
+  `definition/tables/`), pronto pra abrir direto no Power BI Desktop sem
+  passar pelo Tabular Editor. Reaproveita `_tabela_tmdl`/`_relacionamentos`/
+  `_medidas_tmdl` de `tmdl_generator.py` de verdade — só "dedenta" 1 tab de
+  cada linha (exatamente o aviso do bullet acima). **Importante**: essa
+  geração foi validada estruturalmente (JSON de cada `.platform`/`.pbir`/
+  `report.json` parseável, `.tmdl` com `table`/`relationship`/`model`/
+  `database` começando na coluna 0, regressão nos 200 setores, zip monta
+  certo) mas **nunca foi aberta de verdade num Power BI Desktop real**
+  (não instalado na máquina onde foi escrita) — os schemas JSON do lado
+  Report (`report.json`, `.platform`, `definition.pbir`, `pages.json`,
+  `page.json`) são "melhor esforço" baseado no formato PBIP/Fabric
+  conhecido no momento, não conferidos contra uma abertura real. Se o
+  usuário reportar erro ao abrir o `.pbip` gerado, o problema mais provável
+  está nesses arquivos JSON do Report (o lado SemanticModel/TMDL é o mais
+  confiável, por reaproveitar lógica já testada em produção).
 - `generators/auditor_modelo.py` — audita TMDL colado pelo usuário. Esse
   parser espera o MESMO formato "createOrReplace" de 2 níveis: `table X` em
   1 tab, `column`/`measure` em 2 tabs (não é o formato PBIP nativo de 1

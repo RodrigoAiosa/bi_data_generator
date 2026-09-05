@@ -6,8 +6,8 @@ import time
 
 import streamlit as st
 
-from config import SETORES, SETORES_INFO, SLIDER_DEFAULT, SLIDER_MAX, SLIDER_MIN, SLIDER_STEP
-from i18n import get_lang, set_lang, t
+from config import SETORES, SETORES_INFO, SLIDER_DEFAULT, SLIDER_MAX, SLIDER_MIN, SLIDER_STEP, set_mes_fiscal
+from i18n import get_lang, set_lang, t, MESES
 
 _LABEL_STYLE = (
     'font-family: Syne, sans-serif; font-size: 0.7rem; font-weight: 700;'
@@ -189,6 +189,20 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
                 f'{t("date_error")}</div>',
                 unsafe_allow_html=True,
             )
+
+        # ── Ano fiscal ─────────────────────────────────────────────────────
+        st.markdown(f'<p style="{_LABEL_STYLE} margin: 18px 0 10px;">{t("fiscal_label")}</p>', unsafe_allow_html=True)
+        meses_nomes = MESES[lang]
+        mes_fiscal_escolha = st.selectbox(
+            "",
+            options=list(range(1, 13)),
+            format_func=lambda m: meses_nomes[m],
+            index=0,
+            label_visibility="collapsed",
+            key="mes_fiscal_select",
+            help=t("fiscal_hint"),
+        )
+        set_mes_fiscal(mes_fiscal_escolha)
 
         # ── Volume ─────────────────────────────────────────────────────────
         st.markdown(f'<p style="{_LABEL_STYLE} margin: 18px 0 10px;">{t("volume_label")}</p>', unsafe_allow_html=True)
