@@ -1,6 +1,7 @@
 """ui/sidebar.py: Sidebar completa com toggle de idioma, pesquisa e SQL DDL/INSERT."""
 
 from datetime import date
+from pathlib import Path
 import time
 
 import streamlit as st
@@ -330,5 +331,19 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
                 if len(sql_content) > 3_000:
                     preview += f"\n\n{_s('trunc')}"
                 st.code(preview, language="sql")
+
+    st.divider()
+    caminho_pptx = Path(__file__).resolve().parent.parent / "assets" / "BI_Data_Generator_Apresentacao.pptx"
+    if caminho_pptx.exists():
+        from log_acesso import registrar_evento
+        st.download_button(
+            label="📊 Apresentação (.pptx)" if lang == "pt" else "📊 Presentation (.pptx)",
+            data=caminho_pptx.read_bytes(),
+            file_name="BI_Data_Generator_Apresentacao.pptx",
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            use_container_width=True,
+            key="dl_apresentacao_pptx",
+            on_click=lambda: registrar_evento("baixou_apresentacao"),
+        )
 
     return setor, data_inicio, data_fim, n_linhas, gerar
