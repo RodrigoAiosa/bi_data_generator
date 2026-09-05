@@ -2,7 +2,7 @@
 
 Gerador de **dados fictícios em modelo estrela** (fato + dimensões + calendário) para quem quer praticar **Power BI, DAX, SQL e modelagem dimensional** sem depender de bases reais, sensíveis ou difíceis de conseguir.
 
-Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário, medidas DAX sugeridas, modelo TMDL pronto para o Power BI, dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
+Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário (com semana ISO 8601 e ano fiscal configurável), medidas DAX sugeridas, modelo TMDL pronto para o Power BI (ou um template de projeto `.pbip` completo, pronto pra abrir direto no Power BI Desktop), dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
 
 O app principal tem **10 abas**: o Gerador de Setores (200 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada), o Formatar M (o mesmo princípio, mas para código Power Query), o Auditor de Modelo (cole o TMDL de um modelo seu e receba uma nota de qualidade), o DAX Sandbox (escreva uma medida DAX e veja o resultado calculado de verdade contra os dados), o Pergunte aos Dados (escreva uma pergunta de negócio em português e veja a medida DAX equivalente e a resposta calculada de verdade) e o Carrossel Power BI (envie o .pbix do seu relatório, marque as páginas e baixe um HTML com barra de progresso que alterna sozinho entre elas).
 
@@ -50,9 +50,10 @@ O objetivo é resolver um problema comum de quem estuda ou ensina Business Intel
 
 - Tabela **Fato** com chaves estrangeiras e métricas numéricas;
 - Tabelas **Dimensão** com atributos descritivos e chave primária;
-- Tabela **dCalendario** (compatível com Power Query) para análises de série temporal;
+- Tabela **dCalendario** (compatível com Power Query) para análises de série temporal, com granularidade de semana ISO 8601 e ano fiscal (mês de início configurável);
 - **Medidas DAX** sugeridas automaticamente com base nas colunas geradas;
 - **Modelo TMDL** com tabelas, relacionamentos e medidas prontos para importar no Power BI;
+- **Template de projeto Power BI (.pbip)**, com o mesmo modelo já montado, pronto para abrir direto no Power BI Desktop;
 - **Dicionário de dados** explicando cada tabela e coluna;
 - Scripts **SQL (DDL/INSERT)** para recriar a base em SQL Server, PostgreSQL ou MySQL;
 - Um **case de negócio fictício**, gerado automaticamente, transformando a base num exercício com objetivo real a resolver;
@@ -139,20 +140,22 @@ O app abre com **10 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "�
 ### Aba 🏭 Gerador de Setores
 
 1. **Escolha o setor**: use a caixa de busca na barra lateral para filtrar entre os 200 setores disponíveis (ex.: digitar "saúde", "log", "marketing").
-2. **Defina o período**: datas de início e fim; a tabela `dCalendario` é gerada automaticamente cobrindo esse intervalo.
-3. **Defina o volume de dados**: slider de 100 a 100.000 linhas na tabela fato (o volume das dimensões é ajustado proporcionalmente).
-4. *(Opcional)* **Ative "Injetar anomalias nos dados"** para adicionar problemas propositais (veja [Modo anomalias, deriva temporal e case de negócio](#-modo-anomalias-deriva-temporal-e-case-de-negócio)).
-5. *(Opcional)* **Ative "Simular deriva temporal (concept drift)"** para fazer uma categoria ganhar participação gradualmente ao longo do período, sem evento único que explique.
-6. Clique em **"Gerar base agora"**. Uma barra de progresso mostra as etapas reais: criação de dimensões, geração da fato, cálculo de métricas, compactação do ZIP.
-7. A tela de resultado mostra, nessa ordem:
+2. **Defina o período**: datas de início e fim; a tabela `dCalendario` é gerada automaticamente cobrindo esse intervalo, já com granularidade de semana ISO 8601 e ano fiscal.
+3. *(Opcional)* **Defina o início do ano fiscal**: mês em que o exercício fiscal começa (default Janeiro = ano fiscal igual ao civil); afeta as colunas `AnoFiscal`/`MesFiscal`/`TrimestreFiscal` da `dCalendario`.
+4. **Defina o volume de dados**: slider de 100 a 100.000 linhas na tabela fato (o volume das dimensões é ajustado proporcionalmente).
+5. *(Opcional)* **Ative "Injetar anomalias nos dados"** para adicionar problemas propositais (veja [Modo anomalias, deriva temporal e case de negócio](#-modo-anomalias-deriva-temporal-e-case-de-negócio)).
+6. *(Opcional)* **Ative "Simular deriva temporal (concept drift)"** para fazer uma categoria ganhar participação gradualmente ao longo do período, sem evento único que explique.
+7. Clique em **"Gerar base agora"**. Uma barra de progresso mostra as etapas reais: criação de dimensões, geração da fato, cálculo de métricas, compactação do ZIP.
+8. A tela de resultado mostra, nessa ordem:
    - Um **case de negócio fictício**, gerado automaticamente para o setor escolhido;
    - O **resumo das tabelas** geradas e o **preview** de cada uma;
    - As **medidas DAX sugeridas**, organizadas por categoria;
    - O **gabarito** (se anomalia ou deriva temporal estiverem ativas), num expansor colapsado tipo spoiler;
-   - O **botão de download** do `.zip` completo.
-8. Baixe o **dicionário de dados** (Excel/CSV zipado) com a descrição de cada tabela e coluna.
-9. *(Opcional)* Na barra lateral, gere o **script SQL** (DDL, INSERT ou completo) no dialeto desejado.
-10. *(Opcional)* Se você já gerou um cenário na aba "🧬 Dados Causais" **antes** de clicar em "Baixar Base", o `.zip` também inclui o CSV causal e o gabarito (veja a seção dedicada).
+   - O **botão de download** do `.zip` completo (CSVs + `model.tmdl`);
+   - O **botão de download do template Power BI (.pbip)**, pronto para abrir direto no Power BI Desktop.
+9. Baixe o **dicionário de dados** (Excel/CSV zipado) com a descrição de cada tabela e coluna.
+10. *(Opcional)* Na barra lateral, gere o **script SQL** (DDL, INSERT ou completo) no dialeto desejado.
+11. *(Opcional)* Se você já gerou um cenário na aba "🧬 Dados Causais" **antes** de clicar em "Baixar Base", o `.zip` também inclui o CSV causal e o gabarito (veja a seção dedicada).
 
 ### Aba 🤖 Automatizar BI
 
