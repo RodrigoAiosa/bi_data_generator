@@ -15,7 +15,6 @@ O app principal tem **10 abas**: o Gerador de Setores (200 bases prontas), o Aut
 
 - [Visão geral](#-visão-geral)
 - [Estrutura do repositório](#-estrutura-do-repositório)
-- [Qual versão usar?](#-qual-versão-usar)
 - [Instalação e execução local](#-instalação-e-execução-local)
 - [Como usar o app](#-como-usar-o-app)
 - [Setores de negócio disponíveis](#-setores-de-negócio-disponíveis-200)
@@ -45,7 +44,7 @@ O app principal tem **10 abas**: o Gerador de Setores (200 bases prontas), o Aut
 
 ## 🧭 Visão geral
 
-Este repositório reúne **múltiplos projetos** de geração de dados sintéticos para BI, todos seguindo o mesmo princípio: gerar bases realistas, com relacionamentos íntegros, prontas para importar em ferramentas de análise (Power BI, Tableau, Excel, Python, SQL).
+Este repositório gera dados sintéticos de BI em modelo estrela, com relacionamentos íntegros, prontos para importar em ferramentas de análise (Power BI, Tableau, Excel, Python, SQL).
 
 O objetivo é resolver um problema comum de quem estuda ou ensina Business Intelligence: **falta de dados bons para praticar**. Criar tabelas manualmente é lento, não tem sazonalidade real, e raramente reflete um modelo dimensional coerente. O BI Data Generator resolve isso gerando, em segundos:
 
@@ -64,21 +63,21 @@ O objetivo é resolver um problema comum de quem estuda ou ensina Business Intel
 
 ## 🗂 Estrutura do repositório
 
-O repositório evoluiu ao longo do tempo e hoje contém a versão principal na raiz, além de versões anteriores/alternativas mantidas em subpastas para referência e compatibilidade com deploys já existentes.
+Repositório de um único app (BI Data Generator PRO), tudo na raiz.
 
 ```
 bi_data_generator/
 ├── app.py                      # ⭐ App principal (BI Data Generator PRO), versão mais completa
-├── config.py                   # Configuração da página, slider de volume e dicionário de 200 setores
+├── config.py                   # Configuração da página, slider de volume, dicionário de 200 setores e obter_gerador() (import sob demanda do setor escolhido)
 ├── i18n.py                     # Sistema de internacionalização (PT-BR / EN)
 ├── helpers.py                  # Funções utilitárias no nível raiz
 ├── log_acesso.py               # Log de acesso e uso (sessão, eventos) enviado para uma planilha Google Sheets
 ├── requirements.txt            # Dependências do app principal
 ├── LICENSE
 │
-├── generators/                 # 🏭 Um módulo por setor de negócio (213 arquivos)
-│   ├── __init__.py             # Exporta todas as funções gerar_<setor>
-│   ├── helpers.py              # dcalendario(), new_ids(), get_faker(), rand_dates(), to_zip()...
+├── generators/                 # 🏭 Um módulo por setor de negócio (200 setores + 15 motores/utilitários)
+│   ├── __init__.py             # Vazio de propósito: cada gerador é importado sob demanda (ver config.obter_gerador), não todos de uma vez
+│   ├── helpers.py              # dcalendario(), new_ids(), get_faker(), fake_pool(), rand_dates(), to_zip()...
 │   ├── dicionario.py           # Gera o dicionário de dados (CSV zipado) com descrições PT/EN
 │   ├── medidas.py              # Gera a bateria de medidas DAX sugeridas por tabela fato
 │   ├── sql_generator.py        # Gera DDL / INSERT / script completo (SQL Server, PostgreSQL, MySQL)
@@ -98,7 +97,7 @@ bi_data_generator/
 │   ├── sidebar.py                # Sidebar: busca de setor, período, volume, botão gerar, export SQL
 │   ├── estado_inicial.py         # Tela inicial / onboarding ("Como usar")
 │   ├── resultado.py               # Métricas, preview de tabelas, medidas DAX, gabarito e download do ZIP
-│   ├── cache_utils.py              # Cache da geração bruta, compartilhado entre abas/botão de SQL
+│   ├── cache_utils.py              # Cache da geração bruta (compartilhado entre abas/botão de SQL) e cache genérico de medidas DAX/TMDL/ZIP do resultado
 │   ├── automatizar_bi.py           # Aba "Automatizar BI": upload de planilha, tipos, medidas e TMDL
 │   └── simulador_pl300.py           # Aba "Simulador PL-300": quiz de prática para a certificação
 │   └── dados_causais.py             # Aba "Dados Causais": relação causa-efeito conhecida, em cima do setor gerado
@@ -108,36 +107,10 @@ bi_data_generator/
 │   └── dax_sandbox.py               # Aba "DAX Sandbox": escreve uma medida DAX e vê o resultado calculado de verdade
 │   └── sugestao_proximo_passo.py    # Sugestão discreta de próxima ferramenta a usar, entre as abas
 │
-├── styles/
-│   ├── css.py                   # CSS customizado injetado no Streamlit (tema Power BI: amarelo/preto)
-│   └── seo.py                   # (opcional) meta tags de SEO
-│
-├── bi_data_generator/            # 📦 Versão completa "standalone" (55 setores*), código-fonte espelhado
-│   ├── app.py
-│   ├── config.py
-│   └── generators/
-│
-└── escoladax_simples/            # 📦 Versão enxuta (8 setores), ideal para começar
-    ├── app.py
-    ├── requirements.txt
-    └── generators_bi/
-        ├── __init__.py
-        ├── helpers.py
-        ├── setores.py
-        └── medidas.py
+└── styles/
+    ├── css.py                   # CSS customizado injetado no Streamlit (tema Power BI: amarelo/preto)
+    └── seo.py                   # (opcional) meta tags de SEO
 ```
-
-> 💡 As pastas `bi_data_generator/` e `escoladax_simples/` são projetos Streamlit **independentes**, cada um com seu próprio `app.py` e `requirements.txt`. O `app.py` da raiz do repositório é a versão mais atual e mais completa (a que está publicada em produção).
-
----
-
-## 🤔 Qual versão usar?
-
-| Versão | Pasta | Setores | Indicado para |
-|---|---|---|---|
-| **BI Data Generator PRO** (recomendada) | raiz do repositório (`app.py`) | 200 setores | Uso geral, estudo avançado, portfólio, prática de Power BI/DAX/SQL completa |
-| **BI Data Generator (completo)** | `bi_data_generator/` | 55 setores* | Espelho da versão principal, útil se você quiser hospedar separadamente |
-| **EscolaDAX Simples** | `escoladax_simples/` | 8 setores (Varejo, Financeiro, Saúde, E-commerce, Logística, Educação, Imobiliário, SaaS B2B) | Quem está começando e quer uma interface mais enxuta, com menos opções |
 
 ---
 
@@ -147,8 +120,6 @@ bi_data_generator/
 - Python 3.10+ (recomendado 3.11)
 - pip
 
-### Versão principal (raiz do repositório)
-
 ```bash
 git clone https://github.com/RodrigoAiosa/bi_data_generator.git
 cd bi_data_generator
@@ -157,24 +128,6 @@ streamlit run app.py
 ```
 
 O Streamlit vai abrir automaticamente em `http://localhost:8501`.
-
-### Versão "EscolaDAX Simples"
-
-```bash
-cd escoladax_simples
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-### Versão "BI Data Generator" (pasta espelhada)
-
-```bash
-cd bi_data_generator
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-> ⚠️ Cada subpasta tem seu próprio `requirements.txt`: instale as dependências dentro da pasta do app que for rodar.
 
 ---
 
@@ -1046,13 +999,7 @@ Todo o texto da interface (sidebar, hero, resultado, case de negócio, mensagens
 
 ## ☁️ Deploy no Streamlit Cloud
 
-Como há múltiplos apps no mesmo repositório, ao criar o app no Streamlit Cloud aponte o **"Main file path"** para o `app.py` desejado, por exemplo:
-
-- `app.py` (versão principal, recomendada)
-- `bi_data_generator/app.py`
-- `escoladax_simples/app.py`
-
-Cada app usa o `requirements.txt` da sua própria pasta (ou da raiz, no caso do app principal).
+Ao criar o app no Streamlit Cloud, aponte o **"Main file path"** para `app.py` (raiz do repositório), usando o `requirements.txt` também da raiz.
 
 ---
 
