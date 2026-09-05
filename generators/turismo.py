@@ -60,7 +60,8 @@ def gerar_turismo(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     datas = rand_dates(start, end, n)
     pacotes_ids = random.choices(dim_pacote["id_pacote"].tolist(), k=n)
-    precos_base = [dim_pacote.loc[dim_pacote["id_pacote"] == p, "preco_base"].values[0] for p in pacotes_ids]
+    mapa_preco_base = dim_pacote.set_index("id_pacote")["preco_base"].to_dict()
+    precos_base = [mapa_preco_base[p] for p in pacotes_ids]
     
     fato = pd.DataFrame({
         "id_viagem":   new_ids(n),

@@ -57,7 +57,8 @@ def gerar_imobiliario(n: int, start: date, end: date) -> dict[str, pd.DataFrame]
 
     datas = rand_dates(start, end, n)
     imoveis_ids = random.choices(dim_imovel["id_imovel"].tolist(), k=n)
-    valores_estimados = [dim_imovel.loc[dim_imovel["id_imovel"] == i, "valor_estimado"].values[0] for i in imoveis_ids]
+    mapa_valor_estimado = dim_imovel.set_index("id_imovel")["valor_estimado"].to_dict()
+    valores_estimados = [mapa_valor_estimado[i] for i in imoveis_ids]
     
     fato = pd.DataFrame({
         "id_transacao": new_ids(n),

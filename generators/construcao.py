@@ -54,7 +54,8 @@ def gerar_construcao(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     datas = rand_dates(start, end, n)
     materiais_ids = random.choices(dim_material["id_material"].tolist(), k=n)
-    precos_unit = [dim_material.loc[dim_material["id_material"] == m, "preco_unit"].values[0] for m in materiais_ids]
+    mapa_preco_unit = dim_material.set_index("id_material")["preco_unit"].to_dict()
+    precos_unit = [mapa_preco_unit[m] for m in materiais_ids]
     
     fato = pd.DataFrame({
         "id_consumo":  new_ids(n),

@@ -115,7 +115,11 @@ def _detectar_fk(tabela_fato: str, tabela_dim: str, tabelas: dict[str, pd.DataFr
         return None
     dim_df = tabelas[tabela_dim]
     pk_dim = dim_df.columns[0]
-    fk_cols = [c for c in tabelas[tabela_fato].columns if c.lower().startswith(("id_", "sk_"))]
+    pk_proprio = tabelas[tabela_fato].columns[0]
+    fk_cols = [
+        c for c in tabelas[tabela_fato].columns
+        if c.lower().startswith(("id_", "sk_")) and c != pk_proprio
+    ]
 
     # 1) Prioridade máxima: mesmo nome exato da coluna-chave (ex.:
     # FatoProjeto.id_profissional == DimEquipe.id_profissional) — mais

@@ -46,7 +46,8 @@ def gerar_seguros(n: int, start: date, end: date) -> dict[str, pd.DataFrame]:
 
     datas = rand_dates(start, end, n)
     planos_ids = random.choices(dim_plano["id_plano"].tolist(), k=n)
-    coberturas = [dim_plano.loc[dim_plano["id_plano"] == p, "cobertura_max"].values[0] for p in planos_ids]
+    mapa_cobertura = dim_plano.set_index("id_plano")["cobertura_max"].to_dict()
+    coberturas = [mapa_cobertura[p] for p in planos_ids]
     
     fato = pd.DataFrame({
         "id_apolice":  new_ids(n),

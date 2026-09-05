@@ -41,7 +41,7 @@ _VARCHAR_OVERRIDES = {
 }
 
 
-def _infer_sql_type(col: str, dtype: str, dialect: str) -> str:
+def _infer_sql_type(col: str, dtype: str, dialect: str, serie: pd.Series | None = None) -> str:
     """Infere o tipo SQL da coluna com base no dtype e no nome."""
     col_lower = col.lower()
 
@@ -69,7 +69,18 @@ def _infer_sql_type(col: str, dtype: str, dialect: str) -> str:
     # ("12_Q002"), sk_rota ("ROTA034") e id_plano_atual ("Starter") são
     # texto de verdade. Forçar INT nelas quebrava o INSERT com erro de
     # conversão de string para número.
-    if col_lower.startswith(("id_", "sk_")) and dtype in ("int64", "int32"):
+    # Também cobre uma FK id_/sk_ opcional (ex.: id_drone em FatoMonitoramento
+    # do AgTech, onde ~85% das leituras não vêm de drone): quando parte das
+    # linhas é None, o pandas promove a coluna de int64 para float64 (não dá
+    # pra guardar NaN num int64 puro), mas os valores não-nulos continuam
+    # sendo chaves inteiras — sem essa checagem, a FK virava DECIMAL(18,2)
+    # no DDL enquanto a PK correspondente na Dim continuava INT.
+    eh_float_so_com_inteiros = (
+        dtype in ("float64", "float32")
+        and serie is not None
+        and serie.dropna().mod(1).eq(0).all()
+    )
+    if col_lower.startswith(("id_", "sk_")) and (dtype in ("int64", "int32") or eh_float_so_com_inteiros):
         if dialect == "sqlserver":
             return "INT"
         if dialect == "postgresql":
@@ -240,7 +251,7 @@ def gerar_sql(nome_setor: str, tabelas: dict[str, pd.DataFrame], dialect: str = 
 
         for col in tdf.columns:
             dtype_str = str(tdf[col].dtype)
-            sql_type  = _infer_sql_type(col, dtype_str, dialect)
+            sql_type  = _infer_sql_type(col, dtype_str, dialect, tdf[col])
             not_null  = "NOT NULL" if _is_not_null(col, tdf[col]) else "NULL"
 
             if dialect == "sqlserver":
