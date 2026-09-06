@@ -4,7 +4,7 @@ Gerador de **dados fictícios em modelo estrela** (fato + dimensões + calendár
 
 Em poucos segundos você escolhe um setor de negócio, define um período e um volume de linhas, e recebe um pacote completo com tabela fato, dimensões, tabela calendário (com semana ISO 8601 e ano fiscal configurável), medidas DAX sugeridas, modelo TMDL pronto para o Power BI (ou um template de projeto `.pbip` completo, pronto pra abrir direto no Power BI Desktop), dicionário de dados e, se quiser, os scripts SQL para recriar tudo em um banco relacional.
 
-O app principal tem **10 abas**: o Gerador de Setores (200 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada), o Formatar M (o mesmo princípio, mas para código Power Query), o Auditor de Modelo (cole o TMDL de um modelo seu e receba uma nota de qualidade), o DAX Sandbox (escreva uma medida DAX e veja o resultado calculado de verdade contra os dados), o Pergunte aos Dados (escreva uma pergunta de negócio em português e veja a medida DAX equivalente e a resposta calculada de verdade) e o Carrossel Power BI (envie o .pbix do seu relatório, marque as páginas e baixe um HTML com barra de progresso que alterna sozinho entre elas).
+O app principal tem **11 abas**: o Gerador de Setores (200 bases prontas), o Automatizar BI (envie sua própria planilha e gere medidas/modelo automaticamente), o Simulador de Certificação PL-300 (quiz de prática para a certificação oficial da Microsoft), o Dados Causais (gera uma relação causa-efeito conhecida de propósito, em cima do setor que você já gerou), o Formatar DAX (cola uma expressão bagunçada e recebe ela formatada), o Formatar M (o mesmo princípio, mas para código Power Query), o Auditor de Modelo (cole o TMDL de um modelo seu e receba uma nota de qualidade), o DAX Sandbox (escreva uma medida DAX e veja o resultado calculado de verdade contra os dados), o Pergunte aos Dados (escreva uma pergunta de negócio em português e veja a medida DAX equivalente e a resposta calculada de verdade) e o Carrossel Power BI (envie o .pbix do seu relatório, marque as páginas e baixe um HTML com barra de progresso que alterna sozinho entre elas).
 
 > Aplicação construída em **Streamlit** e distribuída publicamente em:
 > 🔗 **https://rodrigoaiosa.streamlit.app**
@@ -135,7 +135,7 @@ O Streamlit vai abrir automaticamente em `http://localhost:8501`.
 
 ## 🖱 Como usar o app
 
-O app abre com **10 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox", "💬 Pergunte aos Dados" e "🖥️ Carrossel Power BI".
+O app abre com **11 abas**: "🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox", "💬 Pergunte aos Dados" e "🖥️ Carrossel Power BI".
 
 ### Aba 🏭 Gerador de Setores
 
@@ -410,14 +410,14 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | --- | --- |
 | 🚛 Transporte | 303 |
 | 📣 Marketing Digital | 215 |
-| 🏛️ Governo & Setor Público | 185 |
-| 🚗 Mobilidade | 159 |
+| 🏛️ Governo & Setor Público | 184 |
+| 🚗 Mobilidade | 160 |
 | ☁️ SaaS B2B | 146 |
 | 🛢️ Petróleo & Gás | 140 |
 | 🦄 Startups & Venture Capital | 137 |
 | 💊 Farmacêutico | 118 |
 | 🏪 E-commerce | 116 |
-| 🏦 Fintech | 115 |
+| 🏦 Fintech | 116 |
 | 🏟️ Esportes | 103 |
 | ⛏️ Mineração | 103 |
 | 🤝 CRM | 98 |
@@ -428,7 +428,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🐟 Pesca & Aquicultura | 91 |
 | ✈️ Viagens Corporativas | 91 |
 | 🏋️ Academia & Fitness | 84 |
-| 👗 Moda & Vestuário | 83 |
 | 🏢 Recursos Humanos | 83 |
 | 💱 Agência de Câmbio | 82 |
 | 📢 Agência de Publicidade | 82 |
@@ -436,6 +435,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | ♻️ Economia Circular | 82 |
 | 🎉 Eventos & Entretenimento | 82 |
 | 🏷️ Franquias | 82 |
+| 👗 Moda & Vestuário | 82 |
 | 🍽️ Restaurantes & Food Service | 82 |
 | ⚖️ Jurídico | 81 |
 | 🎬 Audiovisual & Produtora | 80 |
@@ -447,10 +447,10 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 📦 Fábrica de Embalagens | 71 |
 | 🥩 Frigorífico & Processamento de Carnes | 71 |
 | 🛋️ Indústria Moveleira | 71 |
+| 🚗 Locadora de Veículos | 71 |
 | 🛩️ Táxi Aéreo & Aviação Executiva | 71 |
 | 🍬 Usina de Açúcar & Etanol | 71 |
 | ⚡ Energia | 70 |
-| 🚗 Locadora de Veículos | 70 |
 | 🚴 Logística Urbana | 69 |
 | 💧 Saneamento & Água | 69 |
 | 🏢 Condomínio & Facilities | 63 |
@@ -488,12 +488,12 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🦷 Odontologia | 50 |
 | 🥐 Padaria & Confeitaria | 50 |
 | ⚓️ Porto & Terminal Portuário | 50 |
+| 🖥️ Telemedicina | 50 |
 | 🎰 Apostas Esportivas & iGaming | 49 |
 | 🌽 Biocombustíveis | 49 |
 | 🎫 Casa Lotérica & Correspondente Bancário | 49 |
 | 🍺 Cervejaria Artesanal | 49 |
 | 📊 Consultoria Empresarial | 49 |
-| 📦 Correios & Encomendas | 49 |
 | 🪑 Coworking & Espaços Compartilhados | 49 |
 | 🚂 Ferrovia de Carga | 49 |
 | 💵 Financeira & Crédito Pessoal | 49 |
@@ -504,13 +504,13 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 👓 Óptica | 49 |
 | 🏊 Piscina & Spa | 49 |
 | ⚒️ Serralheria | 49 |
-| 🖥️ Telemedicina | 49 |
 | 🚌 Transporte Escolar | 49 |
 | 🛒 Varejo | 49 |
 | 🚰 Água Mineral & Envasamento | 48 |
 | 👟 Calçados | 48 |
 | 📜 Cartório & Serviços Notariais | 48 |
 | 🧱 Cerâmica & Revestimentos | 48 |
+| 📦 Correios & Encomendas | 48 |
 | 🧴 Cosméticos & Fábrica de Cosméticos | 48 |
 | 🟫 Curtume & Couro | 48 |
 | ☀️ Energia Solar | 48 |
@@ -567,8 +567,8 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🏬 Armazenagem & Self Storage | 28 |
 | 🗣️ Escola de Idiomas | 28 |
 | 🗂️ Operadora de Plano de Saúde | 28 |
-| 🧺 Lavanderia | 27 |
 | 🏥 Saúde | 27 |
+| 🔒 Segurança Privada | 27 |
 | 🧹 Serviços de Limpeza | 27 |
 | ✈️ Turismo | 27 |
 | 🪩 Casa Noturna & Casa de Shows | 26 |
@@ -576,8 +576,8 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🎾 Clube Social & Recreativo | 26 |
 | 💰 Financeiro | 26 |
 | ⛪ Igreja & Templos Religiosos | 26 |
+| 🧺 Lavanderia | 26 |
 | 🦺 Segurança do Trabalho & SESMT | 26 |
-| 🔒 Segurança Privada | 26 |
 | 🚲 Aluguel de Bicicletas & Bike Sharing | 25 |
 | 🛍️ Atacado & Atacarejo | 25 |
 | 🌾 Cerealista & Armazém de Grãos | 25 |
@@ -598,9 +598,9 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🧮 Contabilidade | 16 |
 | 🚇 Metrô & Trem Urbano | 16 |
 | 👶 Creche & Educação Infantil | 15 |
-| 🧰 Escola Técnica & Profissionalizante | 15 |
 | 🏠 Imobiliário | 15 |
 | 🩸 Banco de Sangue & Hemocentro | 14 |
+| 🧰 Escola Técnica & Profissionalizante | 14 |
 | ✅ Inspeção & Certificação | 14 |
 | 👵 Asilo & Casa de Repouso | 13 |
 | 🏟️ Estádio & Arena | 13 |
