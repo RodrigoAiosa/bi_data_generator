@@ -91,6 +91,20 @@ def _report_files(nome_limpo: str) -> dict[str, str]:
     return {
         f"{base}/.platform": _platform_json("Report", nome_limpo),
         f"{base}/definition.pbir": json.dumps(pbir, indent=2, ensure_ascii=False),
+        # definition/version.json é OBRIGATÓRIO (confirmado por 3 fontes: o
+        # erro real "Cannot find file 'version.json'" com isRequired=true na
+        # pilha do Power BI Desktop; a listagem oficial de estrutura da
+        # Microsoft — learn.microsoft.com/rest/api/fabric/.../report-definition
+        # — que lista 'definition/version.json' como parte do payload PBIR
+        # junto de definition/report.json; e um skill de comunidade marcando
+        # "REQUIRED -- PBIR version"). CONTEÚDO: diferente de definition.pbism
+        # e definition.pbir (que validei contra o schema JSON oficial de
+        # verdade), não encontrei o schema publicado nem um exemplo real do
+        # conteúdo deste arquivo especificamente — esta é uma estimativa best
+        # effort (versão mínima, sem $schema, já que o nome sugere um
+        # propósito bem mais restrito que os outros dois), não uma correção
+        # com o mesmo nível de confiança.
+        f"{base}/definition/version.json": json.dumps({"version": "2.0"}, indent=2, ensure_ascii=False),
         f"{base}/definition/report.json": json.dumps(report_json, indent=2, ensure_ascii=False),
         f"{base}/definition/pages/pages.json": json.dumps(pages_json, indent=2, ensure_ascii=False),
         f"{base}/definition/pages/ReportSection1/page.json": json.dumps(page_json, indent=2, ensure_ascii=False),
