@@ -27,7 +27,6 @@ passar batido.
 from __future__ import annotations
 
 import argparse
-import datetime
 import re
 import sys
 import warnings
@@ -40,40 +39,7 @@ CAMINHO_PPTX = RAIZ / "assets" / "BI_Data_Generator_Apresentacao.pptx"
 
 sys.path.insert(0, str(RAIZ))
 
-
-def contar_setores() -> int:
-    from config import SETORES
-    return len(SETORES)
-
-
-def contar_medidas_dax(amostra_por_setor: int = 50) -> int:
-    """Gera uma amostra pequena de cada setor (rápido, ~5s pros 200) e soma
-    a bateria de medidas DAX sugeridas — a mesma lógica usada em produção."""
-    from config import SETORES, obter_gerador
-    from generators.medidas import gerar_bateria_medidas
-
-    inicio = datetime.date(2024, 1, 1)
-    fim = datetime.date(2024, 12, 31)
-    total = 0
-    for nome in SETORES:
-        fn = obter_gerador(nome)
-        tabelas = fn(amostra_por_setor, inicio, fim)
-        medidas = gerar_bateria_medidas(tabelas)
-        total += sum(len(lista) for cats in medidas.values() for lista in cats.values())
-    return total
-
-
-def contar_ferramentas() -> int:
-    """Conta quantas abas existem de verdade em app.py, lendo a lista
-    passada pra st.tabs([...]) — não um número fixo mantido à mão."""
-    texto_app = (RAIZ / "app.py").read_text(encoding="utf-8")
-    m = re.search(r"st\.tabs\(\s*\[(.*?)\]\s*,?\s*\)", texto_app, re.DOTALL)
-    if not m:
-        raise RuntimeError("Não encontrei a chamada st.tabs([...]) em app.py — layout mudou?")
-    lista_literal = m.group(1)
-    # Cada aba é uma string entre aspas — conta quantas strings tem na lista
-    abas = re.findall(r'"[^"]*"', lista_literal)
-    return len(abas)
+from scripts.fatos_projeto import contar_setores, contar_medidas_dax, contar_ferramentas  # noqa: E402
 
 
 def _set_texto_paragrafo(paragraph, novo_texto: str) -> None:

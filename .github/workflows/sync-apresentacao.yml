@@ -1,15 +1,17 @@
-name: Sincronizar apresentação
+name: Sincronizar apresentação e README
 
-# Roda toda vez que algo que pode mudar os números da apresentação
-# (quantidade de setores, medidas DAX ou abas) é alterado na branch main.
-# Se os números da apresentação (assets/BI_Data_Generator_Apresentacao.pptx)
-# estiverem desatualizados, o workflow atualiza e comita de volta sozinho.
+# Roda toda vez que algo que pode mudar os números da apresentação e do
+# README (quantidade de setores, medidas DAX ou abas) é alterado na branch
+# main. Se esses números estiverem desatualizados — seja na apresentação
+# (assets/BI_Data_Generator_Apresentacao.pptx) ou no README.md — o workflow
+# atualiza e comita de volta sozinho.
 #
 # O que ele NÃO faz: se uma aba/ferramenta nova for adicionada, ele avisa
 # no log do Actions (fica visível na aba "Actions" do repositório) mas não
-# cria automaticamente o card/slide novo — isso continua exigindo trabalho
-# manual de design (texto, layout), igual foi feito pra "Pergunte aos Dados"
-# e "Carrossel Power BI".
+# cria automaticamente o card/slide novo na apresentação, nem a frase
+# descrevendo a ferramenta nova no README — isso continua exigindo trabalho
+# manual (texto, layout), igual foi feito pra "Pergunte aos Dados" e
+# "Carrossel Power BI".
 
 on:
   push:
@@ -19,6 +21,7 @@ on:
       - "app.py"
       - "generators/**.py"
       - "assets/BI_Data_Generator_Apresentacao.pptx"
+      - "README.md"
   workflow_dispatch: {}  # permite rodar manualmente pela aba Actions também
 
 permissions:
@@ -43,24 +46,26 @@ jobs:
           pip install -r requirements.txt
           pip install python-pptx
 
-      - name: Rodar a sincronização
-        id: sync
+      - name: Sincronizar a apresentação (.pptx)
         run: python scripts/sync_apresentacao.py
 
-      - name: Verificar se o arquivo mudou
+      - name: Sincronizar o README
+        run: python scripts/sync_readme.py
+
+      - name: Verificar se algum arquivo mudou
         id: diff
         run: |
-          if git diff --quiet -- assets/BI_Data_Generator_Apresentacao.pptx; then
+          if git diff --quiet -- assets/BI_Data_Generator_Apresentacao.pptx README.md; then
             echo "mudou=false" >> "$GITHUB_OUTPUT"
           else
             echo "mudou=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Comitar a apresentação atualizada
+      - name: Comitar as mudanças
         if: steps.diff.outputs.mudou == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add assets/BI_Data_Generator_Apresentacao.pptx
-          git commit -m "chore(apresentacao): sincroniza numeros automaticamente [skip ci]"
+          git add assets/BI_Data_Generator_Apresentacao.pptx README.md
+          git commit -m "chore(docs): sincroniza numeros da apresentacao e do README automaticamente [skip ci]"
           git push
