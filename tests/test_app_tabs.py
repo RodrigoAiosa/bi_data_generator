@@ -76,6 +76,18 @@ def test_dados_causais():
     assert not at.exception
 
 
+def test_scd_simulador():
+    at = _rodar_app()
+    btn_gerar = next(b for b in at.button if b.label == "Gerar base agora")
+    btn_gerar.click().run()
+    btn_scd = next(b for b in at.button if b.key == "btn_gerar_scd")
+    btn_scd.click().run()
+    assert not at.exception
+
+    downloads_scd = [d for d in at.download_button if d.label in ("T0 (antes)", "T1 (depois)", "Gabarito", "SCD Tipo 2 (completo)")]
+    assert len(downloads_scd) == 4
+
+
 def test_formatar_dax():
     at = _rodar_app()
     entrada = next(t for t in at.text_area if t.key == "formatar_dax_entrada")

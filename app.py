@@ -34,6 +34,7 @@ from ui import (
 from ui.automatizar_bi import render_automatizar_bi
 from ui.simulador_pl300 import render_simulador_pl300
 from ui.dados_causais import render_dados_causais, montar_gabarito_causal_txt
+from ui.scd_simulador import render_scd_simulador
 from ui.formatar_dax import render_formatar_dax
 from ui.formatar_m import render_formatar_m
 from ui.sugestao_proximo_passo import sugerir
@@ -429,8 +430,8 @@ def main() -> None:
         st.markdown(_TABS_GUIA_TEXTO[lang])
     st.session_state["tabs_guia_visto"] = True
 
-    tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_dax, tab_m, tab_auditor, tab_sandbox, tab_pergunte, tab_carrossel = st.tabs(
-        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox", "💬 Pergunte aos Dados", "🖥️ Carrossel Power BI"]
+    tab_gerador, tab_automatizar, tab_pl300, tab_causal, tab_scd, tab_dax, tab_m, tab_auditor, tab_sandbox, tab_pergunte, tab_carrossel = st.tabs(
+        ["🏭 Gerador de Setores", "🤖 Automatizar BI", "🎓 Simulador PL-300", "🧬 Dados Causais", "🕰️ Simulador de Dimensões Mutáveis", "📐 Formatar DAX", "🔧 Formatar M", "🩺 Auditor de Modelo", "🧮 DAX Sandbox", "💬 Pergunte aos Dados", "🖥️ Carrossel Power BI"]
     )
 
     with tab_gerador:
@@ -491,6 +492,9 @@ def main() -> None:
 
     with tab_causal:
         render_dados_causais()
+
+    with tab_scd:
+        render_scd_simulador()
 
     with tab_dax:
         render_formatar_dax()
