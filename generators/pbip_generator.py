@@ -55,6 +55,11 @@ def _report_files(nome_limpo: str) -> dict[str, str]:
     pré-montados; um relatório vazio é o ponto de partida mais seguro para
     o usuário montar o próprio dashboard sobre um modelo já pronto."""
     pbir = {
+        # $schema é OBRIGATÓRIO (confirmado via fetch direto do schema oficial:
+        # required = ["$schema", "version", "datasetReference"]) — estava
+        # faltando aqui, mesmo tipo de lacuna que causou o erro do
+        # definition.pbism.
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json",
         "version": "4.0",
         "datasetReference": {"byPath": {"path": f"../{nome_limpo}.SemanticModel"}},
     }
@@ -99,11 +104,19 @@ def _semantic_model_files(nome_limpo: str, tabelas: dict[str, pd.DataFrame]) -> 
         # definition.pbism é um arquivo OBRIGATÓRIO na raiz da pasta .SemanticModel
         # (não dentro de definition/) — sem ele o Power BI Desktop recusa abrir o
         # projeto com "DatasetDefinition: Required artifact is missing". Schema
-        # confirmado na documentação oficial de PBIP (Microsoft Learn): apenas
-        # 'version' e 'datasetReference' (null/null quando o modelo é local, não
-        # uma referência a um semantic model já publicado no serviço).
+        # confirmado na documentação OFICIAL da Microsoft (Fabric REST API,
+        # SemanticModel definition, learn.microsoft.com/rest/api/fabric/articles/
+        # item-management/definitions/semantic-model-definition) — NÃO tem
+        # 'datasetReference' (isso é do definition.pbir, de Report; uma tentativa
+        # anterior baseada numa fonte de terceiros misturou os dois schemas por
+        # engano, causando "Property 'datasetReference' has not been defined and
+        # the schema does not allow additional properties").
         f"{base}/definition.pbism": json.dumps(
-            {"version": "1.0", "datasetReference": {"byPath": None, "byConnection": None}},
+            {
+                "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json",
+                "version": "4.2",
+                "settings": {"qnaEnabled": False},
+            },
             indent=2, ensure_ascii=False,
         ) + "\n",
         f"{base}/definition/database.tmdl": f"database {nome_limpo}\n\tcompatibilityLevel: {_COMPATIBILITY_LEVEL}\n",
