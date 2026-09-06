@@ -417,7 +417,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🦄 Startups & Venture Capital | 137 |
 | 💊 Farmacêutico | 118 |
 | 🏪 E-commerce | 116 |
-| 🏦 Fintech | 116 |
+| 🏦 Fintech | 115 |
 | 🏟️ Esportes | 103 |
 | ⛏️ Mineração | 103 |
 | 🤝 CRM | 98 |
@@ -472,11 +472,11 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🛠️ Locação de Equipamentos | 60 |
 | 🖼️ Museus & Cultura | 60 |
 | 🍷 Vinícola & Vitivinicultura | 60 |
+| 🌳 Viveiro & Paisagismo | 60 |
 | 🌱 AgTech | 59 |
 | 🧬 Biotecnologia | 59 |
 | 🖥️ Data Center & Cloud Hosting | 59 |
 | 🚚 Logística | 59 |
-| 🌳 Viveiro & Paisagismo | 59 |
 | 🧠 Saúde Mental | 58 |
 | 🧶 Artesanato | 50 |
 | 🪙 Blockchain & Criptomoedas | 50 |
@@ -525,6 +525,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🔬 Laboratório & Diagnóstico | 47 |
 | 🏍️ Motoboy & App de Transporte | 47 |
 | 🎁 Clube de Assinaturas | 39 |
+| 🧾 Consórcios | 39 |
 | 📝 Cursinho Preparatório | 39 |
 | 🥬 Feira Livre & Mercado Municipal | 39 |
 | 🗑️ Reciclagem & Gestão de Resíduos | 39 |
@@ -533,7 +534,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🕵️ Auditoria & Compliance | 38 |
 | 💈 Barbearia | 38 |
 | 🍱 Buffet & Cerimonial | 38 |
-| 🧾 Consórcios | 38 |
 | 🏗️ Construção Civil | 38 |
 | 💳 Cooperativa de Crédito | 38 |
 | 🖋️ Estúdio de Tatuagem | 38 |
@@ -578,7 +578,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | ⛪ Igreja & Templos Religiosos | 26 |
 | 🦺 Segurança do Trabalho & SESMT | 26 |
 | 🔒 Segurança Privada | 26 |
-| 🪧 Sindicato & Associação de Classe | 26 |
 | 🚲 Aluguel de Bicicletas & Bike Sharing | 25 |
 | 🛍️ Atacado & Atacarejo | 25 |
 | 🌾 Cerealista & Armazém de Grãos | 25 |
@@ -589,6 +588,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🛗 Manutenção de Elevadores | 25 |
 | 🐾 Pet & Veterinária | 25 |
 | 🤖 Robótica & Automação Industrial | 25 |
+| 🪧 Sindicato & Associação de Classe | 25 |
 | 📇 Cobrança & Recuperação de Crédito | 24 |
 | 📐 Engenharia & Projetos | 24 |
 | 🔥 Gás Natural & Distribuição | 24 |
