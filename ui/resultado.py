@@ -175,12 +175,20 @@ def render_resultado(
     nome_pbip_zip = f"Template_PBI_{nome.replace(' ', '_')}.zip"
 
     st.download_button(
-        label=f"📥 Baixar template Power BI (.pbip) — {nome_pbip_zip}",
+        label="📥 Baixar template Power BI (.pbip) — 🧪 Beta",
         data=pbip_zip_bytes,
         file_name=nome_pbip_zip,
         mime="application/zip",
         use_container_width=True,
         on_click=lambda: registrar_evento("baixou_pbip", setor=nome),
+    )
+    st.warning(
+        "🧪 **Beta**: essa funcionalidade é recente e já passamos por algumas rodadas de "
+        "correção com base em erros reais do Power BI Desktop. Se o arquivo não abrir "
+        "direito, me avise com a mensagem de erro completa (botão \"Copiar os detalhes\" "
+        "na caixa de erro) que eu corrijo rápido — o `.zip` de CSV + `model.tmdl` de sempre "
+        "continua funcionando normalmente como alternativa já validada.",
+        icon="🧪",
     )
     st.caption(
         "Projeto Power BI (.pbip) já com tabelas, relacionamentos e medidas DAX montados — "
