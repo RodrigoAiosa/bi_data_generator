@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest
+duckdb
+jsonschema
+python-pptx

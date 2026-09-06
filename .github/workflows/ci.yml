@@ -1,0 +1,37 @@
+name: CI — Testes automatizados
+
+# Roda a suite de testes real (não so lint/sintaxe) a cada push ou PR pra
+# main: geracao dos 200 setores, SQL executado de verdade no DuckDB,
+# deteccao de relacionamento (FK), template .pbip validado contra os
+# schemas oficiais da Microsoft, e as 10 abas via AppTest. Ver tests/ pra
+# cada arquivo individual.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências (produção + teste)
+        run: pip install -r requirements-dev.txt
+
+      - name: Rodar a suíte de testes
+        run: python -m pytest tests/ -v --durations=10
+
+      - name: Resumo em caso de falha
+        if: failure()
+        run: |
+          echo "::error::A suite de testes falhou. Veja o log acima pra saber exatamente qual setor/aba/arquivo quebrou."
