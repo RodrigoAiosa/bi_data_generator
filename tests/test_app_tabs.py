@@ -33,6 +33,20 @@ def test_carrega_sem_excecao():
     _rodar_app()
 
 
+def test_sidebar_sem_aviso_de_label_vazio(capsys):
+    """Achado no QA anterior: 4 widgets da sidebar usavam label="" +
+    label_visibility="collapsed", gerando aviso do proprio Streamlit sobre
+    acessibilidade (label vazio nao serve pra leitor de tela). Corrigido
+    dando um label de verdade a cada um (o mesmo texto ja mostrado
+    visualmente acima via markdown customizado), mantendo escondido
+    visualmente. Este teste trava que isso nao volte."""
+    _rodar_app()
+    saida = capsys.readouterr()
+    texto_completo = saida.out + saida.err
+    assert "empty value" not in texto_completo.lower()
+    assert "label got" not in texto_completo.lower()
+
+
 def test_gerador_de_setores():
     at = _rodar_app()
     btn = next(b for b in at.button if b.label == "Gerar base agora")

@@ -146,7 +146,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
         lang = get_lang()
         st.markdown(f'<p style="{_LABEL_STYLE} margin-bottom: 8px;">{t("search_label")}</p>', unsafe_allow_html=True)
         query = st.text_input(
-            "",
+            t("search_label"),
             placeholder=t("search_placeholder"),
             label_visibility="collapsed",
             key="busca_setor",
@@ -172,7 +172,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
 
         # ── Setor ──────────────────────────────────────────────────────────
         st.markdown(f'<p style="{_LABEL_STYLE} margin-bottom: 10px;">{t("sector_label")}</p>', unsafe_allow_html=True)
-        setor = st.selectbox("", setores_filtrados, label_visibility="collapsed")
+        setor = st.selectbox(t("sector_label"), setores_filtrados, label_visibility="collapsed")
 
         # ── Período ────────────────────────────────────────────────────────
         st.markdown(f'<p style="{_LABEL_STYLE} margin: 18px 0 10px;">{t("period_label")}</p>', unsafe_allow_html=True)
@@ -194,7 +194,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
         st.markdown(f'<p style="{_LABEL_STYLE} margin: 18px 0 10px;">{t("fiscal_label")}</p>', unsafe_allow_html=True)
         meses_nomes = MESES[lang]
         mes_fiscal_escolha = st.selectbox(
-            "",
+            t("fiscal_label"),
             options=list(range(1, 13)),
             format_func=lambda m: meses_nomes[m],
             index=0,
@@ -206,7 +206,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
 
         # ── Volume ─────────────────────────────────────────────────────────
         st.markdown(f'<p style="{_LABEL_STYLE} margin: 18px 0 10px;">{t("volume_label")}</p>', unsafe_allow_html=True)
-        n_linhas = st.slider("", min_value=SLIDER_MIN, max_value=SLIDER_MAX,
+        n_linhas = st.slider(t("volume_label"), min_value=SLIDER_MIN, max_value=SLIDER_MAX,
                              value=SLIDER_DEFAULT, step=SLIDER_STEP, label_visibility="collapsed")
         st.markdown(
             f'<p style="font-size:0.75rem;color:#7b8ba8;text-align:center;margin-top:-8px;">'
