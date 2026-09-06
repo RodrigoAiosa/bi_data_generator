@@ -14,41 +14,10 @@ import random
 import streamlit as st
 
 from generators.dax_engine import avaliar_medida, DaxError
+from generators.relacionamentos import detectar_fk as _detectar_fk
 from log_acesso import registrar_evento
 from ui.cache_utils import gerar_bruto_com_cache
 from ui.sugestao_proximo_passo import sugerir
-
-
-def _detectar_fk(tabela_fato: str, tabela_dim: str, tabelas: dict) -> tuple[str, str] | None:
-    """Mesma heurística de generators/dax_engine.py e generators/relatorios_gerenciais.py."""
-    if tabela_dim not in tabelas or tabela_fato not in tabelas:
-        return None
-    dim_df = tabelas[tabela_dim]
-    pk_dim = dim_df.columns[0]
-    pk_proprio = tabelas[tabela_fato].columns[0]
-    fk_cols = [
-        c for c in tabelas[tabela_fato].columns
-        if c.lower().startswith(("id_", "sk_")) and c != pk_proprio
-    ]
-
-    # 1) Prioridade máxima: uma coluna do Fato com o MESMO NOME EXATO da PK
-    # da dimensão (ex.: FatoProjeto.id_profissional == DimEquipe.id_profissional)
-    # — sinal muito mais confiável do que comparar com o nome da TABELA, que
-    # pode não ter nada a ver com o nome da própria coluna-chave (a dimensão
-    # "Equipe" é identificada por "id_profissional", não por "id_equipe").
-    for col in fk_cols:
-        if col.lower() == pk_dim.lower():
-            return col, pk_dim
-
-    # 2) Fallback: heurística de sufixo por nome da tabela (cobre os casos
-    # onde a coluna do Fato não tem o mesmo nome exato da PK, mas os nomes
-    # são parecidos o bastante, ex.: 'id_vendedor' com DimVendedor).
-    sufixo_dim = tabela_dim[3:].lower() if tabela_dim.startswith("Dim") else tabela_dim.lower()
-    for col in fk_cols:
-        sufixo_col = col.split("_", 1)[1] if "_" in col else col[3:]
-        if sufixo_col.lower() in sufixo_dim or sufixo_dim in sufixo_col.lower():
-            return col, pk_dim
-    return None
 
 
 def _html_escape(texto: str) -> str:

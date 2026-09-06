@@ -20,6 +20,8 @@ import re
 
 import pandas as pd
 
+from generators.relacionamentos import detectar_fk as _detectar_fk
+
 _REF_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_ ]*)\[([^\]]+)\]$")
 _NUM_RE = re.compile(r"^-?\d+(\.\d+)?$")
 _FILTRO_RE = re.compile(
@@ -109,33 +111,6 @@ def _parse_ref(ref: str, tabelas: dict[str, pd.DataFrame]) -> tuple[str, str]:
 
 
 # ── Detecção de relacionamento FK (mesma heurística usada em relatorios_gerenciais.py) ──
-def _detectar_fk(tabela_fato: str, tabela_dim: str, tabelas: dict[str, pd.DataFrame]) -> tuple[str, str] | None:
-    """Retorna (coluna_fk_no_fato, coluna_pk_na_dim) se achar uma relação, senão None."""
-    if tabela_dim not in tabelas or tabela_fato not in tabelas:
-        return None
-    dim_df = tabelas[tabela_dim]
-    pk_dim = dim_df.columns[0]
-    pk_proprio = tabelas[tabela_fato].columns[0]
-    fk_cols = [
-        c for c in tabelas[tabela_fato].columns
-        if c.lower().startswith(("id_", "sk_")) and c != pk_proprio
-    ]
-
-    # 1) Prioridade máxima: mesmo nome exato da coluna-chave (ex.:
-    # FatoProjeto.id_profissional == DimEquipe.id_profissional) — mais
-    # confiável do que comparar com o nome da tabela, que pode não ter
-    # nada a ver com o nome da própria coluna-chave.
-    for col in fk_cols:
-        if col.lower() == pk_dim.lower():
-            return col, pk_dim
-
-    # 2) Fallback: heurística de sufixo por nome da tabela.
-    sufixo_dim = tabela_dim[3:].lower() if tabela_dim.startswith("Dim") else tabela_dim.lower()
-    for col in fk_cols:
-        sufixo_col = col.split("_", 1)[1] if "_" in col else col[3:]
-        if sufixo_col.lower() in sufixo_dim or sufixo_dim in sufixo_col.lower():
-            return col, pk_dim
-    return None
 
 
 def _comparar(serie: pd.Series, operador: str, valor_bruto: str) -> pd.Series:

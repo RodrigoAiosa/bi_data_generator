@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from generators.dax_engine import DaxError, avaliar_medida
+from generators.relacionamentos import extrair_sufixo_chave
 from generators.relatorios_gerenciais import _colunas_medida
 
 _SINONIMOS_MEDIDA = {
@@ -263,7 +264,7 @@ def _achar_dimensao(pergunta_norm: str, tabelas: dict) -> str | None:
         dim_df = tabelas[dim_nome]
         pk_dim = dim_df.columns[0]
         if pk_dim.lower().startswith(("id_", "sk_")):
-            sufixo_pk = pk_dim.split("_", 1)[1] if "_" in pk_dim else pk_dim[3:]
+            sufixo_pk = extrair_sufixo_chave(pk_dim)
             if sufixo_pk.lower() in palavras_pergunta:
                 return dim_nome
 
