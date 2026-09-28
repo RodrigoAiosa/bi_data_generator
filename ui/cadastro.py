@@ -10,6 +10,7 @@ automaticamente: o app funciona normalmente, só sem exigir/gravar cadastro.
 import streamlit as st
 
 from data_acesso import (
+    buscar_cidades,
     cadastrar,
     celular_valido,
     email_cadastrado,
@@ -46,6 +47,9 @@ _STR: dict[str, dict[str, str]] = {
     "estado_label":     {"pt": "Estado", "en": "State"},
     "estado_outro":     {"pt": "Fora do Brasil / Outro", "en": "Outside Brazil / Other"},
     "cidade_label":     {"pt": "Cidade", "en": "City"},
+    "cidade_placeholder": {"pt": "Selecione a cidade…", "en": "Select the city…"},
+    "cidade_offline_aviso": {"pt": "Não consegui carregar a lista de cidades agora — digite manualmente.",
+                              "en": "Couldn't load the city list right now — type it manually."},
     "btn_cadastrar":    {"pt": "Cadastrar e começar", "en": "Register and start"},
     "erro_campos":      {"pt": "⚠️ Preencha todos os campos antes de continuar.",
                           "en": "⚠️ Please fill in all fields before continuing."},
@@ -83,6 +87,18 @@ def _lang_toggle(lang: str) -> None:
 
 
 def _form_cadastrar(lang: str) -> None:
+    # Fora do st.form de propósito: widgets dentro de um form só disparam
+    # rerun no submit, então a lista de cidades (que depende do estado)
+    # nunca seria atualizada em tempo real se o seletor de estado também
+    # estivesse dentro do form.
+    estado = st.selectbox(
+        _s("estado_label", lang),
+        _ESTADOS_BR + [_s("estado_outro", lang)],
+        key="cadastro_estado_sel",
+    )
+    eh_outro_pais = estado == _s("estado_outro", lang)
+    cidades = [] if eh_outro_pais else buscar_cidades(estado)
+
     with st.form("form_cadastro", clear_on_submit=False):
         nome = st.text_input(_s("nome_label", lang))
         col_a, col_b = st.columns(2)
@@ -90,25 +106,32 @@ def _form_cadastrar(lang: str) -> None:
             sexo = st.selectbox(_s("sexo_label", lang), _SEXO_OPCOES[lang])
         with col_b:
             email = st.text_input(_s("email_label", lang))
-        col_c, col_d = st.columns(2)
-        with col_c:
-            celular = st.text_input(
-                _s("celular_label", lang),
-                max_chars=15,
-                placeholder=_s("celular_placeholder", lang),
-                help=_s("celular_help", lang),
+        celular = st.text_input(
+            _s("celular_label", lang),
+            max_chars=15,
+            placeholder=_s("celular_placeholder", lang),
+            help=_s("celular_help", lang),
+        )
+        if cidades:
+            cidade = st.selectbox(
+                _s("cidade_label", lang),
+                cidades,
+                index=None,
+                placeholder=_s("cidade_placeholder", lang),
             )
-        with col_d:
-            estado = st.selectbox(_s("estado_label", lang), _ESTADOS_BR + [_s("estado_outro", lang)])
-        cidade = st.text_input(_s("cidade_label", lang))
+        else:
+            cidade = st.text_input(_s("cidade_label", lang))
+            if not eh_outro_pais:
+                st.caption(_s("cidade_offline_aviso", lang))
 
         enviado = st.form_submit_button(_s("btn_cadastrar", lang), use_container_width=True)
 
     if not enviado:
         return
 
+    cidade = (cidade or "").strip()
     celular_limpo = limpar_celular(celular)
-    if not all([nome.strip(), sexo, email.strip(), celular_limpo, estado, cidade.strip()]):
+    if not all([nome.strip(), sexo, email.strip(), celular_limpo, estado, cidade]):
         st.error(_s("erro_campos", lang))
         return
     if not email_valido(email):

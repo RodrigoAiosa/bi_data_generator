@@ -60,6 +60,30 @@ def celular_valido(celular: str) -> bool:
     return bool(_CELULAR_REGEX.match(limpar_celular(celular)))
 
 
+@st.cache_data(ttl=60 * 60 * 24, show_spinner=False)
+def buscar_cidades(uf: str) -> list[str]:
+    """
+    Busca a lista de municípios de um estado brasileiro na API pública do
+    IBGE (não depende do Supabase). Cacheada por 24h por UF, já que a
+    lista de cidades de um estado não muda de um dia pro outro.
+
+    Retorna [] em caso de erro/timeout/UF desconhecida — quem chama deve
+    cair para um campo de texto livre nesse caso, nunca travar o cadastro
+    por causa disso (mesmo espírito "best-effort" do resto do arquivo).
+    """
+    try:
+        resp = requests.get(
+            f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{uf}/municipios",
+            timeout=_TIMEOUT_SEG,
+        )
+        if resp.status_code != 200:
+            return []
+        dados = resp.json()
+        return sorted({item["nome"] for item in dados if isinstance(item, dict) and item.get("nome")})
+    except Exception:
+        return []
+
+
 def email_cadastrado(email: str) -> Optional[bool]:
     """
     Verifica (via RPC email_cadastrado, que só devolve true/false) se um

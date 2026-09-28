@@ -17,6 +17,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 import data_acesso
+import ui.cadastro as cadastro_ui
 
 _CAMINHO_APP = str(Path(__file__).resolve().parent.parent / "app.py")
 
@@ -159,8 +160,11 @@ def test_gate_bloqueia_quando_supabase_configurado(monkeypatch):
 
 
 def test_gate_libera_apos_cadastro_bem_sucedido(monkeypatch):
+    """Simula a API do IBGE fora do ar (retorna []) — o campo cidade deve
+    cair para texto livre, e o cadastro precisa continuar funcionando."""
     monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
     monkeypatch.setattr(data_acesso.requests, "post", lambda *a, **k: Mock(status_code=201, text=""))
+    monkeypatch.setattr(cadastro_ui, "buscar_cidades", lambda uf: [])
 
     at = AppTest.from_file(_CAMINHO_APP, default_timeout=180)
     at.run()
@@ -185,6 +189,61 @@ def test_gate_libera_apos_cadastro_bem_sucedido(monkeypatch):
 
 def _s_btn_cadastrar(botao) -> bool:
     return botao.label in ("Cadastrar e começar", "Register and start")
+
+
+def test_cidade_vira_selectbox_quando_ha_lista_de_cidades(monkeypatch):
+    """Quando o IBGE responde, a cidade deixa de ser texto livre e vira uma
+    lista das cidades do estado selecionado."""
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    monkeypatch.setattr(data_acesso.requests, "post", lambda *a, **k: Mock(status_code=201, text=""))
+    monkeypatch.setattr(cadastro_ui, "buscar_cidades", lambda uf: ["Campinas", "São Paulo"] if uf == "SP" else [])
+
+    at = AppTest.from_file(_CAMINHO_APP, default_timeout=180)
+    at.run()
+
+    # Estado padrão do selectbox é o primeiro (AC) — troca pra SP, que tem
+    # cidades mockadas, disparando o rerun que popula o seletor de cidade.
+    estado_sel = next(s for s in at.selectbox if s.label in ("Estado", "State"))
+    estado_sel.set_value("SP").run()
+
+    cidade_sel = next(s for s in at.selectbox if s.label in ("Cidade", "City"))
+    assert list(cidade_sel.options) == ["Campinas", "São Paulo"]
+    cidade_sel.set_value("São Paulo")
+
+    for ti in at.text_input:
+        rotulo = (ti.label or "").lower()
+        if "mail" in rotulo:
+            ti.set_value("ana@exemplo.com")
+        elif "celular" in rotulo or "phone" in rotulo:
+            ti.set_value("11999999999")
+        else:
+            ti.set_value("Preenchido")
+
+    botao = next(b for b in at.button if _s_btn_cadastrar(b))
+    botao.click().run()
+    assert not at.exception
+    assert bool(at.session_state.get("cadastro_ok")) is True
+
+
+def test_estado_outro_nao_busca_cidades(monkeypatch):
+    """'Fora do Brasil / Outro' deve manter cidade como texto livre e nunca
+    chamar a API do IBGE."""
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    chamadas = []
+    monkeypatch.setattr(cadastro_ui, "buscar_cidades", lambda uf: chamadas.append(uf) or [])
+
+    at = AppTest.from_file(_CAMINHO_APP, default_timeout=180)
+    at.run()
+
+    estado_sel = next(s for s in at.selectbox if s.label in ("Estado", "State"))
+    estado_sel.set_value("Fora do Brasil / Outro").run()
+
+    # A primeira renderização (estado padrão "AC") busca cidades normalmente;
+    # o que importa é que, com "Outro" selecionado, a UF especial nunca é
+    # passada pra buscar_cidades.
+    assert "Fora do Brasil / Outro" not in chamadas
+    assert not any(s.label in ("Cidade", "City") for s in at.selectbox)
+    assert any((ti.label or "") in ("Cidade", "City") for ti in at.text_input)
 
 
 def test_gate_fail_open_sem_configuracao_nao_bloqueia():
