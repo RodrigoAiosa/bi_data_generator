@@ -168,24 +168,21 @@ def cadastrar(nome_completo: str, sexo: str, email: str, celular: str,
                 "apikey": key,
                 "Authorization": f"Bearer {key}",
                 "Content-Type": "application/json",
-                # "representation" (em vez de "minimal"): precisamos do
-                # id_registro gerado de volta, pra linkar os logs de uso
-                # (logs_uso.id_registro) a essa pessoa desde já.
-                "Prefer": "return=representation",
+                # "minimal": a tabela `registros` só tem política de INSERT
+                # pro público (sem SELECT), de propósito — pedir
+                # "return=representation" faria o PostgREST tentar ler a
+                # linha de volta e, sem política de SELECT, o role anon
+                # toma 401 mesmo com o INSERT já tendo funcionado. Por isso
+                # buscamos o id_registro depois, via obter_id_registro()
+                # (RPC SECURITY DEFINER, já usada no fluxo "já sou
+                # cadastrado"), que é o jeito seguro de ler esse dado.
+                "Prefer": "return=minimal",
             },
             timeout=_TIMEOUT_SEG,
         )
-        if resp.status_code in (200, 201):
-            id_registro = None
-            try:
-                dados = resp.json()
-                if isinstance(dados, list) and dados:
-                    id_registro = dados[0].get("id_registro")
-            except Exception:
-                pass
+        if resp.status_code in (200, 201, 204):
+            id_registro = obter_id_registro(payload["email"])
             return True, "", id_registro
-        if resp.status_code == 204:
-            return True, "", None
         # 409 = violação de unicidade (e-mail já cadastrado)
         if resp.status_code == 409 or "duplicate key" in resp.text.lower() or "23505" in resp.text:
             return False, "duplicado", None

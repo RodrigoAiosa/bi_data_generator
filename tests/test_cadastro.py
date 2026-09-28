@@ -65,8 +65,10 @@ def test_cadastrar_grava_celular_limpo(monkeypatch):
     capturado = {}
 
     def _post_fake(url, json, headers, timeout):
-        capturado["celular"] = json["celular"]
-        return Mock(status_code=201, text="", json=lambda: [{"id_registro": 1}])
+        if url.endswith("/rest/v1/registros"):
+            capturado["celular"] = json["celular"]
+            return Mock(status_code=201, text="")
+        return Mock(status_code=200, json=lambda: 1)  # rpc/obter_id_registro
 
     monkeypatch.setattr(data_acesso.requests, "post", _post_fake)
     data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "(11) 99999-9999", "SP", "São Paulo")
@@ -132,9 +134,16 @@ def test_email_cadastrado_erro_rede_retorna_none(monkeypatch):
 
 def test_cadastrar_sucesso(monkeypatch):
     monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
-    resp = Mock(status_code=201, text="")
-    resp.json.return_value = [{"id_registro": 7}]
-    monkeypatch.setattr(data_acesso.requests, "post", lambda *a, **k: resp)
+
+    def _post_fake(url, json=None, headers=None, timeout=None):
+        if url.endswith("/rest/v1/registros"):
+            # "return=minimal": INSERT bem-sucedido não devolve corpo (a
+            # tabela só tem política de SELECT... na verdade não tem
+            # nenhuma, de propósito — ver comentário em cadastrar()).
+            return Mock(status_code=201, text="")
+        return Mock(status_code=200, json=lambda: 7)  # rpc/obter_id_registro
+
+    monkeypatch.setattr(data_acesso.requests, "post", _post_fake)
     ok, erro, id_registro = data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "11999999999", "SP", "São Paulo")
     assert ok is True
     assert erro == ""
