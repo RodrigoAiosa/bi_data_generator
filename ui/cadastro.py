@@ -87,44 +87,50 @@ def _lang_toggle(lang: str) -> None:
 
 
 def _form_cadastrar(lang: str) -> None:
-    # Fora do st.form de propósito: widgets dentro de um form só disparam
-    # rerun no submit, então a lista de cidades (que depende do estado)
-    # nunca seria atualizada em tempo real se o seletor de estado também
-    # estivesse dentro do form.
-    estado = st.selectbox(
-        _s("estado_label", lang),
-        _ESTADOS_BR + [_s("estado_outro", lang)],
-        key="cadastro_estado_sel",
+    # Sem st.form de propósito: widgets dentro de um form só disparam rerun
+    # no submit, e a Cidade precisa atualizar em tempo real assim que o
+    # Estado muda — então todo o bloco usa widgets soltos + botão comum,
+    # na ordem pedida: Nome, Sexo, E-mail, Celular, Estado, Cidade.
+    nome = st.text_input(_s("nome_label", lang), key="cad_nome")
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        sexo = st.selectbox(_s("sexo_label", lang), _SEXO_OPCOES[lang], key="cad_sexo")
+    with col_b:
+        email = st.text_input(_s("email_label", lang), key="cad_email")
+
+    celular = st.text_input(
+        _s("celular_label", lang),
+        max_chars=15,
+        placeholder=_s("celular_placeholder", lang),
+        help=_s("celular_help", lang),
+        key="cad_celular",
     )
+
+    col_c, col_d = st.columns(2)
+    with col_c:
+        estado = st.selectbox(
+            _s("estado_label", lang),
+            _ESTADOS_BR + [_s("estado_outro", lang)],
+            key="cadastro_estado_sel",
+        )
     eh_outro_pais = estado == _s("estado_outro", lang)
     cidades = [] if eh_outro_pais else buscar_cidades(estado)
-
-    with st.form("form_cadastro", clear_on_submit=False):
-        nome = st.text_input(_s("nome_label", lang))
-        col_a, col_b = st.columns(2)
-        with col_a:
-            sexo = st.selectbox(_s("sexo_label", lang), _SEXO_OPCOES[lang])
-        with col_b:
-            email = st.text_input(_s("email_label", lang))
-        celular = st.text_input(
-            _s("celular_label", lang),
-            max_chars=15,
-            placeholder=_s("celular_placeholder", lang),
-            help=_s("celular_help", lang),
-        )
+    with col_d:
         if cidades:
             cidade = st.selectbox(
                 _s("cidade_label", lang),
                 cidades,
                 index=None,
                 placeholder=_s("cidade_placeholder", lang),
+                key="cad_cidade_sel",
             )
         else:
-            cidade = st.text_input(_s("cidade_label", lang))
-            if not eh_outro_pais:
-                st.caption(_s("cidade_offline_aviso", lang))
+            cidade = st.text_input(_s("cidade_label", lang), key="cad_cidade_txt")
+    if not cidades and not eh_outro_pais:
+        st.caption(_s("cidade_offline_aviso", lang))
 
-        enviado = st.form_submit_button(_s("btn_cadastrar", lang), use_container_width=True)
+    enviado = st.button(_s("btn_cadastrar", lang), use_container_width=True, key="cad_submit_btn")
 
     if not enviado:
         return
