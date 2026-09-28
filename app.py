@@ -20,6 +20,7 @@ from generators.concept_drift import injetar_concept_drift
 from log_acesso import iniciar_sessao, registrar_evento
 from i18n import t
 from styles.css import inject_css
+from ui.cadastro import render_gate_cadastro
 try:
     from styles.seo import inject_seo
 except Exception:
@@ -410,6 +411,13 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: 
 def main() -> None:
     inject_css()
     inject_seo(lang=_get_lang())
+
+    # Cadastro obrigatório antes de liberar o app (uma vez por sessão de
+    # navegador, ou sempre liberado se o Supabase não estiver configurado
+    # neste ambiente — dev local, CI, testes). Ver ui/cadastro.py.
+    if not render_gate_cadastro():
+        return
+
     render_hero()
 
     lang = _get_lang()

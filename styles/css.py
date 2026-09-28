@@ -505,8 +505,10 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
 .stButton > button,
 .stButton > button[kind="primary"],
 .stButton > button[kind="secondary"],
+.stFormSubmitButton > button,
 [data-testid="stBaseButton-primary"],
-[data-testid="stBaseButton-secondary"] {
+[data-testid="stBaseButton-secondary"],
+[data-testid="stFormSubmitButton"] button {
     background: #F2C811 !important;
     color: #252423 !important; border: none !important; border-radius: 12px !important;
     font-family: 'Syne', sans-serif !important; font-weight: 700 !important;
@@ -516,13 +518,17 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
 }
 .stButton > button *,
+.stFormSubmitButton > button *,
 [data-testid="stBaseButton-primary"] *,
-[data-testid="stBaseButton-secondary"] * {
+[data-testid="stBaseButton-secondary"] *,
+[data-testid="stFormSubmitButton"] button * {
     color: #252423 !important;
 }
 .stButton > button:hover,
+.stFormSubmitButton > button:hover,
 [data-testid="stBaseButton-primary"]:hover,
-[data-testid="stBaseButton-secondary"]:hover {
+[data-testid="stBaseButton-secondary"]:hover,
+[data-testid="stFormSubmitButton"] button:hover {
     background: #D4AF0A !important;
     transform: translateY(-2px) !important;
     box-shadow: 0 8px 24px rgba(242,200,17,0.35) !important;
