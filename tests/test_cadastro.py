@@ -33,6 +33,43 @@ def test_email_valido():
     assert data_acesso.email_valido("ana@exemplo.com") is True
     assert data_acesso.email_valido("nao-e-email") is False
     assert data_acesso.email_valido("") is False
+    assert data_acesso.email_valido("ana@exemplo") is False  # sem TLD
+    assert data_acesso.email_valido("ana@@exemplo.com") is False
+
+
+def test_celular_valido_aceita_so_digitos_com_ddd():
+    assert data_acesso.celular_valido("11999999999") is True   # celular, 11 dígitos
+    assert data_acesso.celular_valido("1133334444") is True    # fixo, 10 dígitos
+
+
+def test_celular_valido_aceita_formatado_mas_valida_pelos_digitos():
+    """O usuário pode digitar com máscara — validamos pelos dígitos, mas
+    quem persiste (cadastrar) sempre limpa antes de gravar."""
+    assert data_acesso.celular_valido("(11) 99999-9999") is True
+
+
+def test_celular_valido_rejeita_tamanho_errado_ou_letras():
+    assert data_acesso.celular_valido("123") is False
+    assert data_acesso.celular_valido("") is False
+    assert data_acesso.celular_valido("abc99999999") is False
+
+
+def test_limpar_celular_remove_tudo_que_nao_e_digito():
+    assert data_acesso.limpar_celular("(11) 99999-9999") == "11999999999"
+    assert data_acesso.limpar_celular("+55 11 99999-9999") == "5511999999999"
+
+
+def test_cadastrar_grava_celular_limpo(monkeypatch):
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    capturado = {}
+
+    def _post_fake(url, json, headers, timeout):
+        capturado["celular"] = json["celular"]
+        return Mock(status_code=201, text="")
+
+    monkeypatch.setattr(data_acesso.requests, "post", _post_fake)
+    data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "(11) 99999-9999", "SP", "São Paulo")
+    assert capturado["celular"] == "11999999999"
 
 
 def test_email_cadastrado_sem_configuracao_retorna_none():
@@ -131,8 +168,13 @@ def test_gate_libera_apos_cadastro_bem_sucedido(monkeypatch):
     # Preenche todos os campos de texto do formulário de cadastro (primeira
     # aba) com valores válidos e envia.
     for ti in at.text_input:
-        eh_email = "mail" in (ti.label or "").lower()
-        valor = "ana@exemplo.com" if eh_email else "Preenchido"
+        rotulo = (ti.label or "").lower()
+        if "mail" in rotulo:
+            valor = "ana@exemplo.com"
+        elif "celular" in rotulo or "phone" in rotulo:
+            valor = "11999999999"
+        else:
+            valor = "Preenchido"
         ti.set_value(valor)
 
     botao = next(b for b in at.button if _s_btn_cadastrar(b))

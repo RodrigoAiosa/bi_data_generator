@@ -9,7 +9,14 @@ automaticamente: o app funciona normalmente, só sem exigir/gravar cadastro.
 """
 import streamlit as st
 
-from data_acesso import cadastrar, email_cadastrado, email_valido, esta_configurado
+from data_acesso import (
+    cadastrar,
+    celular_valido,
+    email_cadastrado,
+    email_valido,
+    esta_configurado,
+    limpar_celular,
+)
 from i18n import get_lang, set_lang
 
 _ESTADOS_BR = [
@@ -33,6 +40,9 @@ _STR: dict[str, dict[str, str]] = {
     "sexo_label":       {"pt": "Sexo", "en": "Gender"},
     "email_label":      {"pt": "E-mail", "en": "Email"},
     "celular_label":    {"pt": "Celular", "en": "Phone"},
+    "celular_help":     {"pt": "Somente números, com DDD (ex: 11999999999).",
+                          "en": "Digits only, with area code (e.g. 11999999999)."},
+    "celular_placeholder": {"pt": "11999999999", "en": "11999999999"},
     "estado_label":     {"pt": "Estado", "en": "State"},
     "estado_outro":     {"pt": "Fora do Brasil / Outro", "en": "Outside Brazil / Other"},
     "cidade_label":     {"pt": "Cidade", "en": "City"},
@@ -40,6 +50,8 @@ _STR: dict[str, dict[str, str]] = {
     "erro_campos":      {"pt": "⚠️ Preencha todos os campos antes de continuar.",
                           "en": "⚠️ Please fill in all fields before continuing."},
     "erro_email":       {"pt": "⚠️ Digite um e-mail válido.", "en": "⚠️ Enter a valid email."},
+    "erro_celular":     {"pt": "⚠️ Digite um celular válido: só números, com DDD (10 ou 11 dígitos).",
+                          "en": "⚠️ Enter a valid phone: digits only, with area code (10 or 11 digits)."},
     "erro_duplicado":   {"pt": "Este e-mail já está cadastrado. Use a aba **{aba}** para continuar.",
                           "en": "This email is already registered. Use the **{aba}** tab to continue."},
     "erro_rede":        {"pt": "😕 Não foi possível concluir o cadastro agora. Verifique sua conexão e tente novamente.",
@@ -80,7 +92,12 @@ def _form_cadastrar(lang: str) -> None:
             email = st.text_input(_s("email_label", lang))
         col_c, col_d = st.columns(2)
         with col_c:
-            celular = st.text_input(_s("celular_label", lang))
+            celular = st.text_input(
+                _s("celular_label", lang),
+                max_chars=15,
+                placeholder=_s("celular_placeholder", lang),
+                help=_s("celular_help", lang),
+            )
         with col_d:
             estado = st.selectbox(_s("estado_label", lang), _ESTADOS_BR + [_s("estado_outro", lang)])
         cidade = st.text_input(_s("cidade_label", lang))
@@ -90,11 +107,15 @@ def _form_cadastrar(lang: str) -> None:
     if not enviado:
         return
 
-    if not all([nome.strip(), sexo, email.strip(), celular.strip(), estado, cidade.strip()]):
+    celular_limpo = limpar_celular(celular)
+    if not all([nome.strip(), sexo, email.strip(), celular_limpo, estado, cidade.strip()]):
         st.error(_s("erro_campos", lang))
         return
     if not email_valido(email):
         st.error(_s("erro_email", lang))
+        return
+    if not celular_valido(celular):
+        st.error(_s("erro_celular", lang))
         return
 
     with st.spinner("…"):

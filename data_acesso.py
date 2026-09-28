@@ -24,7 +24,10 @@ import requests
 import streamlit as st
 
 _TIMEOUT_SEG = 6
-_EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}$")
+# Celular: só dígitos, DDD + número (fixo: 10, celular: 11 dígitos no padrão BR).
+_CELULAR_REGEX = re.compile(r"^\d{10,11}$")
+_NAO_DIGITO = re.compile(r"\D+")
 
 
 def _config() -> tuple[str, str]:
@@ -45,6 +48,16 @@ def esta_configurado() -> bool:
 
 def email_valido(email: str) -> bool:
     return bool(_EMAIL_REGEX.match((email or "").strip()))
+
+
+def limpar_celular(celular: str) -> str:
+    """Remove tudo que não for dígito (espaços, parênteses, hífen, +55...)."""
+    return _NAO_DIGITO.sub("", celular or "")
+
+
+def celular_valido(celular: str) -> bool:
+    """True se, depois de limpo, sobrar só dígitos no padrão BR (DDD + número)."""
+    return bool(_CELULAR_REGEX.match(limpar_celular(celular)))
 
 
 def email_cadastrado(email: str) -> Optional[bool]:
@@ -89,7 +102,7 @@ def cadastrar(nome_completo: str, sexo: str, email: str, celular: str,
         "nome_completo": nome_completo.strip(),
         "sexo": sexo.strip(),
         "email": email.strip(),
-        "celular": celular.strip(),
+        "celular": limpar_celular(celular),
         "estado": estado.strip(),
         "cidade": cidade.strip(),
     }
