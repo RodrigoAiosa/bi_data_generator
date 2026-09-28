@@ -404,7 +404,7 @@ Veja a seção [Carrossel Power BI](#-carrossel-power-bi) para o passo a passo c
 
 ## 🧮 Quantidade de medidas DAX geradas por setor
 
-Cada setor gera uma quantidade diferente de medidas DAX automaticamente, dependendo de quantas tabelas fato, colunas numéricas e chaves estrangeiras ele tem (setores multi-fato e com mais colunas de valor multiplicam a base de medidas). Somando os 200 setores, o motor já sabe escrever **10.688 medidas DAX diferentes**, sem depender de nenhuma IA.
+Cada setor gera uma quantidade diferente de medidas DAX automaticamente, dependendo de quantas tabelas fato, colunas numéricas e chaves estrangeiras ele tem (setores multi-fato e com mais colunas de valor multiplicam a base de medidas). Somando os 200 setores, o motor já sabe escrever **10.691 medidas DAX diferentes**, sem depender de nenhuma IA.
 
 | Setor | Medidas DAX |
 | --- | --- |
@@ -416,8 +416,8 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🛢️ Petróleo & Gás | 140 |
 | 🦄 Startups & Venture Capital | 137 |
 | 💊 Farmacêutico | 118 |
+| 🏪 E-commerce | 116 |
 | 🏦 Fintech | 116 |
-| 🏪 E-commerce | 115 |
 | 🏟️ Esportes | 103 |
 | ⛏️ Mineração | 103 |
 | 🤝 CRM | 98 |
@@ -428,6 +428,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🐟 Pesca & Aquicultura | 91 |
 | ✈️ Viagens Corporativas | 91 |
 | 🏋️ Academia & Fitness | 84 |
+| 👗 Moda & Vestuário | 83 |
 | 🏢 Recursos Humanos | 83 |
 | 💱 Agência de Câmbio | 82 |
 | 📢 Agência de Publicidade | 82 |
@@ -435,7 +436,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | ♻️ Economia Circular | 82 |
 | 🎉 Eventos & Entretenimento | 82 |
 | 🏷️ Franquias | 82 |
-| 👗 Moda & Vestuário | 82 |
 | 🍽️ Restaurantes & Food Service | 82 |
 | ⚖️ Jurídico | 81 |
 | 🎬 Audiovisual & Produtora | 80 |
@@ -447,13 +447,13 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 📦 Fábrica de Embalagens | 71 |
 | 🥩 Frigorífico & Processamento de Carnes | 71 |
 | 🛋️ Indústria Moveleira | 71 |
+| 🚗 Locadora de Veículos | 71 |
 | 🛩️ Táxi Aéreo & Aviação Executiva | 71 |
 | 🍬 Usina de Açúcar & Etanol | 71 |
 | ⚡ Energia | 70 |
-| 🚗 Locadora de Veículos | 70 |
 | 🚴 Logística Urbana | 69 |
 | 💧 Saneamento & Água | 69 |
-| 🏢 Condomínio & Facilities | 63 |
+| 🏢 Condomínio & Facilities | 62 |
 | 🌐 Comércio Exterior | 61 |
 | 🚙 Concessionária de Veículos | 61 |
 | 🏖️ Locação por Temporada | 61 |
@@ -494,7 +494,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🎫 Casa Lotérica & Correspondente Bancário | 49 |
 | 🍺 Cervejaria Artesanal | 49 |
 | 📊 Consultoria Empresarial | 49 |
-| 📦 Correios & Encomendas | 49 |
 | 🪑 Coworking & Espaços Compartilhados | 49 |
 | 🚂 Ferrovia de Carga | 49 |
 | 💵 Financeira & Crédito Pessoal | 49 |
@@ -511,6 +510,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 👟 Calçados | 48 |
 | 📜 Cartório & Serviços Notariais | 48 |
 | 🧱 Cerâmica & Revestimentos | 48 |
+| 📦 Correios & Encomendas | 48 |
 | 🧴 Cosméticos & Fábrica de Cosméticos | 48 |
 | 🟫 Curtume & Couro | 48 |
 | ☀️ Energia Solar | 48 |
@@ -520,10 +520,10 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🎙️ Rádio & Podcast | 48 |
 | 🏬 Shopping Center & Administração de Malls | 48 |
 | 🍦 Sorveteria & Fábrica de Sorvetes | 48 |
+| 🎬 Streaming | 48 |
 | 📡 Telecom | 48 |
 | 🔬 Laboratório & Diagnóstico | 47 |
 | 🏍️ Motoboy & App de Transporte | 47 |
-| 🎬 Streaming | 47 |
 | 🎁 Clube de Assinaturas | 39 |
 | 🧾 Consórcios | 39 |
 | 📝 Cursinho Preparatório | 39 |
@@ -536,6 +536,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🍱 Buffet & Cerimonial | 38 |
 | 🏗️ Construção Civil | 38 |
 | 💳 Cooperativa de Crédito | 38 |
+| 🅿️ Estacionamento & Zona Azul | 38 |
 | 🖋️ Estúdio de Tatuagem | 38 |
 | 💐 Floricultura | 38 |
 | 🩺 Home Care | 38 |
@@ -550,7 +551,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🐔 Avicultura | 37 |
 | ☕️ Cafeicultura & Torrefação | 37 |
 | 📚 Educação | 37 |
-| 🅿️ Estacionamento & Zona Azul | 37 |
 | ⚗️ Farmácia de Manipulação | 37 |
 | 🎡 Parque de Diversões | 37 |
 | 🛡️ Seguros | 37 |
@@ -568,7 +568,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🗣️ Escola de Idiomas | 28 |
 | 🗂️ Operadora de Plano de Saúde | 28 |
 | 🏥 Saúde | 27 |
-| 🔒 Segurança Privada | 27 |
 | 🧹 Serviços de Limpeza | 27 |
 | ✈️ Turismo | 27 |
 | 🪩 Casa Noturna & Casa de Shows | 26 |
@@ -578,6 +577,8 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | ⛪ Igreja & Templos Religiosos | 26 |
 | 🧺 Lavanderia | 26 |
 | 🦺 Segurança do Trabalho & SESMT | 26 |
+| 🔒 Segurança Privada | 26 |
+| 🪧 Sindicato & Associação de Classe | 26 |
 | 🚲 Aluguel de Bicicletas & Bike Sharing | 25 |
 | 🛍️ Atacado & Atacarejo | 25 |
 | 🌾 Cerealista & Armazém de Grãos | 25 |
@@ -588,7 +589,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🛗 Manutenção de Elevadores | 25 |
 | 🐾 Pet & Veterinária | 25 |
 | 🤖 Robótica & Automação Industrial | 25 |
-| 🪧 Sindicato & Associação de Classe | 25 |
 | 📇 Cobrança & Recuperação de Crédito | 24 |
 | 📐 Engenharia & Projetos | 24 |
 | 🔥 Gás Natural & Distribuição | 24 |
@@ -639,7 +639,7 @@ Depois de concluir uma ação relevante em qualquer uma das abas (gerar uma base
 - **Período configurável**: qualquer intervalo de datas, com geração automática da `dCalendario`.
 - **Busca de setor** na barra lateral, com índice construído a partir do nome e da descrição de cada setor.
 - **Barra de progresso real**, com etapas (dimensões, fato, métricas, compactação).
-- **Medidas DAX sugeridas automaticamente** (`generators/medidas.py`), organizadas por categoria e prontas para colar no Power BI. Somando os 200 setores, já são **10.688 medidas diferentes** que o motor sabe escrever sozinho, sem depender de nenhuma IA.
+- **Medidas DAX sugeridas automaticamente** (`generators/medidas.py`), organizadas por categoria e prontas para colar no Power BI. Somando os 200 setores, já são **10.691 medidas diferentes** que o motor sabe escrever sozinho, sem depender de nenhuma IA.
 - **Modelo TMDL** (`generators/tmdl_generator.py`): tabelas, relacionamentos e medidas prontos para importar no Power BI (Tabular Editor), com resolução automática de ambiguidade de relacionamento, inclusive em cadeias fato-para-fato.
 - **Template de projeto Power BI** (`generators/pbip_generator.py`): reaproveita o mesmo modelo (tabelas, relacionamentos e medidas) já em formato de projeto `.pbip` (Report + SemanticModel em TMDL nativo), pronto para abrir direto no Power BI Desktop (Arquivo → Abrir → Procurar) sem precisar colar nada no Tabular Editor. Basta apontar o parâmetro `CaminhoPasta` para onde os CSVs foram extraídos e atualizar.
 - **Dicionário de dados** (`generators/dicionario.py`): explica o significado de cada tabela e coluna com base em padrões de nome (`id_`, `valor_`, `qtd_`, `status`, `data_`, etc.), disponível em PT/EN e exportado como ZIP.
