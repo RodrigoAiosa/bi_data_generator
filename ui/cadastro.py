@@ -17,8 +17,10 @@ from data_acesso import (
     email_valido,
     esta_configurado,
     limpar_celular,
+    obter_id_registro,
 )
 from i18n import get_lang, set_lang
+from log_acesso import registrar_evento
 
 _ESTADOS_BR = [
     "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
@@ -82,6 +84,7 @@ def _lang_toggle(lang: str) -> None:
     with col:
         label = "🇺🇸 English" if lang == "pt" else "🇧🇷 Português"
         if st.button(label, key="cadastro_lang_toggle", use_container_width=True):
+            registrar_evento("trocou_idioma_tela_cadastro")
             set_lang("en" if lang == "pt" else "pt")
             st.rerun()
 
@@ -139,26 +142,33 @@ def _form_cadastrar(lang: str) -> None:
     celular_limpo = limpar_celular(celular)
     if not all([nome.strip(), sexo, email.strip(), celular_limpo, estado, cidade]):
         st.error(_s("erro_campos", lang))
+        registrar_evento("clicou_cadastrar", status="erro", erro="campos_faltando")
         return
     if not email_valido(email):
         st.error(_s("erro_email", lang))
+        registrar_evento("clicou_cadastrar", status="erro", erro="email_invalido")
         return
     if not celular_valido(celular):
         st.error(_s("erro_celular", lang))
+        registrar_evento("clicou_cadastrar", status="erro", erro="celular_invalido")
         return
 
     with st.spinner("…"):
-        ok, erro = cadastrar(nome, sexo, email, celular, estado, cidade)
+        ok, erro, id_registro = cadastrar(nome, sexo, email, celular, estado, cidade)
 
     if ok:
         st.session_state["cadastro_ok"] = True
         st.session_state["cadastro_email"] = email.strip()
+        st.session_state["cadastro_id_registro"] = id_registro
+        registrar_evento("clicou_cadastrar", status="sucesso")
         st.success(_s("sucesso", lang))
         st.rerun()
     elif erro == "duplicado":
         st.warning(_s("erro_duplicado", lang, aba=_s("aba_ja_tenho", lang)))
+        registrar_evento("clicou_cadastrar", status="erro", erro="duplicado")
     else:
         st.error(_s("erro_rede", lang))
+        registrar_evento("clicou_cadastrar", status="erro", erro=erro)
 
 
 def _form_ja_tenho(lang: str) -> None:
@@ -172,6 +182,7 @@ def _form_ja_tenho(lang: str) -> None:
 
     if not email_valido(email):
         st.error(_s("erro_email", lang))
+        registrar_evento("clicou_verificar_cadastro", status="erro", erro="email_invalido")
         return
 
     with st.spinner("…"):
@@ -180,12 +191,16 @@ def _form_ja_tenho(lang: str) -> None:
     if existe is True:
         st.session_state["cadastro_ok"] = True
         st.session_state["cadastro_email"] = email.strip()
+        st.session_state["cadastro_id_registro"] = obter_id_registro(email)
+        registrar_evento("clicou_verificar_cadastro", status="sucesso")
         st.success(_s("sucesso", lang))
         st.rerun()
     elif existe is False:
         st.warning(_s("nao_encontrado", lang, aba=_s("aba_cadastrar", lang)))
+        registrar_evento("clicou_verificar_cadastro", status="erro", erro="nao_encontrado")
     else:
         st.error(_s("erro_verificacao", lang))
+        registrar_evento("clicou_verificar_cadastro", status="erro", erro="erro_verificacao")
 
 
 def render_gate_cadastro() -> bool:

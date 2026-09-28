@@ -8,6 +8,7 @@ import streamlit as st
 
 from config import SETORES, SETORES_INFO, SLIDER_DEFAULT, SLIDER_MAX, SLIDER_MIN, SLIDER_STEP, set_mes_fiscal
 from i18n import get_lang, set_lang, t, MESES
+from log_acesso import registrar_evento
 
 _LABEL_STYLE = (
     'font-family: Syne, sans-serif; font-size: 0.7rem; font-weight: 700;'
@@ -134,6 +135,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
 
         # ── Toggle de idioma ───────────────────────────────────────────────
         if st.button(t("lang_toggle"), use_container_width=True):
+            registrar_evento("trocou_idioma")
             set_lang("en" if get_lang() == "pt" else "pt")
             st.rerun()
 

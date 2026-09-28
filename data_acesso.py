@@ -111,16 +111,46 @@ def email_cadastrado(email: str) -> Optional[bool]:
         return None
 
 
+def obter_id_registro(email: str) -> Optional[int]:
+    """
+    Devolve o id_registro de um e-mail já cadastrado (via RPC
+    obter_id_registro), ou None se não existir ou não foi possível
+    verificar. Usado pra linkar os logs de uso (logs_uso.id_registro) à
+    sessão de quem confirma "já sou cadastrado" sem passar pelo formulário
+    de novo.
+    """
+    url, key = _config()
+    if not url or not key or not email:
+        return None
+    try:
+        resp = requests.post(
+            f"{url}/rest/v1/rpc/obter_id_registro",
+            json={"p_email": email.strip()},
+            headers={
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+            },
+            timeout=_TIMEOUT_SEG,
+        )
+        if resp.status_code == 200:
+            valor = resp.json()
+            return int(valor) if valor is not None else None
+        return None
+    except Exception:
+        return None
+
+
 def cadastrar(nome_completo: str, sexo: str, email: str, celular: str,
-              estado: str, cidade: str) -> tuple[bool, str]:
+              estado: str, cidade: str) -> tuple[bool, str, Optional[int]]:
     """
     Insere um novo registro na tabela `registros` via REST (INSERT-only,
     permitido pela política de RLS para o role anon). Retorna
-    (sucesso, mensagem_de_erro_amigavel).
+    (sucesso, mensagem_de_erro_amigavel, id_registro_ou_None).
     """
     url, key = _config()
     if not url or not key:
-        return False, "Cadastro não está configurado neste ambiente."
+        return False, "Cadastro não está configurado neste ambiente.", None
 
     payload = {
         "nome_completo": nome_completo.strip(),
@@ -138,15 +168,27 @@ def cadastrar(nome_completo: str, sexo: str, email: str, celular: str,
                 "apikey": key,
                 "Authorization": f"Bearer {key}",
                 "Content-Type": "application/json",
-                "Prefer": "return=minimal",
+                # "representation" (em vez de "minimal"): precisamos do
+                # id_registro gerado de volta, pra linkar os logs de uso
+                # (logs_uso.id_registro) a essa pessoa desde já.
+                "Prefer": "return=representation",
             },
             timeout=_TIMEOUT_SEG,
         )
-        if resp.status_code in (200, 201, 204):
-            return True, ""
+        if resp.status_code in (200, 201):
+            id_registro = None
+            try:
+                dados = resp.json()
+                if isinstance(dados, list) and dados:
+                    id_registro = dados[0].get("id_registro")
+            except Exception:
+                pass
+            return True, "", id_registro
+        if resp.status_code == 204:
+            return True, "", None
         # 409 = violação de unicidade (e-mail já cadastrado)
         if resp.status_code == 409 or "duplicate key" in resp.text.lower() or "23505" in resp.text:
-            return False, "duplicado"
-        return False, f"erro_http_{resp.status_code}"
+            return False, "duplicado", None
+        return False, f"erro_http_{resp.status_code}", None
     except Exception:
-        return False, "erro_rede"
+        return False, "erro_rede", None

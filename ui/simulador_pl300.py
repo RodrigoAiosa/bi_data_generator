@@ -449,6 +449,8 @@ def render_simulador_pl300() -> None:
         total_calc = len(perguntas)
         pct_calc = (acertos_calc / total_calc * 100) if total_calc else 0
 
+        registrar_evento("corrigiu_simulado_pl300", volume=total_calc)
+
         historico_sessao = st.session_state.setdefault("pl300_historico_sessao", [])
         historico_sessao.append({
             "data_hora": st.session_state["pl300_data_correcao"],
@@ -486,6 +488,7 @@ def render_simulador_pl300() -> None:
             file_name=f"resultado_pl300_{data_hora_correcao.replace(' ', '_').replace(':', '')}.csv",
             mime="text/csv",
             use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_resultado_pl300", volume=total),
         )
         st.caption(
             "Guarde esse arquivo: baixando um novo a cada prova feita, você monta seu próprio "

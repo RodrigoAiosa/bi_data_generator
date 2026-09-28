@@ -62,6 +62,7 @@ def render_formatar_dax() -> None:
         usar_exemplo = st.button("💡 Usar exemplo", use_container_width=True, key="btn_exemplo_dax")
 
     if usar_exemplo:
+        registrar_evento("usou_exemplo_dax")
         st.session_state["_dax_inserir_exemplo"] = True
         st.rerun()
 
@@ -89,6 +90,7 @@ def render_formatar_dax() -> None:
             file_name="medida_formatada.dax",
             mime="text/plain",
             use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_dax_formatado"),
         )
 
         sugerir(

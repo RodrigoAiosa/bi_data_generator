@@ -274,6 +274,7 @@ def render_dados_causais() -> None:
             file_name="dados_causais.csv",
             mime="text/csv",
             use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_dados_causais"),
         )
     with col_dl2:
         st.download_button(
@@ -282,6 +283,7 @@ def render_dados_causais() -> None:
             file_name="gabarito_causal.txt",
             mime="text/plain",
             use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_gabarito_causal"),
         )
 
     sugerir(

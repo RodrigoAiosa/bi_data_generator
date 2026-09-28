@@ -26,6 +26,7 @@ import streamlit as st
 from generators.medidas import _titulo
 from generators.tmdl_generator import _tabela_tmdl, _e_chave, _coluna_e_data
 from generators.helpers import to_zip
+from log_acesso import registrar_evento
 from ui.sugestao_proximo_passo import sugerir
 
 
@@ -865,6 +866,7 @@ def render_automatizar_bi() -> None:
                     tipos_por_tabela[nome_tabela][col] = tipo_escolhido
 
     if st.button("🧮 Gerar medidas DAX", type="primary", use_container_width=True, key="btn_gerar_medidas_automatizar"):
+        registrar_evento("automatizar_bi_gerou_medidas", volume=len(tabelas))
         tabelas_convertidas = {
             nome_tabela: _aplicar_tipos(df, tipos_por_tabela.get(nome_tabela, {}))
             for nome_tabela, df in tabelas.items()
@@ -931,6 +933,7 @@ def render_automatizar_bi() -> None:
                 file_name="medidas_automatizar_bi.txt",
                 mime="text/plain",
                 use_container_width=True,
+                on_click=lambda: registrar_evento("automatizar_bi_baixou_medidas"),
             )
         with col_dl2:
             if calendario is not None:
@@ -940,6 +943,7 @@ def render_automatizar_bi() -> None:
                     file_name="Calendario.csv",
                     mime="text/csv",
                     use_container_width=True,
+                    on_click=lambda: registrar_evento("automatizar_bi_baixou_calendario"),
                 )
         with col_dl3:
             if tmdl_texto and tabelas_para_tmdl:
@@ -950,6 +954,7 @@ def render_automatizar_bi() -> None:
                     file_name="modelo_automatizar_bi.zip",
                     mime="application/zip",
                     use_container_width=True,
+                    on_click=lambda: registrar_evento("automatizar_bi_baixou_modelo_zip"),
                 )
 
         if tmdl_texto and tabelas_para_tmdl:

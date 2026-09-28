@@ -17,6 +17,7 @@ from generators.carrossel_pbi import (
     gerar_html_carrossel,
     montar_url_embed,
 )
+from log_acesso import registrar_evento
 
 
 def render_carrossel_pbi() -> None:
@@ -60,8 +61,12 @@ def render_carrossel_pbi() -> None:
     col_sel1, col_sel2 = st.columns(2)
     with col_sel1:
         marcar_todas = st.button("☑️ Marcar todas", use_container_width=True, key="carrossel_marcar_todas")
+        if marcar_todas:
+            registrar_evento("carrossel_marcou_todas_paginas")
     with col_sel2:
         desmarcar_todas = st.button("⬜ Desmarcar todas", use_container_width=True, key="carrossel_desmarcar_todas")
+        if desmarcar_todas:
+            registrar_evento("carrossel_desmarcou_todas_paginas")
 
     st.markdown("**Marque as páginas que quer incluir no carrossel:**")
     paginas_selecionadas = []
@@ -128,6 +133,7 @@ def render_carrossel_pbi() -> None:
         file_name="carrossel_powerbi.html",
         mime="text/html",
         use_container_width=True,
+        on_click=lambda: registrar_evento("baixou_carrossel_html", volume=len(paginas_com_url)),
     )
     st.caption(
         "Abra o arquivo baixado em qualquer navegador (de preferência já autenticado no "

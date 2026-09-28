@@ -66,7 +66,7 @@ def test_cadastrar_grava_celular_limpo(monkeypatch):
 
     def _post_fake(url, json, headers, timeout):
         capturado["celular"] = json["celular"]
-        return Mock(status_code=201, text="")
+        return Mock(status_code=201, text="", json=lambda: [{"id_registro": 1}])
 
     monkeypatch.setattr(data_acesso.requests, "post", _post_fake)
     data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "(11) 99999-9999", "SP", "São Paulo")
@@ -77,10 +77,31 @@ def test_email_cadastrado_sem_configuracao_retorna_none():
     assert data_acesso.email_cadastrado("ana@exemplo.com") is None
 
 
+def test_obter_id_registro_sem_configuracao_retorna_none():
+    assert data_acesso.obter_id_registro("ana@exemplo.com") is None
+
+
+def test_obter_id_registro_encontrado(monkeypatch):
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    resp = Mock(status_code=200)
+    resp.json.return_value = 42
+    monkeypatch.setattr(data_acesso.requests, "post", lambda *a, **k: resp)
+    assert data_acesso.obter_id_registro("ana@exemplo.com") == 42
+
+
+def test_obter_id_registro_nao_encontrado(monkeypatch):
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    resp = Mock(status_code=200)
+    resp.json.return_value = None
+    monkeypatch.setattr(data_acesso.requests, "post", lambda *a, **k: resp)
+    assert data_acesso.obter_id_registro("ninguem@exemplo.com") is None
+
+
 def test_cadastrar_sem_configuracao_retorna_erro_amigavel():
-    ok, erro = data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "11999999999", "SP", "São Paulo")
+    ok, erro, id_registro = data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "11999999999", "SP", "São Paulo")
     assert ok is False
     assert erro != ""
+    assert id_registro is None
 
 
 def test_email_cadastrado_true(monkeypatch):
@@ -111,19 +132,23 @@ def test_email_cadastrado_erro_rede_retorna_none(monkeypatch):
 
 def test_cadastrar_sucesso(monkeypatch):
     monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
-    monkeypatch.setattr(data_acesso.requests, "post", lambda *a, **k: Mock(status_code=201, text=""))
-    ok, erro = data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "11999999999", "SP", "São Paulo")
+    resp = Mock(status_code=201, text="")
+    resp.json.return_value = [{"id_registro": 7}]
+    monkeypatch.setattr(data_acesso.requests, "post", lambda *a, **k: resp)
+    ok, erro, id_registro = data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "11999999999", "SP", "São Paulo")
     assert ok is True
     assert erro == ""
+    assert id_registro == 7
 
 
 def test_cadastrar_email_duplicado(monkeypatch):
     monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
     resp = Mock(status_code=409, text="duplicate key value violates unique constraint")
     monkeypatch.setattr(data_acesso.requests, "post", lambda *a, **k: resp)
-    ok, erro = data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "11999999999", "SP", "São Paulo")
+    ok, erro, id_registro = data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "11999999999", "SP", "São Paulo")
     assert ok is False
     assert erro == "duplicado"
+    assert id_registro is None
 
 
 def test_cadastrar_erro_rede(monkeypatch):
@@ -133,9 +158,10 @@ def test_cadastrar_erro_rede(monkeypatch):
         raise ConnectionError("sem rede")
 
     monkeypatch.setattr(data_acesso.requests, "post", _explode)
-    ok, erro = data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "11999999999", "SP", "São Paulo")
+    ok, erro, id_registro = data_acesso.cadastrar("Ana", "Feminino", "ana@exemplo.com", "11999999999", "SP", "São Paulo")
     assert ok is False
     assert erro == "erro_rede"
+    assert id_registro is None
 
 
 # ── Gate completo, simulando Supabase configurado ───────────────────────────

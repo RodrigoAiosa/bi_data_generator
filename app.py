@@ -412,6 +412,14 @@ def main() -> None:
     inject_css()
     inject_seo(lang=_get_lang())
 
+    # Sessão de log começa aqui — ANTES do gate de cadastro, de propósito:
+    # assim cliques na própria tela de cadastro (trocar idioma, "já sou
+    # cadastrado") também ficam registrados. id_registro fica None até o
+    # cadastro terminar; a partir daí, os eventos seguintes já saem com o
+    # id_registro certo (ver ui/cadastro.py, que grava
+    # st.session_state["cadastro_id_registro"] assim que confirma quem é).
+    iniciar_sessao(_get_lang())
+
     # Cadastro obrigatório antes de liberar o app (uma vez por sessão de
     # navegador, ou sempre liberado se o Supabase não estiver configurado
     # neste ambiente — dev local, CI, testes). Ver ui/cadastro.py.
@@ -421,7 +429,6 @@ def main() -> None:
     render_hero()
 
     lang = _get_lang()
-    iniciar_sessao(lang)
 
     setor, data_inicio, data_fim, n_linhas, gerar = render_sidebar()
     nome = setor.split(" ", 1)[1]

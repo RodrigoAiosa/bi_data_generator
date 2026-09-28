@@ -15,6 +15,7 @@ nenhum LLM — o projeto não tem essa dependência).
 import streamlit as st
 
 from generators.qa_engine import responder_pergunta
+from log_acesso import registrar_evento
 from ui.cache_utils import gerar_bruto_com_cache
 from ui.dax_sandbox import _montar_dot
 from ui.sugestao_proximo_passo import sugerir
@@ -52,6 +53,8 @@ def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> N
     )
 
     carregar = st.button("🔄 Recarregar dados", key="qa_carregar")
+    if carregar:
+        registrar_evento("qa_recarregou_dados", setor=setor.split(" ", 1)[1] if " " in setor else setor)
 
     chave_atual = (setor, n_linhas)
     if carregar or st.session_state.get("qa_chave") != chave_atual:
@@ -83,6 +86,7 @@ def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> N
     if st.button("🔎 Perguntar", type="primary", key="qa_perguntar"):
         if not pergunta.strip():
             st.warning("Escreva uma pergunta antes de clicar em Perguntar.")
+            registrar_evento("qa_perguntou", status="erro", erro="pergunta_vazia")
         else:
             resp = responder_pergunta(pergunta, tabelas)
             if resp.entendida:
@@ -96,10 +100,12 @@ def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> N
                             st.markdown(f"- {p}")
                 if resp.tabela_resultado is not None:
                     st.dataframe(resp.tabela_resultado, use_container_width=True)
+                registrar_evento("qa_perguntou", volume=len(pergunta), status="sucesso")
             else:
                 st.error("Não consegui entender essa pergunta com o vocabulário que reconheço.")
                 for s in resp.sugestoes:
                     st.caption(f"💡 {s}")
+                registrar_evento("qa_perguntou", volume=len(pergunta), status="erro", erro="nao_entendida")
 
     sugerir(
         "Gostou da medida gerada? Teste variações dela direto na aba **🧮 DAX Sandbox** "

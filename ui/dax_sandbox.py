@@ -186,6 +186,8 @@ def render_dax_sandbox(setor: str, n_linhas: int, data_inicio, data_fim) -> None
     )
 
     gerar_clicado = st.button("🔄 Recarregar dados", key="dax_sandbox_carregar")
+    if gerar_clicado:
+        registrar_evento("dax_sandbox_recarregou_dados", setor=setor.split(" ", 1)[1] if " " in setor else setor)
 
     chave_atual = (setor, n_linhas)
     if gerar_clicado or st.session_state.get("dax_sandbox_chave") != chave_atual:

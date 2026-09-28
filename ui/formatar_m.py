@@ -74,6 +74,7 @@ def render_formatar_m() -> None:
         usar_exemplo = st.button("💡 Usar exemplo", use_container_width=True, key="btn_exemplo_m")
 
     if usar_exemplo:
+        registrar_evento("usou_exemplo_m")
         st.session_state["_m_inserir_exemplo"] = True
         st.rerun()
 
@@ -101,6 +102,7 @@ def render_formatar_m() -> None:
             file_name="consulta_formatada.m",
             mime="text/plain",
             use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_m_formatado"),
         )
 
         sugerir(

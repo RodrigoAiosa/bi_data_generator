@@ -138,21 +138,25 @@ def render_scd_simulador() -> None:
         st.download_button(
             "T0 (antes)", data=resultado["snapshot_t0"].to_csv(index=False).encode("utf-8"),
             file_name="scd_t0_antes.csv", mime="text/csv", use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_scd_t0"),
         )
     with col_dl2:
         st.download_button(
             "T1 (depois)", data=resultado["snapshot_t1"].to_csv(index=False).encode("utf-8"),
             file_name="scd_t1_depois.csv", mime="text/csv", use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_scd_t1"),
         )
     with col_dl3:
         st.download_button(
             "Gabarito", data=gabarito.to_csv(index=False).encode("utf-8"),
             file_name="scd_gabarito.csv", mime="text/csv", use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_scd_gabarito"),
         )
     with col_dl4:
         st.download_button(
             "SCD Tipo 2 (completo)", data=resultado["scd_tipo2"].to_csv(index=False).encode("utf-8"),
             file_name="scd_tipo2_resultado.csv", mime="text/csv", use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_scd_tipo2"),
         )
 
     sugerir(

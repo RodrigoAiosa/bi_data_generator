@@ -117,4 +117,5 @@ def render_auditor_modelo() -> None:
             file_name="auditoria_modelo.txt",
             mime="text/plain",
             use_container_width=True,
+            on_click=lambda: registrar_evento("baixou_relatorio_auditor"),
         )
