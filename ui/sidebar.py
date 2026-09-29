@@ -273,7 +273,6 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
 
             from generators.sql_generator import gerar_sql, gerar_sql_insert, gerar_sql_completo
             from generators.relatorios_gerenciais import gerar_relatorios_gerenciais
-            from log_acesso import registrar_evento
             from ui.cache_utils import gerar_bruto_com_cache
 
             nome_setor  = setor.split(" ", 1)[1]
@@ -351,7 +350,6 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
     st.divider()
     caminho_pptx = Path(__file__).resolve().parent.parent / "assets" / "BI_Data_Generator_Apresentacao.pptx"
     if caminho_pptx.exists():
-        from log_acesso import registrar_evento
         st.download_button(
             label="📊 Apresentação (.pptx)" if lang == "pt" else "📊 Presentation (.pptx)",
             data=caminho_pptx.read_bytes(),
