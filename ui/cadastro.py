@@ -79,20 +79,81 @@ def _s(key: str, lang: str, **kwargs) -> str:
     return texto.format(**kwargs) if kwargs else texto
 
 
+# Bandeiras desenhadas em SVG (não emoji): o emoji 🇧🇷/🇺🇸 depende da fonte
+# do sistema operacional e no Windows/Chrome cai para o texto "BR"/"US" em
+# vez de mostrar a bandeira — por isso desenhamos o ícone nós mesmos.
+_BANDEIRA_BR = (
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' "
+    "viewBox='0 0 24 16'%3E%3Crect width='24' height='16' fill='%23009739'/%3E"
+    "%3Cpolygon points='12,2 22,8 12,14 2,8' fill='%23FEDD00'/%3E"
+    "%3Ccircle cx='12' cy='8' r='4' fill='%23012169'/%3E%3C/svg%3E"
+)
+_BANDEIRA_US = (
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' "
+    "viewBox='0 0 24 16'%3E%3Crect width='24' height='16' fill='%23B22234'/%3E"
+    "%3Cg fill='white'%3E%3Crect y='1.23' width='24' height='1.23'/%3E"
+    "%3Crect y='3.69' width='24' height='1.23'/%3E%3Crect y='6.15' width='24' height='1.23'/%3E"
+    "%3Crect y='8.61' width='24' height='1.23'/%3E%3Crect y='11.08' width='24' height='1.23'/%3E"
+    "%3Crect y='13.54' width='24' height='1.23'/%3E%3C/g%3E"
+    "%3Crect width='10' height='8.6' fill='%233C3B6E'/%3E%3C/svg%3E"
+)
+
+
 def _lang_toggle(lang: str) -> None:
-    # Dois ícones de bandeira (BR/EUA) em vez de um botão-alternador só:
-    # cada um seleciona o idioma diretamente. O idioma ativo fica
-    # desabilitado (visualmente "apertado"/selecionado); o outro é clicável.
+    # Dois ícones de bandeira (BR/EUA) em vez de um botão de texto: o
+    # st.button continua existindo (é o que dispara o clique em Python) e
+    # continua clicável normalmente, mas o CSS abaixo esconde o texto e
+    # desenha a bandeira como fundo do botão — usando a classe
+    # "st-key-<key>" que o Streamlit atribui ao container de cada botão.
+    # O idioma ativo fica com o botão desabilitado e com um contorno
+    # dourado, indicando visualmente qual está selecionado.
+    # !important em tudo: styles/css.py já define regras globais de botão
+    # com !important (background/cor/padding/border-radius), então sem
+    # !important aqui elas vencem e a bandeira nunca aparece.
+    st.markdown(
+        f"""
+        <style>
+        .st-key-cadastro_lang_pt button, .st-key-cadastro_lang_en button {{
+            width: 40px !important; height: 28px !important; min-width: 40px !important;
+            padding: 0 !important; border-radius: 6px !important;
+            background-size: cover !important; background-position: center !important;
+            background-repeat: no-repeat !important; box-shadow: none !important;
+            overflow: hidden !important; border: 2px solid transparent !important;
+        }}
+        .st-key-cadastro_lang_pt button * , .st-key-cadastro_lang_en button * {{
+            font-size: 0 !important; color: transparent !important;
+        }}
+        .st-key-cadastro_lang_pt button, .st-key-cadastro_lang_pt button:disabled {{
+            background-image: url("{_BANDEIRA_BR}") !important;
+        }}
+        .st-key-cadastro_lang_en button, .st-key-cadastro_lang_en button:disabled {{
+            background-image: url("{_BANDEIRA_US}") !important;
+        }}
+        .st-key-cadastro_lang_pt button:disabled,
+        .st-key-cadastro_lang_en button:disabled {{
+            /* :disabled dá especificidade extra a essa regra, senão o
+               background-image do botão "ativo" some (a regra global de
+               botão em styles/css.py usa o shorthand "background: ... !important",
+               que zera qualquer background-image que não tenha a mesma
+               especificidade + posição depois dela na cascata). */
+            opacity: 1 !important; border: 2px solid #F2C811 !important; cursor: default !important;
+        }}
+        .st-key-cadastro_lang_pt button:not(:disabled):hover,
+        .st-key-cadastro_lang_en button:not(:disabled):hover {{
+            border: 2px solid rgba(242,200,17,0.5) !important; transform: scale(1.08) !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     _, col_pt, col_en = st.columns([5, 1, 1])
     with col_pt:
-        if st.button("🇧🇷", key="cadastro_lang_pt", use_container_width=True,
-                      disabled=(lang == "pt"), help="Português"):
+        if st.button("BR", key="cadastro_lang_pt", disabled=(lang == "pt"), help="Português"):
             registrar_evento("trocou_idioma_tela_cadastro")
             set_lang("pt")
             st.rerun()
     with col_en:
-        if st.button("🇺🇸", key="cadastro_lang_en", use_container_width=True,
-                      disabled=(lang == "en"), help="English"):
+        if st.button("US", key="cadastro_lang_en", disabled=(lang == "en"), help="English"):
             registrar_evento("trocou_idioma_tela_cadastro")
             set_lang("en")
             st.rerun()
