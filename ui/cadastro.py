@@ -146,7 +146,9 @@ def _lang_toggle(lang: str) -> None:
         """,
         unsafe_allow_html=True,
     )
-    _, col_pt, col_en = st.columns([5, 1, 1])
+    # Centralizados no topo (em vez de alinhados à direita): margens iguais
+    # dos dois lados, com as duas bandeiras juntas no meio.
+    _, col_pt, col_en, _ = st.columns([4, 1, 1, 4])
     with col_pt:
         if st.button("BR", key="cadastro_lang_pt", disabled=(lang == "pt"), help="Português"):
             registrar_evento("trocou_idioma_tela_cadastro")
