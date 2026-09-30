@@ -80,12 +80,21 @@ def _s(key: str, lang: str, **kwargs) -> str:
 
 
 def _lang_toggle(lang: str) -> None:
-    _, col = st.columns([5, 1])
-    with col:
-        label = "🇺🇸 English" if lang == "pt" else "🇧🇷 Português"
-        if st.button(label, key="cadastro_lang_toggle", use_container_width=True):
+    # Dois ícones de bandeira (BR/EUA) em vez de um botão-alternador só:
+    # cada um seleciona o idioma diretamente. O idioma ativo fica
+    # desabilitado (visualmente "apertado"/selecionado); o outro é clicável.
+    _, col_pt, col_en = st.columns([5, 1, 1])
+    with col_pt:
+        if st.button("🇧🇷", key="cadastro_lang_pt", use_container_width=True,
+                      disabled=(lang == "pt"), help="Português"):
             registrar_evento("trocou_idioma_tela_cadastro")
-            set_lang("en" if lang == "pt" else "pt")
+            set_lang("pt")
+            st.rerun()
+    with col_en:
+        if st.button("🇺🇸", key="cadastro_lang_en", use_container_width=True,
+                      disabled=(lang == "en"), help="English"):
+            registrar_evento("trocou_idioma_tela_cadastro")
+            set_lang("en")
             st.rerun()
 
 
