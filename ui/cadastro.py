@@ -161,6 +161,60 @@ def _lang_toggle(lang: str) -> None:
             st.rerun()
 
 
+def _filtro_celular_somente_digitos() -> None:
+    """Impede digitar letra/símbolo/espaço no campo Celular em tempo real
+    (não só limpar depois do Enter). st.text_input não tem um "modo
+    numérico" nativo, então isso é feito via um pedacinho de JS: acha o
+    <input> pelo aria-label (Streamlit usa o rótulo do widget como
+    aria-label — por isso cobre "Celular" e "Phone", os dois idiomas do
+    app), intercepta cada tecla digitada e reescreve o valor mantendo só
+    dígitos, até 11 (mesmo limite de max_chars no st.text_input e da
+    validação em data_acesso._CELULAR_REGEX — se um mudar, o outro
+    precisa mudar junto). Um MutationObserver reanexa o listener sempre
+    que o Streamlit redesenha a tela (troca de aba, de idioma etc.),
+    porque o elemento é recriado a cada rerun.
+    st.iframe roda esse HTML num <iframe> same-origin com JS liberado,
+    por isso o script consegue acessar window.parent.document pra mexer
+    no campo real, fora do iframe — é um hack (sem componente
+    customizado "de verdade"), mas testado e funciona de forma estável
+    neste app. (Usa st.iframe, não o antigo st.components.v1.html, que
+    o próprio Streamlit já marca para remoção.)
+    """
+    st.iframe(
+        """
+        <script>
+        (function() {
+            const ROTULOS = ["Celular", "Phone"];
+            function aplicarFiltro() {
+                const doc = window.parent.document;
+                let alvo = null;
+                for (const rotulo of ROTULOS) {
+                    alvo = doc.querySelector('input[aria-label="' + rotulo + '"]');
+                    if (alvo) break;
+                }
+                if (!alvo || alvo.dataset.filtroCelularAplicado) return;
+                alvo.dataset.filtroCelularAplicado = "1";
+                alvo.addEventListener('input', function(e) {
+                    const limpo = e.target.value.replace(/\\D/g, '').slice(0, 11);
+                    if (limpo !== e.target.value) {
+                        const setter = Object.getOwnPropertyDescriptor(
+                            window.parent.HTMLInputElement.prototype, 'value'
+                        ).set;
+                        setter.call(e.target, limpo);
+                        e.target.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                });
+            }
+            const obs = new MutationObserver(aplicarFiltro);
+            obs.observe(window.parent.document.body, { childList: true, subtree: true });
+            aplicarFiltro();
+        })();
+        </script>
+        """,
+        height=1,
+    )
+
+
 def _form_cadastrar(lang: str) -> None:
     # Sem st.form de propósito: widgets dentro de um form só disparam rerun
     # no submit, e a Cidade precisa atualizar em tempo real assim que o
@@ -192,6 +246,7 @@ def _form_cadastrar(lang: str) -> None:
         key="cad_celular",
         on_change=_normalizar_celular_digitado,
     )
+    _filtro_celular_somente_digitos()
 
     col_c, col_d = st.columns(2)
     with col_c:
