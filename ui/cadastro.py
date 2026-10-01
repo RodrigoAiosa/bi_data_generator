@@ -174,12 +174,23 @@ def _form_cadastrar(lang: str) -> None:
     with col_b:
         email = st.text_input(_s("email_label", lang), key="cad_email")
 
+    def _normalizar_celular_digitado() -> None:
+        """on_change: remove tudo que não for dígito assim que o campo é
+        confirmado (Enter/blur) — quem cola/digita algo formatado, ex.
+        "(11) 99999-9999", vê o campo já virar só dígitos, com espaço
+        liberado pra completar os 11, em vez de descobrir isso só no erro."""
+        bruto = st.session_state.get("cad_celular", "")
+        limpo = limpar_celular(bruto)
+        if limpo != bruto:
+            st.session_state["cad_celular"] = limpo
+
     celular = st.text_input(
         _s("celular_label", lang),
-        max_chars=15,
+        max_chars=11,  # DDD (2) + número (8 fixo / 9 celular) = no máx. 11 dígitos — bate com _CELULAR_REGEX
         placeholder=_s("celular_placeholder", lang),
         help=_s("celular_help", lang),
         key="cad_celular",
+        on_change=_normalizar_celular_digitado,
     )
 
     col_c, col_d = st.columns(2)
