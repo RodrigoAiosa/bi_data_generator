@@ -289,3 +289,128 @@ def test_gate_fail_open_sem_configuracao_nao_bloqueia():
     at.run()
     assert not at.exception
     assert len(at.tabs) == 11
+
+
+# ── Link de divulgação (compartilhamento + rastreio de cliques) ─────────────
+
+def _rpc_fake(respostas, chamadas):
+    def _post(url, json, headers, timeout):
+        nome = url.rsplit("/", 1)[-1]
+        chamadas.append((nome, json))
+        valor = respostas.get(nome)
+        if valor is None:
+            return Mock(status_code=500, text="erro")
+        return Mock(status_code=200, json=lambda: valor)
+    return _post
+
+
+def test_criar_link_compartilhamento_devolve_codigo(monkeypatch):
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    chamadas = []
+    monkeypatch.setattr(data_acesso.requests, "post",
+                        _rpc_fake({"criar_link_compartilhamento": "abc123def4"}, chamadas))
+    assert data_acesso.criar_link_compartilhamento(7) == "abc123def4"
+    assert chamadas == [("criar_link_compartilhamento", {"p_id_registro": 7})]
+
+
+def test_criar_link_compartilhamento_falhas_viram_none(monkeypatch):
+    assert data_acesso.criar_link_compartilhamento(7) is None          # sem config
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    assert data_acesso.criar_link_compartilhamento(None) is None       # sem id
+    monkeypatch.setattr(data_acesso.requests, "post", _rpc_fake({}, []))
+    assert data_acesso.criar_link_compartilhamento(7) is None          # HTTP 500
+
+    def _explode(*a, **k):
+        raise RuntimeError("rede")
+    monkeypatch.setattr(data_acesso.requests, "post", _explode)
+    assert data_acesso.criar_link_compartilhamento(7) is None          # exceção
+
+
+def test_registrar_clique_compartilhamento(monkeypatch):
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    chamadas = []
+    monkeypatch.setattr(data_acesso.requests, "post",
+                        _rpc_fake({"registrar_clique_compartilhamento": True}, chamadas))
+    assert data_acesso.registrar_clique_compartilhamento("abc123def4", "s1") is True
+    assert chamadas[0][1] == {"p_codigo": "abc123def4", "p_id_sessao": "s1"}
+    assert data_acesso.registrar_clique_compartilhamento("", "s1") is False
+    monkeypatch.setattr(data_acesso.requests, "post",
+                        _rpc_fake({"registrar_clique_compartilhamento": False}, []))
+    assert data_acesso.registrar_clique_compartilhamento("x" * 10, "s1") is False
+
+
+def test_url_compartilhamento():
+    assert data_acesso.montar_url_compartilhamento("abc") == \
+        "https://ai-bidatagenerator.streamlit.app/?ref=abc"
+
+
+def test_ref_na_url_registra_clique_uma_vez_por_sessao(monkeypatch):
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    chamadas = []
+    monkeypatch.setattr(data_acesso.requests, "post",
+                        _rpc_fake({"registrar_clique_compartilhamento": True}, chamadas))
+    at = AppTest.from_file(_CAMINHO_APP, default_timeout=180)
+    at.query_params["ref"] = "abc123def4"
+    at.run()
+    assert not at.exception
+    at.run()  # rerun na mesma sessão: não pode duplicar
+    cliques = [c for c in chamadas if c[0] == "registrar_clique_compartilhamento"]
+    assert len(cliques) == 1
+    assert cliques[0][1]["p_codigo"] == "abc123def4"
+    assert cliques[0][1]["p_id_sessao"] == at.session_state["id_sessao"]
+
+
+def test_sem_ref_nao_registra_clique(monkeypatch):
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    chamadas = []
+    monkeypatch.setattr(data_acesso.requests, "post",
+                        _rpc_fake({"registrar_clique_compartilhamento": True}, chamadas))
+    at = AppTest.from_file(_CAMINHO_APP, default_timeout=180)
+    at.run()
+    assert not at.exception
+    assert not [c for c in chamadas if c[0] == "registrar_clique_compartilhamento"]
+
+
+def _cadastrar_novo_usuario(monkeypatch, codigo):
+    monkeypatch.setattr(data_acesso, "_config", lambda: ("https://fake.supabase.co", "chave"))
+    respostas = {"obter_id_registro": 5}
+    if codigo:
+        respostas["criar_link_compartilhamento"] = codigo
+
+    def _post(url, json, headers, timeout):
+        if url.endswith("/rest/v1/registros"):
+            return Mock(status_code=201, text="")
+        return _rpc_fake(respostas, [])(url, json, headers, timeout)
+
+    monkeypatch.setattr(data_acesso.requests, "post", _post)
+    monkeypatch.setattr(cadastro_ui, "buscar_cidades", lambda uf: [])
+    at = AppTest.from_file(_CAMINHO_APP, default_timeout=180)
+    at.run()
+    for ti in at.text_input:
+        rotulo = (ti.label or "").lower()
+        ti.set_value("ana@exemplo.com" if "mail" in rotulo
+                     else "11999999999" if ("celular" in rotulo or "phone" in rotulo)
+                     else "Preenchido")
+    next(b for b in at.button if _s_btn_cadastrar(b)).click().run()
+    assert not at.exception
+    return at
+
+
+def test_apos_cadastro_mostra_link_de_divulgacao(monkeypatch):
+    at = _cadastrar_novo_usuario(monkeypatch, "abc123def4")
+    assert at.session_state["cadastro_ok"] is True
+    # Ainda na tela de compartilhar: o app principal não renderizou.
+    assert not any(len(s.options) > 100 for s in at.sidebar.selectbox)
+    assert any("?ref=abc123def4" in c.value for c in at.code)
+    # "Continuar" libera o app e não mostra a tela de novo.
+    next(b for b in at.button if b.key == "share_continuar_btn").click().run()
+    assert not at.exception
+    assert any(len(s.options) > 100 for s in at.sidebar.selectbox)
+    assert not any("?ref=" in c.value for c in at.code)
+
+
+def test_cadastro_sem_codigo_de_link_vai_direto_pro_app(monkeypatch):
+    """Se a RPC de link falhar, a tela de compartilhar é pulada (fail-open)."""
+    at = _cadastrar_novo_usuario(monkeypatch, None)
+    assert at.session_state["cadastro_ok"] is True
+    assert any(len(s.options) > 100 for s in at.sidebar.selectbox)

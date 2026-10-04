@@ -17,6 +17,7 @@ from config import PAGE_CONFIG, SETORES
 from generators.dicionario import gerar_dicionario
 from generators.case_negocio import gerar_case_negocio, detectar_kpi_label
 from generators.concept_drift import injetar_concept_drift
+from data_acesso import registrar_clique_compartilhamento
 from log_acesso import iniciar_sessao, registrar_evento
 from i18n import t
 from styles.css import inject_css
@@ -408,6 +409,21 @@ def _render_resultado_completo(nome: str, tabelas: dict, anomalia: bool, drift: 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+def _registrar_clique_indicacao() -> None:
+    """Se a URL veio de um link de divulgação (?ref=<codigo>), registra o clique
+    no Supabase uma única vez por sessão (best-effort: nunca derruba o app)."""
+    if st.session_state.get("ref_processado"):
+        return
+    st.session_state["ref_processado"] = True
+    try:
+        codigo = str(st.query_params.get("ref", "") or "").strip()
+        id_sessao = st.session_state.get("id_sessao")
+        if codigo and id_sessao:
+            registrar_clique_compartilhamento(codigo, id_sessao)
+    except Exception:
+        pass
+
+
 def main() -> None:
     inject_css()
     inject_seo(lang=_get_lang())
@@ -419,6 +435,7 @@ def main() -> None:
     # id_registro certo (ver ui/cadastro.py, que grava
     # st.session_state["cadastro_id_registro"] assim que confirma quem é).
     iniciar_sessao(_get_lang())
+    _registrar_clique_indicacao()
 
     # Cadastro obrigatório antes de liberar o app (uma vez por sessão de
     # navegador, ou sempre liberado se o Supabase não estiver configurado

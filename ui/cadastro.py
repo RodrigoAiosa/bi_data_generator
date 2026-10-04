@@ -7,16 +7,20 @@ Se o Supabase não estiver configurado (sem `supabase_url`/`supabase_anon_key`
 em st.secrets — caso do ambiente local, CI e testes), o cadastro é liberado
 automaticamente: o app funciona normalmente, só sem exigir/gravar cadastro.
 """
+from urllib.parse import quote
+
 import streamlit as st
 
 from data_acesso import (
     buscar_cidades,
     cadastrar,
     celular_valido,
+    criar_link_compartilhamento,
     email_cadastrado,
     email_valido,
     esta_configurado,
     limpar_celular,
+    montar_url_compartilhamento,
     obter_id_registro,
 )
 from i18n import get_lang, set_lang
@@ -71,6 +75,15 @@ _STR: dict[str, dict[str, str]] = {
                           "en": "We couldn't find that email registered. Use the **{aba}** tab to register."},
     "erro_verificacao": {"pt": "😕 Não foi possível verificar agora. Tente novamente em alguns instantes.",
                           "en": "😕 Could not verify right now. Please try again in a moment."},
+    "share_titulo":     {"pt": "🎉 Cadastro concluído!", "en": "🎉 Registration complete!"},
+    "share_texto":      {"pt": "Conhece alguém que também curte Power BI, DAX e SQL? Compartilhe seu link pessoal — assim você ajuda a divulgar o projeto.",
+                          "en": "Know someone who also likes Power BI, DAX and SQL? Share your personal link — help spread the project."},
+    "share_link_label": {"pt": "Seu link pessoal (use o ícone de copiar):", "en": "Your personal link (use the copy icon):"},
+    "share_msg":        {"pt": "Estou usando o BI Data Generator PRO para praticar Power BI, DAX e SQL com dados sintéticos. É gratuito, dá uma olhada:",
+                          "en": "I'm using BI Data Generator PRO to practice Power BI, DAX and SQL with synthetic data. It's free, check it out:"},
+    "share_whatsapp":   {"pt": "📲 Compartilhar no WhatsApp", "en": "📲 Share on WhatsApp"},
+    "share_linkedin":   {"pt": "💼 Compartilhar no LinkedIn", "en": "💼 Share on LinkedIn"},
+    "share_continuar":  {"pt": "Continuar para o app", "en": "Continue to the app"},
 }
 
 
@@ -298,6 +311,8 @@ def _form_cadastrar(lang: str) -> None:
         st.session_state["cadastro_ok"] = True
         st.session_state["cadastro_email"] = email.strip()
         st.session_state["cadastro_id_registro"] = id_registro
+        # Código de divulgação (best-effort): se falhar, o usuário segue direto pro app.
+        st.session_state["share_codigo"] = criar_link_compartilhamento(id_registro)
         registrar_evento("clicou_cadastrar", status="sucesso")
         st.success(_s("sucesso", lang))
         st.rerun()
@@ -341,6 +356,31 @@ def _form_ja_tenho(lang: str) -> None:
         registrar_evento("clicou_verificar_cadastro", status="erro", erro="erro_verificacao")
 
 
+def _tela_compartilhar(lang: str, codigo: str) -> None:
+    """Tela exibida logo após um NOVO cadastro, com o link pessoal de divulgação."""
+    link = montar_url_compartilhamento(codigo)
+    msg = f"{_s('share_msg', lang)} {link}"
+    st.markdown(
+        f'<h2 style="text-align:center; color:#F2C811;">{_s("share_titulo", lang)}</h2>',
+        unsafe_allow_html=True,
+    )
+    _, meio, _ = st.columns([1, 3, 1])
+    with meio:
+        st.markdown(_s("share_texto", lang))
+        st.caption(_s("share_link_label", lang))
+        st.code(link, language=None)
+        st.link_button(_s("share_whatsapp", lang),
+                       f"https://wa.me/?text={quote(msg)}", use_container_width=True)
+        st.link_button(_s("share_linkedin", lang),
+                       f"https://www.linkedin.com/sharing/share-offsite/?url={quote(link, safe='')}",
+                       use_container_width=True)
+        if st.button(_s("share_continuar", lang), type="primary",
+                     use_container_width=True, key="share_continuar_btn"):
+            registrar_evento("continuou_apos_compartilhar")
+            st.session_state["share_codigo"] = None
+            st.rerun()
+
+
 def render_gate_cadastro() -> bool:
     """
     Retorna True se o app pode continuar (cadastro não exigido, ou já feito
@@ -350,6 +390,10 @@ def render_gate_cadastro() -> bool:
     if not esta_configurado():
         return True
     if st.session_state.get("cadastro_ok"):
+        codigo = st.session_state.get("share_codigo")
+        if codigo:
+            _tela_compartilhar(get_lang(), codigo)
+            return False
         return True
 
     lang = get_lang()

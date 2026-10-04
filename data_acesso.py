@@ -141,6 +141,59 @@ def obter_id_registro(email: str) -> Optional[int]:
         return None
 
 
+URL_APP = "https://ai-bidatagenerator.streamlit.app/"
+
+
+def _rpc(nome: str, payload: dict):
+    """POST numa RPC do Supabase. Devolve o JSON da resposta ou None em qualquer falha."""
+    url, key = _config()
+    if not url or not key:
+        return None
+    try:
+        resp = requests.post(
+            f"{url}/rest/v1/rpc/{nome}",
+            json=payload,
+            headers={
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+            },
+            timeout=_TIMEOUT_SEG,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+        return None
+    except Exception:
+        return None
+
+
+def criar_link_compartilhamento(id_registro: Optional[int]) -> Optional[str]:
+    """
+    Gera (ou recupera, é idempotente) o código de divulgação de um cadastro,
+    via RPC criar_link_compartilhamento. Devolve só o código (ex.: "a1b2c3d4e5")
+    ou None se não foi possível — quem chama simplesmente não mostra o link.
+    """
+    if not id_registro:
+        return None
+    valor = _rpc("criar_link_compartilhamento", {"p_id_registro": int(id_registro)})
+    return valor if isinstance(valor, str) and valor else None
+
+
+def montar_url_compartilhamento(codigo: str) -> str:
+    return f"{URL_APP}?ref={codigo}"
+
+
+def registrar_clique_compartilhamento(codigo: str, id_sessao: str) -> bool:
+    """Registra que a sessão `id_sessao` chegou pelo link `codigo`. True se gravou
+    um clique novo (False: código inválido, clique repetido ou falha)."""
+    if not codigo or not id_sessao:
+        return False
+    return _rpc(
+        "registrar_clique_compartilhamento",
+        {"p_codigo": codigo, "p_id_sessao": id_sessao},
+    ) is True
+
+
 def cadastrar(nome_completo: str, sexo: str, email: str, celular: str,
               estado: str, cidade: str) -> tuple[bool, str, Optional[int]]:
     """
