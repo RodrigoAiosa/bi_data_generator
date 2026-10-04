@@ -218,6 +218,35 @@ def _filtro_celular_somente_digitos() -> None:
                     }
                 });
             }
+            // Preenchimento automático do navegador (Chrome/Android) muda o
+            // valor do <input> sem avisar o Streamlit: o servidor recebe o
+            // campo vazio e acusa "preencha todos os campos". Antes do clique
+            // em "Cadastrar", reenviamos o valor real de cada campo de texto
+            // (setter nativo + input + focusout, que é o que o Streamlit
+            // escuta para confirmar o valor).
+            const BOTOES = ["Cadastrar e começar", "Register and start"];
+            function sincronizarCampos() {
+                const doc = window.parent.document;
+                const setter = Object.getOwnPropertyDescriptor(
+                    window.parent.HTMLInputElement.prototype, 'value'
+                ).set;
+                doc.querySelectorAll('input[type="text"], input:not([type])').forEach(function(el) {
+                    if (!el.getAttribute('aria-label') || !el.value) return;
+                    setter.call(el, el.value);
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+                });
+            }
+            function aoPressionar(e) {
+                const btn = e.target.closest && e.target.closest('button');
+                if (btn && BOTOES.indexOf(btn.innerText.trim()) !== -1) sincronizarCampos();
+            }
+            ['pointerdown', 'touchstart', 'mousedown'].forEach(function(ev) {
+                if (!window.parent.__cadSyncAplicado) {
+                    window.parent.document.addEventListener(ev, aoPressionar, true);
+                }
+            });
+            window.parent.__cadSyncAplicado = true;
             const obs = new MutationObserver(aplicarFiltro);
             obs.observe(window.parent.document.body, { childList: true, subtree: true });
             aplicarFiltro();
