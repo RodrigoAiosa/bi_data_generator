@@ -576,6 +576,69 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     line-height: 1.5;
 }
 
+/* ── LEGIBILIDADE DOS CAMPOS (celular e PC) ──
+   O fundo do app é escuro, mas o tema do Streamlit (e o modo claro/escuro do
+   navegador do usuário) decide a cor padrão dos rótulos: em alguns aparelhos
+   saía azul-marinho/cinza escuro sobre #121212 (quase invisível). Aqui a cor
+   é fixada de forma explícita, com contraste mínimo de 7:1 sobre o fundo. ── */
+[data-testid="stWidgetLabel"],
+[data-testid="stWidgetLabel"] p,
+[data-testid="stWidgetLabel"] label,
+.stTextInput label, .stSelectbox label, .stDateInput label,
+.stNumberInput label, .stTextArea label, .stRadio label, .stCheckbox label {
+    color: #E8E6E3 !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+/* valor escolhido e opções de selectbox (fundo escuro => texto claro).
+   Versões novas do Streamlit usam data-testid (não só data-baseweb). */
+[data-testid="stSelectbox"] input,
+[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
+.stSelectbox [data-baseweb="select"] div,
+.stSelectbox [data-baseweb="select"] span,
+.stSelectbox [data-baseweb="select"] input {
+    color: #F3F2F1 !important;
+    -webkit-text-fill-color: #F3F2F1 !important;
+    opacity: 1 !important;
+}
+.stSelectbox [data-baseweb="select"] svg, [data-testid="stSelectbox"] svg { fill: #F3F2F1 !important; color: #F3F2F1 !important; }
+.stSelectbox [data-baseweb="select"] input::placeholder {
+    color: #B3B0AD !important; -webkit-text-fill-color: #B3B0AD !important; opacity: 1 !important;
+}
+/* campos de texto: fundo claro FIXO (#F0F2F6) + texto escuro, em qualquer
+   tema do navegador (no modo escuro o Streamlit pintava o campo de escuro e o
+   texto escuro sumia) */
+.stTextInput [data-baseweb="input"], .stTextInput [data-baseweb="base-input"],
+.stTextArea [data-baseweb="textarea"], .stTextArea [data-baseweb="base-input"],
+.stTextInput input, .stTextArea textarea {
+    background-color: #F0F2F6 !important;
+}
+.stTextInput input, .stTextArea textarea {
+    color: #1B1A19 !important;
+    -webkit-text-fill-color: #1B1A19 !important;
+}
+.stTextInput input::placeholder, .stTextArea textarea::placeholder {
+    color: #6B6966 !important; -webkit-text-fill-color: #6B6966 !important; opacity: 1 !important;
+}
+/* ícone de ajuda (?) e legendas */
+[data-testid="stTooltipIcon"] svg, [data-testid="stTooltipHoverTarget"] svg {
+    color: #D2D0CE !important; fill: none !important; stroke: #D2D0CE !important;
+}
+[data-testid="stCaptionContainer"], .stCaption { color: #B3B0AD !important; }
+/* abas inativas */
+[data-testid="stTab"]:not([aria-selected="true"]),
+[data-testid="stTab"]:not([aria-selected="true"]) p,
+.stTabs [data-baseweb="tab"]:not([aria-selected="true"]),
+.stTabs [data-baseweb="tab"]:not([aria-selected="true"]) p {
+    color: #D2D0CE !important;
+}
+/* lista suspensa aberta do selectbox */
+[data-baseweb="popover"] [role="option"], [data-baseweb="popover"] li {
+    color: #F3F2F1 !important;
+}
+
 </style>
 """
 
