@@ -576,6 +576,13 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     line-height: 1.5;
 }
 
+/* ── Sem "modo escuro automático" do navegador ──
+   O Chrome do Android (e outros) pode escurecer sozinho páginas que não
+   declaram o esquema de cores: campos claros viram escuros e as cores fixas
+   acima saem trocadas. Este app já define todas as suas cores, então avisa
+   ao navegador que NÃO deve reinterpretá-las. */
+:root, html, body { color-scheme: only light !important; }
+
 /* ── LEGIBILIDADE DOS CAMPOS (celular e PC) ──
    O fundo do app é escuro, mas o tema do Streamlit (e o modo claro/escuro do
    navegador do usuário) decide a cor padrão dos rótulos: em alguns aparelhos

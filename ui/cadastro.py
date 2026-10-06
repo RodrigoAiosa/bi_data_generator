@@ -247,6 +247,15 @@ def _filtro_celular_somente_digitos() -> None:
                 }
             });
             window.parent.__cadSyncAplicado = true;
+            // Reforça (via <meta>) a recusa do "modo escuro automático" do navegador.
+            (function() {
+                const head = window.parent.document.head;
+                if (head && !head.querySelector('meta[name="color-scheme"]')) {
+                    const m = window.parent.document.createElement('meta');
+                    m.name = 'color-scheme'; m.content = 'only light';
+                    head.appendChild(m);
+                }
+            })();
             const obs = new MutationObserver(aplicarFiltro);
             obs.observe(window.parent.document.body, { childList: true, subtree: true });
             aplicarFiltro();
