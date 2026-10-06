@@ -174,7 +174,7 @@ def render_sidebar() -> tuple[str, date, date, int, bool]:
 
         # ── Setor ──────────────────────────────────────────────────────────
         st.markdown(f'<p style="{_LABEL_STYLE} margin-bottom: 10px;">{t("sector_label")}</p>', unsafe_allow_html=True)
-        setor = st.selectbox(t("sector_label"), setores_filtrados, label_visibility="collapsed")
+        setor = st.selectbox(t("sector_label"), setores_filtrados, label_visibility="collapsed", key="setor_sel")
 
         # ── Período ────────────────────────────────────────────────────────
         st.markdown(f'<p style="{_LABEL_STYLE} margin: 18px 0 10px;">{t("period_label")}</p>', unsafe_allow_html=True)

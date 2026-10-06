@@ -279,7 +279,17 @@ div[data-testid="stHorizontalBlock"]:has(.stat-card) {
 .flip-wrapper {
     perspective: 800px;
     height: 120px;
-    cursor: default;
+    cursor: pointer;
+}
+/* card do setor atualmente selecionado no filtro */
+.flip-wrapper.sel .flip-front {
+    border: 2px solid #F2C811;
+    box-shadow: 0 0 0 3px rgba(242,200,17,0.18);
+}
+/* campo de texto oculto usado pelo clique nos cards (ui/estado_inicial.py) */
+.st-key-setor_clique_proxy {
+    position: absolute !important; left: -9999px !important; height: 0 !important;
+    overflow: hidden !important; margin: 0 !important;
 }
 .flip-inner {
     position: relative;
