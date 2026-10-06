@@ -146,18 +146,14 @@ def test_botao_download_pptx_presente():
     assert len(btns) == 1
 
 
-def test_botao_pbip_marcado_como_beta():
-    """O template .pbip já passou por 3 rodadas de correção com base em
-    erros reais do Power BI Desktop — precisa continuar sinalizado como
-    beta até ganhar mais confiança (não remover este teste sem decisão
-    consciente de "promover" a funcionalidade)."""
+def test_botao_pbip_removido():
+    """O botão "Baixar template Power BI (.pbip) — Beta" foi retirado da tela
+    de resultado por decisão do autor. O gerador (generators/pbip_generator.py)
+    continua no repositório, só não é mais oferecido na interface."""
     at = _rodar_app()
     btn_gerar = next(b for b in at.button if b.label == "Gerar base agora")
     btn_gerar.click().run()
+    assert not at.exception
 
-    btns_pbip = [b for b in at.download_button if "pbip" in (b.label or "").lower()]
-    assert len(btns_pbip) == 1
-    assert "Beta" in btns_pbip[0].label
-
-    avisos_beta = [w for w in at.warning if "Beta" in w.value]
-    assert len(avisos_beta) == 1
+    assert not [b for b in at.download_button if "pbip" in (b.label or "").lower()]
+    assert not [w for w in at.warning if "Beta" in w.value]
