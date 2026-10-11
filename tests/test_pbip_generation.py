@@ -110,3 +110,104 @@ def test_definition_version_json_presente(nome_setor, arquivos_pbip_por_setor):
     caminho = next((k for k in arquivos if k.endswith(".Report/definition/version.json")), None)
     assert caminho is not None, f"{nome_setor}: definition/version.json ausente"
     json.loads(arquivos[caminho])  # só confirma que é JSON válido
+
+
+# ── Mockup do relatório (PBIR: páginas e visuais) ─────────────────────────────
+import re
+
+
+def _refs_do_visual(no, acum):
+    """Coleta (tabela, propriedade, tipo) de todo Column/Measure do visual.json."""
+    if isinstance(no, dict):
+        for tipo in ("Column", "Measure"):
+            if tipo in no:
+                ent = no[tipo]["Expression"]["SourceRef"]["Entity"]
+                acum.add((ent, no[tipo]["Property"], tipo))
+        for v in no.values():
+            _refs_do_visual(v, acum)
+    elif isinstance(no, list):
+        for v in no:
+            _refs_do_visual(v, acum)
+
+
+def _visuais(arquivos):
+    return {k: json.loads(v) for k, v in arquivos.items() if k.endswith("/visual.json")}
+
+
+def test_version_json_segue_schema_oficial(nome_setor, arquivos_pbip_por_setor):
+    arquivos = arquivos_pbip_por_setor(nome_setor)
+    caminho = next(k for k in arquivos if k.endswith(".Report/definition/version.json"))
+    c = json.loads(arquivos[caminho])
+    assert c["$schema"].endswith("/versionMetadata/1.0.0/schema.json")
+    assert re.match(r"^[1-9][0-9]*\.(0|[1-9][0-9]*)\.0$", c["version"])
+
+
+def test_relatorio_tem_paginas_e_visuais(nome_setor, arquivos_pbip_por_setor):
+    arquivos = arquivos_pbip_por_setor(nome_setor)
+    pages = json.loads(next(v for k, v in arquivos.items() if k.endswith("pages/pages.json")))
+    assert pages["pageOrder"] and pages["activePageName"] in pages["pageOrder"]
+    for pag in pages["pageOrder"]:
+        page_json = next(k for k in arquivos if k.endswith(f"pages/{pag}/page.json"))
+        assert json.loads(arquivos[page_json])["name"] == pag
+    vis = _visuais(arquivos)
+    assert vis, f"{nome_setor}: relatório sem nenhum visual"
+    tipos = {v["visual"]["visualType"] for v in vis.values()}
+    assert {"card", "textbox"} <= tipos, f"{nome_setor}: faltam cartões/cabeçalho ({tipos})"
+
+
+def test_visuais_so_referenciam_o_que_existe_no_modelo(nome_setor, arquivos_pbip_por_setor):
+    """Campo inexistente = visual com erro no Power BI Desktop."""
+    arquivos = arquivos_pbip_por_setor(nome_setor)
+    modelo = {}
+    for k, v in arquivos.items():
+        m = re.search(r"definition/tables/(.+)\.tmdl$", k)
+        if m:
+            modelo[m.group(1)] = v
+    for caminho, vis in _visuais(arquivos).items():
+        refs = set()
+        _refs_do_visual(vis, refs)
+        for ent, prop, tipo in refs:
+            assert ent in modelo, f"{nome_setor}/{caminho}: tabela {ent} inexistente"
+            padrao = f"\tcolumn {prop}\n" if tipo == "Column" else f"\tmeasure '{prop}' ="
+            assert padrao in modelo[ent], f"{nome_setor}/{caminho}: {tipo} {ent}[{prop}] inexistente"
+
+
+def test_visuais_cabem_na_pagina_e_nomes_unicos(nome_setor, arquivos_pbip_por_setor):
+    arquivos = arquivos_pbip_por_setor(nome_setor)
+    vistos = set()
+    for caminho, vis in _visuais(arquivos).items():
+        pos = vis["position"]
+        assert pos["x"] >= 0 and pos["y"] >= 0 and pos["width"] > 0 and pos["height"] > 0
+        assert pos["x"] + pos["width"] <= 1280 and pos["y"] + pos["height"] <= 720, f"{caminho} fora da página"
+        assert caminho not in vistos
+        vistos.add(caminho)
+        assert caminho.split("/visuals/")[1].split("/")[0] == vis["name"]
+
+
+def test_calendario_so_e_usado_em_fato_ligada(nome_setor, arquivos_pbip_por_setor):
+    """Filtro/eixo de dCalendario numa página só faz sentido se a fato da página
+    tem relação ativa com o calendário."""
+    arquivos = arquivos_pbip_por_setor(nome_setor)
+    rel = next((v for k, v in arquivos.items() if k.endswith("relationships.tmdl")), "")
+    for caminho, vis in _visuais(arquivos).items():
+        refs = set()
+        _refs_do_visual(vis, refs)
+        if any(e == "dCalendario" for e, _, _ in refs):
+            assert "toColumn: dCalendario." in rel, f"{nome_setor}/{caminho}: usa dCalendario sem relação"
+
+
+def test_zip_com_csvs_e_projeto_powerbi():
+    import io, zipfile
+    from generators.helpers import to_zip
+    from generators.pbip_leiame import LEIAME_PBIP
+
+    nome = next(iter(__import__("config").SETORES))
+    tabelas = obter_gerador(nome)(100, DATA_INICIO, DATA_FIM)
+    extra = {f"PowerBI/{k}": v for k, v in gerar_pbip(nome.split(" ", 1)[1], tabelas).items()}
+    extra["LEIA-ME.txt"] = LEIAME_PBIP
+    z = zipfile.ZipFile(io.BytesIO(to_zip(tabelas, extra_files=extra)))
+    nomes = z.namelist()
+    for t in tabelas:
+        assert f"{t}.csv" in nomes
+    assert any(n.startswith("PowerBI/") and n.endswith(".pbip") for n in nomes)
+    assert any(n.endswith("/visual.json") for n in nomes) and "LEIA-ME.txt" in nomes

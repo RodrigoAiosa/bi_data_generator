@@ -127,6 +127,17 @@ def render_resultado(
         tmdl_conteudo = gerar_tmdl(nome, tabelas)
 
     arquivos_zip = {"model.tmdl": tmdl_conteudo}
+    # Projeto Power BI (.pbip) com o mockup do relatório, na pasta PowerBI/ do
+    # mesmo zip das bases (CSVs de fatos e dimensões).
+    from generators.pbip_generator import gerar_pbip
+    from generators.pbip_leiame import LEIAME_PBIP
+    if resultado_chave is not None:
+        pbip_arquivos = cache_por_chave("_pbip_cache", ("pbip", resultado_chave), lambda: gerar_pbip(nome, tabelas))
+    else:
+        pbip_arquivos = gerar_pbip(nome, tabelas)
+    for caminho, conteudo in pbip_arquivos.items():
+        arquivos_zip[f"PowerBI/{caminho}"] = conteudo
+    arquivos_zip["LEIA-ME.txt"] = LEIAME_PBIP
     if extra_files:
         arquivos_zip.update(extra_files)
 
@@ -151,8 +162,9 @@ def render_resultado(
         type="primary",
         on_click=lambda: registrar_evento("baixou_zip", setor=nome),
     )
-    st.caption("O .zip inclui os CSVs de cada tabela + `model.tmdl` com todas as tabelas, "
-               "relacionamentos e medidas DAX prontos para importar no Power BI (Tabular Editor / TMDL).")
+    st.caption("O .zip inclui as bases (CSV de cada tabela fato e dimensão), o projeto Power BI "
+               "(`PowerBI/*.pbip`) com um painel de exemplo minimalista — cartões, gráficos e filtros — "
+               "e o `model.tmdl` (opcional, para Tabular Editor). Leia o `LEIA-ME.txt` do zip.")
 
     st.markdown("""
     <div class="info-box">

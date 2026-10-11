@@ -19,9 +19,12 @@ remove 1 tab de cada linha em vez de reescrever essa lógica.
 from __future__ import annotations
 
 import json
+import re
 
 import pandas as pd
 
+from generators.medidas import gerar_bateria_medidas
+from generators.pbip_relatorio import gerar_relatorio
 from generators.tmdl_generator import _medidas_tmdl, _relacionamentos, _tabela_tmdl
 
 _COMPATIBILITY_LEVEL = 1567  # nível estável em projetos TMDL desde 2023/2024; o Power BI Desktop faz upgrade automático se a versão instalada exigir um nível maior.
@@ -49,11 +52,21 @@ def _platform_json(tipo: str, display_name: str) -> str:
     return json.dumps(conteudo, indent=2, ensure_ascii=False)
 
 
-def _report_files(nome_limpo: str) -> dict[str, str]:
-    """Relatório mínimo (1 página em branco) — o valor deste template está no
-    modelo semântico (tabelas, relacionamentos, medidas), não em visuais
-    pré-montados; um relatório vazio é o ponto de partida mais seguro para
-    o usuário montar o próprio dashboard sobre um modelo já pronto."""
+def _fatos_ligadas_ao_calendario(tabelas: dict[str, pd.DataFrame]) -> set[str]:
+    """Fatos com relação ATIVA com dCalendario (só nelas Ano/MesAno filtram de verdade)."""
+    ligadas = set()
+    for bloco in _relacionamentos(tabelas):
+        if "toColumn: dCalendario." in bloco and "isActive: false" not in bloco:
+            m = re.search(r"fromColumn: (\w+)\.", bloco)
+            if m:
+                ligadas.add(m.group(1))
+    return ligadas
+
+
+def _report_files(nome_limpo: str, nome_setor: str = "", tabelas: dict | None = None,
+                  medidas_por_fato: dict | None = None) -> dict[str, str]:
+    """Relatório PBIR com mockup minimalista (ver generators/pbip_relatorio.py):
+    uma página por tabela fato, com filtros, cartões e gráficos."""
     pbir = {
         # $schema é OBRIGATÓRIO (confirmado via fetch direto do schema oficial:
         # required = ["$schema", "version", "datasetReference"]) — estava
@@ -73,22 +86,8 @@ def _report_files(nome_limpo: str) -> dict[str, str]:
         "resourcePackages": [],
         "settings": {},
     }
-    pages_json = {
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
-        "pageOrder": ["ReportSection1"],
-        "activePageName": "ReportSection1",
-    }
-    page_json = {
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.3.0/schema.json",
-        "name": "ReportSection1",
-        "displayName": "Página 1",
-        "displayOption": "FitToPage",
-        "height": 720,
-        "width": 1280,
-    }
-
     base = f"{nome_limpo}.Report"
-    return {
+    arquivos = {
         f"{base}/.platform": _platform_json("Report", nome_limpo),
         f"{base}/definition.pbir": json.dumps(pbir, indent=2, ensure_ascii=False),
         # definition/version.json é OBRIGATÓRIO (confirmado por 3 fontes: o
@@ -104,11 +103,12 @@ def _report_files(nome_limpo: str) -> dict[str, str]:
         # effort (versão mínima, sem $schema, já que o nome sugere um
         # propósito bem mais restrito que os outros dois), não uma correção
         # com o mesmo nível de confiança.
-        f"{base}/definition/version.json": json.dumps({"version": "2.0"}, indent=2, ensure_ascii=False),
+        f"{base}/definition/version.json": json.dumps({"$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/versionMetadata/1.0.0/schema.json", "version": "2.0.0"}, indent=2, ensure_ascii=False),
         f"{base}/definition/report.json": json.dumps(report_json, indent=2, ensure_ascii=False),
-        f"{base}/definition/pages/pages.json": json.dumps(pages_json, indent=2, ensure_ascii=False),
-        f"{base}/definition/pages/ReportSection1/page.json": json.dumps(page_json, indent=2, ensure_ascii=False),
     }
+    arquivos.update(gerar_relatorio(base, nome_setor or nome_limpo, tabelas or {}, medidas_por_fato or {},
+                                    _fatos_ligadas_ao_calendario(tabelas or {})))
+    return arquivos
 
 
 def _semantic_model_files(nome_limpo: str, tabelas: dict[str, pd.DataFrame]) -> dict[str, str]:
@@ -156,7 +156,12 @@ def _semantic_model_files(nome_limpo: str, tabelas: dict[str, pd.DataFrame]) -> 
     )
 
     for nome_tabela, df in tabelas.items():
-        arquivos[f"{base}/definition/tables/{nome_tabela}.tmdl"] = _dedent(_tabela_tmdl(nome_tabela, df))
+        tmdl = _dedent(_tabela_tmdl(nome_tabela, df))
+        if nome_tabela == "dCalendario" and {"MesAno", "IdMesAno"} <= set(df.columns):
+            # sem isso o eixo "MesAno" (texto) ordenaria alfabeticamente nos gráficos
+            tmdl = tmdl.replace("\tcolumn MesAno\n\t\tdataType: string\n",
+                                "\tcolumn MesAno\n\t\tdataType: string\n\t\tsortByColumn: IdMesAno\n", 1)
+        arquivos[f"{base}/definition/tables/{nome_tabela}.tmdl"] = tmdl
 
     if medidas_tmdl:
         arquivos[f"{base}/definition/tables/Medidas.tmdl"] = _dedent(medidas_tmdl)
@@ -192,6 +197,6 @@ def gerar_pbip(nome_setor: str, tabelas: dict[str, pd.DataFrame]) -> dict[str, s
     }
 
     arquivos: dict[str, str] = {f"{nome_limpo}.pbip": json.dumps(pbip_raiz, indent=2, ensure_ascii=False)}
-    arquivos.update(_report_files(nome_limpo))
+    arquivos.update(_report_files(nome_limpo, nome_setor, tabelas, gerar_bateria_medidas(tabelas)))
     arquivos.update(_semantic_model_files(nome_limpo, tabelas))
     return arquivos

@@ -157,3 +157,15 @@ def test_botao_pbip_removido():
 
     assert not [b for b in at.download_button if "pbip" in (b.label or "").lower()]
     assert not [w for w in at.warning if "Beta" in w.value]
+
+
+def test_zip_principal_inclui_bases_e_projeto_powerbi():
+    """O botão único "Baixar Base_BI_….zip" entrega as bases (CSVs) E o projeto
+    Power BI (.pbip) com o mockup do relatório, sem botão separado."""
+    at = _rodar_app()
+    next(b for b in at.button if b.label == "Gerar base agora").click().run()
+    assert not at.exception
+    botoes = [b for b in at.download_button if "Base_BI" in (b.label or "")]
+    assert len(botoes) == 1
+    legendas = " ".join(c.value for c in at.caption)
+    assert ".pbip" in legendas and "LEIA-ME" in legendas
