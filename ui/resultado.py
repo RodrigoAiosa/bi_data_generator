@@ -164,7 +164,7 @@ def render_resultado(
     )
     st.caption("O .zip inclui as bases (CSV de cada tabela fato e dimensão), o projeto Power BI "
                "(`PowerBI/*.pbip`) com um painel de exemplo minimalista — cartões, gráficos e filtros — "
-               "e o `model.tmdl` (opcional, para Tabular Editor). Leia o `LEIA-ME.txt` do zip.")
+               "que abre de qualquer pasta, sem configurar caminho (os dados vão dentro do projeto), e o `model.tmdl` (opcional, para Tabular Editor). Leia o `LEIA-ME.txt` do zip.")
 
     st.markdown("""
     <div class="info-box">

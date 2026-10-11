@@ -40,8 +40,54 @@ def _coluna_e_data(col: str, serie: pd.Series) -> bool:
     return name == "data" or "data" in name
 
 
-def _m_query(nome_tabela: str, df: pd.DataFrame) -> str:
-    """Gera o bloco 'source =' em linguagem M, lendo o CSV correspondente."""
+def _dados_embutidos_b64(df: pd.DataFrame) -> str:
+    """Linhas da tabela como JSON (lista de listas) -> deflate -> base64, para
+    embutir os dados no próprio modelo (sem depender de caminho de pasta)."""
+    import base64, json, zlib
+
+    d = df.copy()
+    for c in d.columns:
+        if pd.api.types.is_datetime64_any_dtype(d[c]):
+            d[c] = d[c].dt.strftime("%Y-%m-%d")
+    d = d.astype(object).where(d.notna(), None)
+    bruto = json.dumps(d.values.tolist(), ensure_ascii=False, default=str, separators=(",", ":")).encode("utf-8")
+    # Binary.Decompress(Compression.Deflate) espera deflate "cru" (sem cabeçalho zlib)
+    co = zlib.compressobj(9, zlib.DEFLATED, -15)
+    return base64.b64encode(co.compress(bruto) + co.flush()).decode("ascii")
+
+
+def _tipos_m(df: pd.DataFrame) -> str:
+    tipos = []
+    for c in df.columns:
+        serie = df[c]
+        if _coluna_e_data(c, serie):
+            tipos.append(f'{{"{c}", type date}}')
+            continue
+        _, m_type = _tmdl_dtype(serie.dtype)
+        tipos.append(f'{{"{c}", {m_type}}}')
+    return ", ".join(tipos)
+
+
+def _m_query_embutida(df: pd.DataFrame) -> str:
+    """Fonte 'source =' com os dados DENTRO do modelo: dispensa pasta/parâmetro."""
+    colunas = ", ".join(f'"{c}"' for c in df.columns)
+    return (
+        "\t\t\tsource =\n"
+        "\t\t\t\tlet\n"
+        f'\t\t\t\t    Origem = Json.Document(Binary.Decompress(Binary.FromText("{_dados_embutidos_b64(df)}", '
+        "BinaryEncoding.Base64), Compression.Deflate)),\n"
+        f"\t\t\t\t    Tabela = Table.FromRows(Origem, {{{colunas}}}),\n"
+        f'\t\t\t\t    #"Tipo Alterado" = Table.TransformColumnTypes(Tabela,{{{_tipos_m(df)}}}, "en-US")\n'
+        "\t\t\t\tin\n"
+        '\t\t\t\t    #"Tipo Alterado"\n'
+    )
+
+
+def _m_query(nome_tabela: str, df: pd.DataFrame, embutir: bool = False) -> str:
+    """Gera o bloco 'source =' em linguagem M: lê o CSV (parâmetro CaminhoPasta)
+    ou, com embutir=True, traz os dados embutidos no próprio modelo."""
+    if embutir:
+        return _m_query_embutida(df)
     n_cols = len(df.columns)
     tipos = []
     for c in df.columns:
@@ -65,7 +111,7 @@ def _m_query(nome_tabela: str, df: pd.DataFrame) -> str:
     )
 
 
-def _tabela_tmdl(nome_tabela: str, df: pd.DataFrame) -> str:
+def _tabela_tmdl(nome_tabela: str, df: pd.DataFrame, embutir: bool = False) -> str:
     linhas = [f"\ttable {nome_tabela}\n\n"]
     for c in df.columns:
         serie = df[c]
@@ -81,7 +127,7 @@ def _tabela_tmdl(nome_tabela: str, df: pd.DataFrame) -> str:
 
     linhas.append(f"\t\tpartition {nome_tabela} = m\n")
     linhas.append("\t\t\tmode: import\n")
-    linhas.append(_m_query(nome_tabela, df))
+    linhas.append(_m_query(nome_tabela, df, embutir))
     linhas.append("\n")
     return "".join(linhas)
 

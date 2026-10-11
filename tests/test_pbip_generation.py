@@ -211,3 +211,32 @@ def test_zip_com_csvs_e_projeto_powerbi():
         assert f"{t}.csv" in nomes
     assert any(n.startswith("PowerBI/") and n.endswith(".pbip") for n in nomes)
     assert any(n.endswith("/visual.json") for n in nomes) and "LEIA-ME.txt" in nomes
+
+
+def test_dados_embutidos_dispensam_caminho_de_pasta(nome_setor, arquivos_pbip_por_setor):
+    """Base pequena: nenhum caminho fixo (C:\\Dados) nem parâmetro; dados vão no modelo."""
+    arquivos = arquivos_pbip_por_setor(nome_setor)
+    modelo = {k: v for k, v in arquivos.items() if ".SemanticModel/" in k}
+    assert not any(k.endswith("expressions.tmdl") for k in modelo)
+    texto = "\n".join(modelo.values())
+    assert "CaminhoPasta" not in texto and "C:\\Dados" not in texto and "File.Contents" not in texto
+    assert "Binary.Decompress" in texto
+
+
+def test_base_grande_cai_no_parametro_de_pasta():
+    from generators.pbip_generator import LIMITE_LINHAS_EMBUTIDAS, embutir_dados
+    import pandas as pd
+    assert embutir_dados({"A": pd.DataFrame({"x": range(10)})})
+    assert not embutir_dados({"A": pd.DataFrame({"x": range(LIMITE_LINHAS_EMBUTIDAS + 1)})})
+
+
+def test_dados_embutidos_reconstituem_a_tabela():
+    import base64, zlib
+    nome = next(iter(__import__("config").SETORES))
+    tabelas = obter_gerador(nome)(150, DATA_INICIO, DATA_FIM)
+    arq = gerar_pbip("X", tabelas)
+    fato = next(n for n in tabelas if n.startswith("Fato"))
+    tmdl = arq[f"X.SemanticModel/definition/tables/{fato}.tmdl"]
+    b64 = re.search(r'FromText\("([^"]+)"', tmdl).group(1)
+    linhas = json.loads(zlib.decompress(base64.b64decode(b64), -15))
+    assert len(linhas) == len(tabelas[fato]) and len(linhas[0]) == len(tabelas[fato].columns)
