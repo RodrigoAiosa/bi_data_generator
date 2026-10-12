@@ -27,11 +27,6 @@ from generators.medidas import gerar_bateria_medidas
 from generators.pbip_relatorio import gerar_relatorio
 from generators.tmdl_generator import _medidas_tmdl, _relacionamentos, _tabela_tmdl
 
-# Até este total de linhas (somando todas as tabelas) os dados vão EMBUTIDOS no
-# modelo: o projeto abre de qualquer pasta, sem parâmetro de caminho. Acima disso
-# o modelo ficaria pesado, então lê os CSVs via parâmetro CaminhoPasta.
-LIMITE_LINHAS_EMBUTIDAS = 60_000
-
 _COMPATIBILITY_LEVEL = 1567  # nível estável em projetos TMDL desde 2023/2024; o Power BI Desktop faz upgrade automático se a versão instalada exigir um nível maior.
 
 
@@ -116,10 +111,6 @@ def _report_files(nome_limpo: str, nome_setor: str = "", tabelas: dict | None = 
     return arquivos
 
 
-def embutir_dados(tabelas: dict[str, pd.DataFrame]) -> bool:
-    return sum(len(d) for d in tabelas.values()) <= LIMITE_LINHAS_EMBUTIDAS
-
-
 def _semantic_model_files(nome_limpo: str, tabelas: dict[str, pd.DataFrame]) -> dict[str, str]:
     base = f"{nome_limpo}.SemanticModel"
     arquivos: dict[str, str] = {
@@ -157,15 +148,7 @@ def _semantic_model_files(nome_limpo: str, tabelas: dict[str, pd.DataFrame]) -> 
         f"annotation PBI_QueryOrder = {json.dumps(ordem, ensure_ascii=False)}\n"
     )
 
-    embutir = embutir_dados(tabelas)
-    if not embutir:
-        arquivos[f"{base}/definition/expressions.tmdl"] = _dedent(
-            '\texpression CaminhoPasta = \n'
-            '\t\t\t"C:\\Dados\\" meta [IsParameterQuery=true, List={"C:\\Dados\\"}, '
-            'DefaultValue="C:\\Dados\\", Type="Text", IsParameterQueryRequired=true]\n'
-            "\t\tannotation PBI_ResultType = Text\n"
-        )
-
+    embutir = True  # dados dentro do modelo: abre de qualquer pasta, em qualquer volume
     for nome_tabela, df in tabelas.items():
         tmdl = _dedent(_tabela_tmdl(nome_tabela, df, embutir))
         if nome_tabela == "dCalendario" and {"MesAno", "IdMesAno"} <= set(df.columns):

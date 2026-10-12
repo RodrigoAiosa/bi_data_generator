@@ -223,13 +223,6 @@ def test_dados_embutidos_dispensam_caminho_de_pasta(nome_setor, arquivos_pbip_po
     assert "Binary.Decompress" in texto
 
 
-def test_base_grande_cai_no_parametro_de_pasta():
-    from generators.pbip_generator import LIMITE_LINHAS_EMBUTIDAS, embutir_dados
-    import pandas as pd
-    assert embutir_dados({"A": pd.DataFrame({"x": range(10)})})
-    assert not embutir_dados({"A": pd.DataFrame({"x": range(LIMITE_LINHAS_EMBUTIDAS + 1)})})
-
-
 def test_dados_embutidos_reconstituem_a_tabela():
     import base64, zlib
     nome = next(iter(__import__("config").SETORES))
@@ -237,6 +230,17 @@ def test_dados_embutidos_reconstituem_a_tabela():
     arq = gerar_pbip("X", tabelas)
     fato = next(n for n in tabelas if n.startswith("Fato"))
     tmdl = arq[f"X.SemanticModel/definition/tables/{fato}.tmdl"]
-    b64 = re.search(r'FromText\("([^"]+)"', tmdl).group(1)
+    b64 = "".join(re.findall(r'"([A-Za-z0-9+/=]+)"', re.search(r"Partes = \{(.*?)\},", tmdl).group(1)))
     linhas = json.loads(zlib.decompress(base64.b64decode(b64), -15))
     assert len(linhas) == len(tabelas[fato]) and len(linhas[0]) == len(tabelas[fato].columns)
+
+
+def test_base_grande_tambem_e_embutida_sem_caminho():
+    """100 mil linhas: continua sem parâmetro/caminho (dados em pedaços no modelo)."""
+    import pandas as pd
+    from generators.tmdl_generator import _m_query
+    df = pd.DataFrame({"id_a": range(100_000), "v": [1.5] * 100_000, "t": ["abc"] * 100_000})
+    m = _m_query("T", df, embutir=True)
+    assert "File.Contents" not in m and "Text.Combine(Partes)" in m
+    assert max(len(x) for x in m.split("\n")) > 1000  # lista de pedaços numa linha, cada um <= 20000
+    assert all(len(x) <= 20000 for x in re.findall(r'"([A-Za-z0-9+/=]{100,})"', m))

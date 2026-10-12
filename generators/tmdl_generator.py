@@ -56,6 +56,13 @@ def _dados_embutidos_b64(df: pd.DataFrame) -> str:
     return base64.b64encode(co.compress(bruto) + co.flush()).decode("ascii")
 
 
+def _lista_m_texto(b64: str, tamanho: int = 20000) -> str:
+    """Lista M de pedaços do base64 ({"...", "..."}): evita um literal gigante
+    numa única linha quando a base é grande (ex.: 100 mil linhas)."""
+    pedacos = [b64[i:i + tamanho] for i in range(0, len(b64), tamanho)] or [""]
+    return "{" + ", ".join(f'"{p}"' for p in pedacos) + "}"
+
+
 def _tipos_m(df: pd.DataFrame) -> str:
     tipos = []
     for c in df.columns:
@@ -74,7 +81,8 @@ def _m_query_embutida(df: pd.DataFrame) -> str:
     return (
         "\t\t\tsource =\n"
         "\t\t\t\tlet\n"
-        f'\t\t\t\t    Origem = Json.Document(Binary.Decompress(Binary.FromText("{_dados_embutidos_b64(df)}", '
+        f"\t\t\t\t    Partes = {_lista_m_texto(_dados_embutidos_b64(df))},\n"
+        "\t\t\t\t    Origem = Json.Document(Binary.Decompress(Binary.FromText(Text.Combine(Partes), "
         "BinaryEncoding.Base64), Compression.Deflate)),\n"
         f"\t\t\t\t    Tabela = Table.FromRows(Origem, {{{colunas}}}),\n"
         f'\t\t\t\t    #"Tipo Alterado" = Table.TransformColumnTypes(Tabela,{{{_tipos_m(df)}}}, "en-US")\n'

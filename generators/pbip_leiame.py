@@ -20,10 +20,6 @@ Como abrir o painel (Power BI Desktop)
   3. Pronto: os dados ja estao DENTRO do projeto, nao ha caminho de pasta
      para configurar e ele abre de qualquer lugar.
 
-  Bases grandes (acima de 60.000 linhas no total): para nao pesar o projeto,
-  ele le os CSVs. Nesse caso, em Transformar dados > Gerenciar parametros,
-  altere CaminhoPasta para a pasta onde estao os CSVs (terminando com \\) e
-  clique em Atualizar.
 
 Dicas
   - Cada pagina do painel corresponde a uma tabela fato.
