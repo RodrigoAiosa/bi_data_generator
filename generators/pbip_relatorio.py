@@ -111,13 +111,15 @@ def _visual_json(nome: str, x: int, y: int, w: int, h: int, z: int, visual: dict
     }
 
 
-def _cartao(med: str, rotulo: str, cor: str) -> dict:
+def _cartao(med: str, rotulo: str, cor: str, largura: int = 280) -> dict:
+    # rótulo cabe na largura do cartão: ~0,55 x fonte(px) por caractere
+    fonte = max(8, min(12, int((largura - 24) / (0.62 * max(len(rotulo), 1)) * 0.75)))
     return {
         "visualType": "card",
         "query": {"queryState": {"Values": {"projections": [_proj(_med(med), "Medidas", med, rotulo)]}}},
         "objects": {
             "labels": [{"properties": {"color": _cor(cor), "fontSize": _lit("26D")}}],
-            "categoryLabels": [{"properties": {"show": _lit("true"), "color": _cor(_TEXTO_SUAVE), "fontSize": _lit("11D")}}],
+            "categoryLabels": [{"properties": {"show": _lit("true"), "color": _cor(_TEXTO_SUAVE), "fontSize": _lit(f"{fonte}D")}}],
         },
         "visualContainerObjects": _moldura(None),
         "drillFilterOtherVisuals": True,
@@ -229,7 +231,7 @@ def _pagina(idx: int, fato: str, df: pd.DataFrame, medidas: dict, tem_calendario
 
     util = LARGURA - 2 * MARGEM
     # Cabeçalho
-    add("cabecalho", MARGEM, 14, util, 56, _texto([
+    add("cabecalho", MARGEM, 8, util, 74, _texto([
         (f"{titulo_setor} · {fato.removeprefix('Fato')}", "20pt", _TEXTO, True),
         ("Painel de exemplo gerado pelo BI Data Generator", "10pt", _TEXTO_SUAVE, False),
     ]))
@@ -240,7 +242,7 @@ def _pagina(idx: int, fato: str, df: pd.DataFrame, medidas: dict, tem_calendario
         filtros.append(("dCalendario", "Ano", "Ano"))
     for c in cats[:2]:
         filtros.append((fato, c, _rotulo(c)))
-    y_f, h_f = 78, 58
+    y_f, h_f = 88, 72
     gap = 16
     n_f = max(len(filtros), 1)
     w_f = (util - gap * (n_f - 1)) // n_f if filtros else util
@@ -265,11 +267,11 @@ def _pagina(idx: int, fato: str, df: pd.DataFrame, medidas: dict, tem_calendario
             break
         cartoes.append((m, m))
     cartoes = cartoes[:4]
-    y_c, h_c = 150, 96
+    y_c, h_c = 170, 96
     n_c = max(len(cartoes), 1)
     w_c = (util - gap * (n_c - 1)) // n_c
     for i, (m, r) in enumerate(cartoes):
-        add(f"cartao{i + 1}", MARGEM + i * (w_c + gap), y_c, w_c, h_c, _cartao(m, r, cor))
+        add(f"cartao{i + 1}", MARGEM + i * (w_c + gap), y_c, w_c, h_c, _cartao(m, r, cor, w_c))
 
     # Medida principal dos gráficos
     principal = (medidas["totais"] or [medidas["registros"]] or [None])[0] or medidas["registros"]
@@ -277,9 +279,9 @@ def _pagina(idx: int, fato: str, df: pd.DataFrame, medidas: dict, tem_calendario
     if principal is None:
         return visuais
 
-    y1, h1 = y_c + h_c + 16, 216
-    y2 = y1 + h1 + 16
-    h2 = ALTURA - y2 - 16
+    y1, h1 = y_c + h_c + 14, 200
+    y2 = y1 + h1 + 14
+    h2 = ALTURA - y2 - 14
     w_esq = int(util * 0.58)
     w_dir = util - w_esq - gap
 
