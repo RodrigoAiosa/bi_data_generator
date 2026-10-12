@@ -410,14 +410,14 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | --- | --- |
 | 🚛 Transporte | 303 |
 | 📣 Marketing Digital | 215 |
-| 🏛️ Governo & Setor Público | 185 |
+| 🏛️ Governo & Setor Público | 184 |
 | 🚗 Mobilidade | 160 |
 | ☁️ SaaS B2B | 146 |
-| 🛢️ Petróleo & Gás | 140 |
+| 🛢️ Petróleo & Gás | 139 |
 | 🦄 Startups & Venture Capital | 137 |
 | 💊 Farmacêutico | 118 |
 | 🏪 E-commerce | 116 |
-| 🏦 Fintech | 114 |
+| 🏦 Fintech | 116 |
 | 🏟️ Esportes | 103 |
 | ⛏️ Mineração | 103 |
 | 🤝 CRM | 98 |
@@ -447,13 +447,13 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 📦 Fábrica de Embalagens | 71 |
 | 🥩 Frigorífico & Processamento de Carnes | 71 |
 | 🛋️ Indústria Moveleira | 71 |
-| 🚗 Locadora de Veículos | 71 |
 | 🛩️ Táxi Aéreo & Aviação Executiva | 71 |
 | 🍬 Usina de Açúcar & Etanol | 71 |
 | ⚡ Energia | 70 |
+| 🚗 Locadora de Veículos | 70 |
 | 🚴 Logística Urbana | 69 |
 | 💧 Saneamento & Água | 69 |
-| 🏢 Condomínio & Facilities | 63 |
+| 🏢 Condomínio & Facilities | 62 |
 | 🌐 Comércio Exterior | 61 |
 | 🚙 Concessionária de Veículos | 61 |
 | 🏖️ Locação por Temporada | 61 |
@@ -573,13 +573,14 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🧹 Serviços de Limpeza | 27 |
 | ✈️ Turismo | 27 |
 | 🪩 Casa Noturna & Casa de Shows | 26 |
+| 🪦 Cemitério & Serviços Perpétuos | 26 |
 | 🎾 Clube Social & Recreativo | 26 |
 | 💰 Financeiro | 26 |
 | ⛪ Igreja & Templos Religiosos | 26 |
 | 🦺 Segurança do Trabalho & SESMT | 26 |
+| 🪧 Sindicato & Associação de Classe | 26 |
 | 🚲 Aluguel de Bicicletas & Bike Sharing | 25 |
 | 🛍️ Atacado & Atacarejo | 25 |
-| 🪦 Cemitério & Serviços Perpétuos | 25 |
 | 🌾 Cerealista & Armazém de Grãos | 25 |
 | 🐜 Controle de Pragas & Dedetização | 25 |
 | 🍹 Distribuidora de Bebidas | 25 |
@@ -588,7 +589,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🛗 Manutenção de Elevadores | 25 |
 | 🐾 Pet & Veterinária | 25 |
 | 🤖 Robótica & Automação Industrial | 25 |
-| 🪧 Sindicato & Associação de Classe | 25 |
 | 📇 Cobrança & Recuperação de Crédito | 24 |
 | 📐 Engenharia & Projetos | 24 |
 | 🔥 Gás Natural & Distribuição | 24 |
