@@ -15,6 +15,7 @@ nenhum LLM — o projeto não tem essa dependência).
 import streamlit as st
 
 from generators.qa_engine import responder_pergunta
+from generators.qa_perguntas import gerar_catalogo
 from log_acesso import registrar_evento
 from ui.cache_utils import gerar_bruto_com_cache
 from ui.dax_sandbox import _montar_dot
@@ -74,18 +75,37 @@ def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> N
         st.graphviz_chart(_montar_dot(tabelas))
 
     medida_exemplo = _primeira_medida(tabelas).replace("_", " ")
-    exemplos = [e.format(medida=medida_exemplo) for e in _EXEMPLOS_GENERICOS]
-    st.caption("Exemplos: " + " · ".join(f"_{e}_" for e in exemplos))
 
-    pergunta = st.text_input(
-        "Sua pergunta",
-        key="qa_pergunta",
-        placeholder=f"Ex.: Qual foi o total de {medida_exemplo}?",
+    # Catálogo: só perguntas que o motor responde de verdade para ESTE setor/volume
+    # (cada uma é executada antes de entrar na lista) — escolher aqui nunca dá erro.
+    chave_catalogo = (st.session_state.get("qa_chave"), id(tabelas))
+    if st.session_state.get("qa_catalogo_chave") != chave_catalogo or "qa_catalogo" not in st.session_state:
+        with st.spinner("Montando a lista de perguntas possíveis para este setor…"):
+            st.session_state["qa_catalogo"] = gerar_catalogo(tabelas)
+        st.session_state["qa_catalogo_chave"] = chave_catalogo
+    catalogo = st.session_state["qa_catalogo"]
+    emoji_de = {p.texto: p.categoria.split(" ", 1)[0] for p in catalogo}
+
+    escolhida = st.selectbox(
+        f"Sua pergunta — {len(catalogo)} perguntas possíveis neste setor",
+        options=[""] + [p.texto for p in catalogo],
+        format_func=lambda t: "Selecione (ou digite para buscar)…" if not t else f"{emoji_de[t]}  {t}",
+        key="qa_pergunta_lista",
+        help="A lista só traz perguntas que o motor consegue responder com os dados do setor "
+             "e volume escolhidos. Digite parte do texto para filtrar (ex.: 'total', 'mês', 'maior').",
     )
+    with st.expander("✍️ Prefiro escrever minha própria pergunta", expanded=False):
+        pergunta_livre = st.text_input(
+            "Sua pergunta (texto livre)",
+            key="qa_pergunta",
+            placeholder=f"Ex.: Qual foi o total de {medida_exemplo}?",
+            help="Se preencher este campo, ele tem prioridade sobre a lista.",
+        )
+    pergunta = pergunta_livre.strip() or escolhida
 
     if st.button("🔎 Perguntar", type="primary", key="qa_perguntar"):
         if not pergunta.strip():
-            st.warning("Escreva uma pergunta antes de clicar em Perguntar.")
+            st.warning("Escolha uma pergunta na lista (ou escreva a sua) antes de clicar em Perguntar.")
             registrar_evento("qa_perguntou", status="erro", erro="pergunta_vazia")
         else:
             resp = responder_pergunta(pergunta, tabelas)

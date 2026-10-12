@@ -169,3 +169,20 @@ def test_zip_principal_inclui_bases_e_projeto_powerbi():
     assert len(botoes) == 1
     legendas = " ".join(c.value for c in at.caption)
     assert ".pbip" in legendas and "LEIA-ME" in legendas
+
+
+def test_pergunte_aos_dados_lista_de_perguntas_do_setor():
+    """A aba oferece a lista de perguntas possíveis do setor; escolher uma
+    delas e perguntar sempre dá resposta (nunca o erro "Não consegui entender")."""
+    at = _rodar_app()
+    next(b for b in at.button if b.key == "qa_carregar").click().run()
+    assert not at.exception
+    perguntas = [p.texto for p in at.session_state["qa_catalogo"]]
+    assert len(perguntas) >= 5
+    for escolha in (perguntas[0], perguntas[len(perguntas) // 2], perguntas[-1]):
+        lista = next(sb for sb in at.selectbox if sb.key == "qa_pergunta_lista")
+        lista.set_value(escolha).run()
+        next(b for b in at.button if b.key == "qa_perguntar").click().run()
+        assert not at.exception
+        assert not at.error, f"'{escolha}' deu erro: {[e.value for e in at.error]}"
+        assert at.success
