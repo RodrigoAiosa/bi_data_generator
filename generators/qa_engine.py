@@ -165,6 +165,26 @@ def _tabela_calendario(tabelas: dict) -> str | None:
     return next((t for t in tabelas if t.startswith("dCal")), None)
 
 
+def _dax_ranking(fato_nome: str, medida: str | None, funcao_nome: str, tabela_ref: str,
+                 coluna_ref: str, ascendente: bool, rotulo_item: str) -> str:
+    """DAX de um ranking ("qual X teve o maior/menor ..."): o VALOR vem de
+    MAXX/MINX iterando os itens distintos e o RÓTULO do vencedor, de TOPN.
+    Nada aqui carrega a resposta já calculada (ex.: filtro fixo no vencedor)."""
+    agg = f"{funcao_nome}({fato_nome}[{medida}])" if medida else f"{funcao_nome}({fato_nome})"
+    itens = f"VALUES({tabela_ref}[{coluna_ref}])"
+    iterador, ordem = ("MINX", "ASC") if ascendente else ("MAXX", "DESC")
+    agregado = {"SUM": "Total", "AVERAGE": "Média", "COUNTROWS": "Registros"}.get(funcao_nome, funcao_nome.title())
+    complemento = f" {medida.replace('_', ' ').title()}" if medida else ""
+    nome_valor = f"{'Menor' if ascendente else 'Maior'} {agregado}{complemento}"
+    return (
+        f"{nome_valor} =\n"
+        f"{iterador}(\n    {itens},\n    CALCULATE({agg})\n)\n\n"
+        f"{rotulo_item} =\n"
+        f"CONCATENATEX(\n    TOPN(1, {itens}, CALCULATE({agg}), {ordem}),\n"
+        f"    {tabela_ref}[{coluna_ref}]\n)"
+    )
+
+
 def _responder_ranking_temporal(pergunta_norm: str, fato_nome: str, cal_nome: str, periodo_col: str,
                                  tabelas: dict, ascendente: bool) -> RespostaQA:
     fato_df = tabelas[fato_nome]
@@ -216,10 +236,8 @@ def _responder_ranking_temporal(pergunta_norm: str, fato_nome: str, cal_nome: st
     valor_periodo = linha_top[periodo_col]
     if isinstance(valor_periodo, float) and valor_periodo.is_integer():
         valor_periodo = int(valor_periodo)
-    expr = (
-        f'CALCULATE({funcao_nome}({fato_nome}{f"[{medida}]" if medida else ""}), '
-        f'{cal_nome}[{periodo_col}]="{valor_periodo}")'
-    )
+    expr = _dax_ranking(fato_nome, medida, funcao_nome, cal_nome, periodo_col, ascendente,
+                        f"Período com {superlativo} valor")
 
     return RespostaQA(
         entendida=True,
@@ -729,10 +747,8 @@ def _responder_ranking(pergunta_norm: str, fato_nome: str, dim_nome: str,
         artigo, rotulo_agregacao = "a", f"{superlativo} média de {medida_label}"
     else:
         artigo, rotulo_agregacao = "o", f"{superlativo} total de {medida_label}"
-    expr = (
-        f'CALCULATE({funcao_nome}({fato_nome}'
-        f'{f"[{medida}]" if medida else ""}), {dim_nome}[{col_desc}]="{linha_top[col_desc]}")'
-    )
+    expr = _dax_ranking(fato_nome, medida, funcao_nome, dim_nome, col_desc, ascendente,
+                        f"{col_desc.replace('_', ' ').capitalize()} com {superlativo} valor")
 
     return RespostaQA(
         entendida=True,
