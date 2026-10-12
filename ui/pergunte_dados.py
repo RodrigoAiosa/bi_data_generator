@@ -42,7 +42,7 @@ def _primeira_medida(tabelas: dict) -> str:
 def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> None:
     st.markdown("## 💬 Pergunte aos Dados")
     st.caption(
-        "Escreva uma pergunta de negócio em português e veja a resposta calculada de "
+        "Escolha uma pergunta de negócio na lista e veja a resposta calculada de "
         "verdade contra os dados do setor e volume escolhidos na barra lateral, junto "
         "com a medida DAX equivalente que foi gerada — assim você aprende a traduzir a "
         "pergunta em código, não só recebe o número pronto. **Importante:** isto não é "
@@ -74,9 +74,7 @@ def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> N
     with st.expander("📊 Modelo do setor (clique para ver o diagrama)", expanded=False):
         st.graphviz_chart(_montar_dot(tabelas))
 
-    medida_exemplo = _primeira_medida(tabelas).replace("_", " ")
-
-    # Catálogo: só perguntas que o motor responde de verdade para ESTE setor/volume
+        # Catálogo: só perguntas que o motor responde de verdade para ESTE setor/volume
     # (cada uma é executada antes de entrar na lista) — escolher aqui nunca dá erro.
     chave_catalogo = (st.session_state.get("qa_chave"), id(tabelas))
     if st.session_state.get("qa_catalogo_chave") != chave_catalogo or "qa_catalogo" not in st.session_state:
@@ -94,18 +92,11 @@ def render_pergunte_dados(setor: str, n_linhas: int, data_inicio, data_fim) -> N
         help="A lista só traz perguntas que o motor consegue responder com os dados do setor "
              "e volume escolhidos. Digite parte do texto para filtrar (ex.: 'total', 'mês', 'maior').",
     )
-    with st.expander("✍️ Prefiro escrever minha própria pergunta", expanded=False):
-        pergunta_livre = st.text_input(
-            "Sua pergunta (texto livre)",
-            key="qa_pergunta",
-            placeholder=f"Ex.: Qual foi o total de {medida_exemplo}?",
-            help="Se preencher este campo, ele tem prioridade sobre a lista.",
-        )
-    pergunta = pergunta_livre.strip() or escolhida
+    pergunta = escolhida
 
     if st.button("🔎 Perguntar", type="primary", key="qa_perguntar"):
         if not pergunta.strip():
-            st.warning("Escolha uma pergunta na lista (ou escreva a sua) antes de clicar em Perguntar.")
+            st.warning("Escolha uma pergunta na lista antes de clicar em Perguntar.")
             registrar_evento("qa_perguntou", status="erro", erro="pergunta_vazia")
         else:
             resp = responder_pergunta(pergunta, tabelas)

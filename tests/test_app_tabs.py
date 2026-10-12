@@ -127,10 +127,12 @@ def test_pergunte_aos_dados():
     at = _rodar_app()
     btn_carregar = next(b for b in at.button if b.key == "qa_carregar")
     btn_carregar.click().run()
-    entrada = next(t for t in at.text_input if t.key == "qa_pergunta")
-    entrada.set_value("Quantos registros existem?").run()
-    btn_perguntar = next(b for b in at.button if b.key == "qa_perguntar")
-    btn_perguntar.click().run()
+    assert not at.exception
+    # sem campo de texto livre: só a lista de perguntas possíveis do setor
+    assert not [t for t in at.text_input if t.key == "qa_pergunta"]
+    pergunta = at.session_state["qa_catalogo"][0].texto
+    next(sb for sb in at.selectbox if sb.key == "qa_pergunta_lista").set_value(pergunta).run()
+    next(b for b in at.button if b.key == "qa_perguntar").click().run()
     assert not at.exception
 
 
