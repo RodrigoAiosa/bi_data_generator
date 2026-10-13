@@ -1,6 +1,6 @@
 """
 ui/esconder_badge.py: reforço em JavaScript para esconder o selo
-"Hosted with Streamlit" (e a foto do dono) e o botão "Manage app" que o Streamlit Cloud injeta no
+"Hosted with Streamlit" (e a foto do dono) e o botão "Manage app" e o avatar do dono que o Streamlit Cloud injeta no
 canto inferior direito. O CSS de styles/css.py cobre os nomes de classe
 conhecidos, mas esses nomes são gerados e mudam; aqui o selo é achado pelo
 CONTEÚDO (texto / link para streamlit.io/cloud) e escondido junto com o
@@ -31,6 +31,19 @@ def esconder_selo_streamlit() -> None:
                     doc.querySelectorAll('body *').forEach(el => {
                         if (el.children.length === 0 && TEXTOS.test((el.textContent || '').trim())
                             && (el.textContent || '').length < 40) alvos.add(el);
+                    });
+                    // foto de perfil do dono (avatar) fixa no canto inferior direito
+                    doc.querySelectorAll('img').forEach(img => {
+                        const r = img.getBoundingClientRect();
+                        const vw = w.innerWidth, vh = w.innerHeight;
+                        if (r.width > 0 && r.width <= 90 && r.height <= 90 &&
+                            r.right > vw - 170 && r.bottom > vh - 130) {
+                            let n = img, fixo = false;
+                            for (let i = 0; i < 8 && n && n !== doc.body; i++, n = n.parentElement) {
+                                if (w.getComputedStyle(n).position === 'fixed') { fixo = true; break; }
+                            }
+                            if (fixo) alvos.add(img);
+                        }
                     });
                     alvos.forEach(el => {
                         // sobe até o contêiner posicionado (fixed) do selo/botão, sem passar do <body>
