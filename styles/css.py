@@ -656,6 +656,28 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     color: #F3F2F1 !important;
 }
 
+/* ── Esconde os controles do Streamlit Cloud (Share / favorito / editar / menu ⋮ e
+      o botão "Manage app"). Não esconde o stHeader inteiro: o botão de abrir a
+      barra lateral mora nele. ── */
+[data-testid="stToolbar"],
+[data-testid="stToolbarActions"],
+[data-testid="stAppDeployButton"],
+[data-testid="stMainMenu"],
+#MainMenu,
+.stAppDeployButton,
+.stDeployButton,
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+[data-testid="manage-app-button"],
+[data-testid="stManageAppButton"],
+[class*="viewerBadge"],
+[class*="_terminalButton_"],
+[class*="_container_gzau3_"],
+footer {
+    display: none !important;
+    visibility: hidden !important;
+}
+
 </style>
 """
 
