@@ -673,6 +673,11 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
 [class*="viewerBadge"],
 [class*="_terminalButton_"],
 [class*="_container_gzau3_"],
+[class*="profileContainer"],
+[class*="profilePreview"],
+[class*="hostedWith"],
+a[href*="streamlit.io/cloud"],
+div:has(> a[href*="streamlit.io/cloud"]),
 footer {
     display: none !important;
     visibility: hidden !important;

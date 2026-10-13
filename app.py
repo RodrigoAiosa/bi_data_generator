@@ -21,6 +21,7 @@ from data_acesso import registrar_clique_compartilhamento
 from log_acesso import iniciar_sessao, registrar_evento
 from i18n import t
 from styles.css import inject_css
+from ui.esconder_badge import esconder_selo_streamlit
 from ui.cadastro import render_gate_cadastro
 try:
     from styles.seo import inject_seo
@@ -426,6 +427,7 @@ def _registrar_clique_indicacao() -> None:
 
 def main() -> None:
     inject_css()
+    esconder_selo_streamlit()
     inject_seo(lang=_get_lang())
 
     # Sessão de log começa aqui — ANTES do gate de cadastro, de propósito:
