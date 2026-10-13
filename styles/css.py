@@ -683,6 +683,21 @@ footer {
     visibility: hidden !important;
 }
 
+/* iframes de 1px usados só para rodar scripts (st.iframe com height=1 — único uso de st.iframe no app): sem isso
+   aparecem como um traço branco na tela. Ficam no DOM (o JS precisa rodar), só
+   invisíveis e fora do fluxo/espaçamento do layout. */
+.stElementContainer:has(> iframe[data-testid="stIFrame"]) {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+iframe[data-testid="stIFrame"] { opacity: 0 !important; pointer-events: none !important; }
+
 </style>
 """
 
