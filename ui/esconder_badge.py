@@ -1,6 +1,6 @@
 """
 ui/esconder_badge.py: reforço em JavaScript para esconder o selo
-"Hosted with Streamlit" (e a foto do dono) que o Streamlit Cloud injeta no
+"Hosted with Streamlit" (e a foto do dono) e o botão "Manage app" que o Streamlit Cloud injeta no
 canto inferior direito. O CSS de styles/css.py cobre os nomes de classe
 conhecidos, mas esses nomes são gerados e mudam; aqui o selo é achado pelo
 CONTEÚDO (texto / link para streamlit.io/cloud) e escondido junto com o
@@ -15,25 +15,37 @@ def esconder_selo_streamlit() -> None:
         """
         <script>
         (function() {
-            const doc = window.parent.document;
-            function esconder() {
-                const alvos = new Set();
-                doc.querySelectorAll('a[href*="streamlit.io/cloud"]').forEach(a => alvos.add(a));
-                doc.querySelectorAll('body *').forEach(el => {
-                    if (el.children.length === 0 && /hosted with streamlit/i.test(el.textContent || '')) alvos.add(el);
-                });
-                alvos.forEach(el => {
-                    // sobe até o contêiner posicionado (fixed) do selo, sem passar do <body>
-                    let alvo = el, n = el;
-                    for (let i = 0; i < 6 && n && n !== doc.body; i++, n = n.parentElement) {
-                        const pos = window.parent.getComputedStyle(n).position;
-                        if (pos === 'fixed') { alvo = n; break; }
-                    }
-                    alvo.style.setProperty('display', 'none', 'important');
-                });
+            // Documentos que tentamos limpar: o do app (parent) e, se o navegador
+            // permitir (mesma origem), o da página que o envolve (top) — é nele que
+            // o Streamlit Cloud costuma pôr o "Manage app". Se for outra origem o
+            // acesso lança erro e simplesmente ignoramos.
+            const docs = [];
+            [window.parent, window.top].forEach(w => {
+                try { if (w && w.document && !docs.some(d => d.w === w)) docs.push({w: w, doc: w.document}); } catch (e) {}
+            });
+            const TEXTOS = /^(hosted with streamlit|manage app)$/i;
+            function esconder({w, doc}) {
+                try {
+                    const alvos = new Set();
+                    doc.querySelectorAll('a[href*="streamlit.io/cloud"]').forEach(a => alvos.add(a));
+                    doc.querySelectorAll('body *').forEach(el => {
+                        if (el.children.length === 0 && TEXTOS.test((el.textContent || '').trim())
+                            && (el.textContent || '').length < 40) alvos.add(el);
+                    });
+                    alvos.forEach(el => {
+                        // sobe até o contêiner posicionado (fixed) do selo/botão, sem passar do <body>
+                        let alvo = el, n = el;
+                        for (let i = 0; i < 8 && n && n !== doc.body; i++, n = n.parentElement) {
+                            if (w.getComputedStyle(n).position === 'fixed') { alvo = n; break; }
+                        }
+                        alvo.style.setProperty('display', 'none', 'important');
+                    });
+                } catch (e) {}
             }
-            new MutationObserver(esconder).observe(doc.body, { childList: true, subtree: true });
-            esconder();
+            docs.forEach(d => {
+                try { new MutationObserver(() => esconder(d)).observe(d.doc.body, { childList: true, subtree: true }); } catch (e) {}
+                esconder(d);
+            });
         })();
         </script>
         """,
