@@ -411,13 +411,13 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🚛 Transporte | 303 |
 | 📣 Marketing Digital | 215 |
 | 🏛️ Governo & Setor Público | 185 |
-| 🚗 Mobilidade | 160 |
+| 🚗 Mobilidade | 159 |
 | ☁️ SaaS B2B | 146 |
 | 🛢️ Petróleo & Gás | 140 |
 | 🦄 Startups & Venture Capital | 137 |
 | 💊 Farmacêutico | 118 |
 | 🏪 E-commerce | 116 |
-| 🏦 Fintech | 114 |
+| 🏦 Fintech | 115 |
 | 🏟️ Esportes | 103 |
 | ⛏️ Mineração | 103 |
 | 🤝 CRM | 98 |
@@ -434,9 +434,9 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 📢 Agência de Publicidade | 82 |
 | 💄 Beleza & Estética | 82 |
 | ♻️ Economia Circular | 82 |
-| 🎉 Eventos & Entretenimento | 82 |
 | 🏷️ Franquias | 82 |
 | 🍽️ Restaurantes & Food Service | 82 |
+| 🎉 Eventos & Entretenimento | 81 |
 | ⚖️ Jurídico | 81 |
 | 🎬 Audiovisual & Produtora | 80 |
 | 🌲 Florestal & Papel | 80 |
@@ -479,7 +479,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🚚 Logística | 59 |
 | 🧠 Saúde Mental | 58 |
 | 🧶 Artesanato | 50 |
-| 🪙 Blockchain & Criptomoedas | 50 |
 | 🎓 Ensino Superior | 50 |
 | 🚢 Indústria Naval | 50 |
 | 🛠️ Manutenção Industrial | 50 |
@@ -491,6 +490,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🖥️ Telemedicina | 50 |
 | 🎰 Apostas Esportivas & iGaming | 49 |
 | 🌽 Biocombustíveis | 49 |
+| 🪙 Blockchain & Criptomoedas | 49 |
 | 🎫 Casa Lotérica & Correspondente Bancário | 49 |
 | 🍺 Cervejaria Artesanal | 49 |
 | 📊 Consultoria Empresarial | 49 |
@@ -520,10 +520,10 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🎙️ Rádio & Podcast | 48 |
 | 🏬 Shopping Center & Administração de Malls | 48 |
 | 🍦 Sorveteria & Fábrica de Sorvetes | 48 |
+| 🎬 Streaming | 48 |
 | 📡 Telecom | 48 |
 | 🔬 Laboratório & Diagnóstico | 47 |
 | 🏍️ Motoboy & App de Transporte | 47 |
-| 🎬 Streaming | 47 |
 | 🎁 Clube de Assinaturas | 39 |
 | 🧾 Consórcios | 39 |
 | 📝 Cursinho Preparatório | 39 |
@@ -567,6 +567,7 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🏬 Armazenagem & Self Storage | 28 |
 | 🗣️ Escola de Idiomas | 28 |
 | 🗂️ Operadora de Plano de Saúde | 28 |
+| 🧺 Lavanderia | 27 |
 | 🏥 Saúde | 27 |
 | 🔒 Segurança Privada | 27 |
 | 🧹 Serviços de Limpeza | 27 |
@@ -576,7 +577,6 @@ Cada setor gera uma quantidade diferente de medidas DAX automaticamente, depende
 | 🎾 Clube Social & Recreativo | 26 |
 | 💰 Financeiro | 26 |
 | ⛪ Igreja & Templos Religiosos | 26 |
-| 🧺 Lavanderia | 26 |
 | 🦺 Segurança do Trabalho & SESMT | 26 |
 | 🚲 Aluguel de Bicicletas & Bike Sharing | 25 |
 | 🛍️ Atacado & Atacarejo | 25 |
