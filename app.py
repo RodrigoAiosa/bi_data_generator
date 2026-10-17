@@ -133,6 +133,22 @@ _TABS_GUIA_TEXTO = {
     ),
 }
 
+# Oculta o rodapé "Built with...", menu e cabeçalhos
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    div[data-testid="stToolbar"] {visibility: hidden !important;}
+    div[data-testid="stDecoration"] {visibility: hidden !important;}
+    div[data-testid="stStatusWidget"] {visibility: hidden !important;}
+    footer {display: none !important;}
+    .viewerBadge_container__1S12D {display: none !important;}
+    .styles_viewerBadge__CvC1V {display: none !important;}
+    </style>
+""", unsafe_allow_html=True)
+
+
 # ── Passos da barra de progresso ─────────────────────────────────────────────
 _STEPS_PT = ["Criando dimensões…", "Gerando tabela fato…", "Calculando métricas…", "Compactando ZIP…"]
 _STEPS_EN = ["Building dimensions…", "Generating fact table…", "Computing metrics…", "Compressing ZIP…"]
