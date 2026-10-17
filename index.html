@@ -24,9 +24,10 @@
       height: 100%;
       background: var(--bg);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
     }
 
-    /* O app ocupa 100% da tela. 100dvh evita o "pulo" da barra do navegador no celular. */
+    /* O app ocupa 100% da tela */
     #app {
       position: fixed;
       inset: 0;
@@ -38,7 +39,7 @@
       background: var(--bg);
     }
 
-    /* Tela de carregamento: some assim que o app responde. */
+    /* Tela de carregamento */
     #loading {
       position: fixed;
       inset: 0;
@@ -64,7 +65,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Aviso se o app demorar (o Streamlit Cloud "dorme" após inatividade). */
+    /* Aviso de lentidão/inicialização */
     #slow { display: none; text-align: center; max-width: 320px; line-height: 1.5; padding: 0 16px; }
     #slow a { color: var(--accent); font-weight: 700; }
     #loading.slow #slow { display: block; }
@@ -80,15 +81,11 @@
     <div class="spinner" aria-hidden="true"></div>
     <div>Carregando o BI Data Generator PRO…</div>
     <div id="slow">
-      Está demorando um pouco mais que o normal — o app pode estar acordando.<br>
+      Está demorando um pouco mais que o normal — o sistema pode estar inicializando.<br>
       Se preferir, <a id="fallback" href="#" target="_blank" rel="noopener">abra em uma nova aba</a>.
     </div>
   </div>
 
-  <!--
-    ?embed=true  → o Streamlit esconde a barra superior, o menu e o rodapé.
-    Para trocar de app, altere só a constante APP_URL no script abaixo.
-  -->
   <iframe
     id="app"
     title="BI Data Generator PRO"
@@ -104,7 +101,7 @@
       var loading = document.getElementById("loading");
       var fallback = document.getElementById("fallback");
 
-      // Mantém parâmetros da URL (ex.: ?utm_source=...) e força o modo embed.
+      // Mantém parâmetros da URL e aplica flags para esconder elementos do iframe
       var url = new URL(APP_URL);
       new URLSearchParams(window.location.search).forEach(function (v, k) {
         url.searchParams.set(k, v);
@@ -114,7 +111,7 @@
       fallback.href = APP_URL;
       frame.src = url.toString();
 
-      // Se demorar, oferece abrir em nova aba (app dormindo ou rede lenta).
+      // Timer para exibir mensagem caso demore para carregar
       var slowTimer = setTimeout(function () {
         loading.classList.add("slow");
       }, 8000);
@@ -129,8 +126,8 @@
 
   <noscript>
     <p style="padding:24px;text-align:center">
-      Ative o JavaScript ou
-      <a href="https://ai-bidatagenerator.streamlit.app/" target="_blank" rel="noopener">abra o BI Data Generator diretamente</a>.
+      Ative o JavaScript para carregar o BI Data Generator PRO ou
+      <a href="https://ai-bidatagenerator.streamlit.app/" target="_blank" rel="noopener">acesse diretamente aqui</a>.
     </p>
   </noscript>
 </body>
