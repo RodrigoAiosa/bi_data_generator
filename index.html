@@ -7,10 +7,6 @@
   <meta name="description" content="Gere bases de dados sintéticas em modelo estrela para praticar Power BI, DAX e SQL: 200 setores de negócio, medidas DAX prontas e exportação.">
   <meta name="theme-color" content="#121212">
 
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="BI Data Generator PRO">
-  <meta property="og:description" content="Dados sintéticos de BI para praticar Power BI, DAX e SQL, por Rodrigo Aiosa.">
-
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E">
 
   <style>
@@ -21,19 +17,27 @@
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
+      padding: 0;
       height: 100%;
+      width: 100%;
       background: var(--bg);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       overflow: hidden;
     }
 
-    /* O app ocupa 100% da tela */
+    /* Container com altura ligeiramente maior para empurrar o rodapé para fora da tela */
+    #iframe-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: -45px; /* Empurra os 45px do rodapé para fora do limite visível */
+      overflow: hidden;
+    }
+
     #app {
-      position: fixed;
-      inset: 0;
       width: 100%;
-      height: 100vh;
-      height: 100dvh;
+      height: 100%;
       border: 0;
       display: block;
       background: var(--bg);
@@ -51,7 +55,7 @@
       background: var(--bg);
       color: var(--accent);
       font-size: 15px;
-      z-index: 2;
+      z-index: 10;
       transition: opacity .3s ease;
     }
     #loading.hidden { opacity: 0; pointer-events: none; }
@@ -65,33 +69,30 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Aviso de lentidão/inicialização */
     #slow { display: none; text-align: center; max-width: 320px; line-height: 1.5; padding: 0 16px; }
     #slow a { color: var(--accent); font-weight: 700; }
     #loading.slow #slow { display: block; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .spinner { animation-duration: 3s; }
-    }
   </style>
 </head>
 <body>
 
   <div id="loading" role="status" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
-    <div>Carregando o BI Data Generator PRO…</div>
+    <div>Carregando a aplicação…</div>
     <div id="slow">
-      Está demorando um pouco mais que o normal — o sistema pode estar inicializando.<br>
+      A aplicação está demorando para responder.<br>
       Se preferir, <a id="fallback" href="#" target="_blank" rel="noopener">abra em uma nova aba</a>.
     </div>
   </div>
 
-  <iframe
-    id="app"
-    title="BI Data Generator PRO"
-    allow="clipboard-write; clipboard-read"
-    referrerpolicy="strict-origin-when-cross-origin"
-  ></iframe>
+  <div id="iframe-wrapper">
+    <iframe
+      id="app"
+      title="BI Data Generator PRO"
+      allow="clipboard-write; clipboard-read"
+      referrerpolicy="strict-origin-when-cross-origin"
+    ></iframe>
+  </div>
 
   <script>
     (function () {
@@ -101,17 +102,16 @@
       var loading = document.getElementById("loading");
       var fallback = document.getElementById("fallback");
 
-      // Mantém parâmetros da URL e aplica flags para esconder elementos do iframe
       var url = new URL(APP_URL);
       new URLSearchParams(window.location.search).forEach(function (v, k) {
         url.searchParams.set(k, v);
       });
       url.searchParams.set("embed", "true");
+      url.searchParams.set("embed_options", "disable_scrolling");
 
       fallback.href = APP_URL;
       frame.src = url.toString();
 
-      // Timer para exibir mensagem caso demore para carregar
       var slowTimer = setTimeout(function () {
         loading.classList.add("slow");
       }, 8000);
@@ -123,12 +123,5 @@
       });
     })();
   </script>
-
-  <noscript>
-    <p style="padding:24px;text-align:center">
-      Ative o JavaScript para carregar o BI Data Generator PRO ou
-      <a href="https://ai-bidatagenerator.streamlit.app/" target="_blank" rel="noopener">acesse diretamente aqui</a>.
-    </p>
-  </noscript>
 </body>
 </html>
