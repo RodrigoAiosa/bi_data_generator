@@ -5,6 +5,13 @@ Corpo JSON: {setor, linhas, inicio, fim, mes_fiscal, anomalia, deriva, idioma}
 Resposta: {resumo, zip_nome, zip_base64} (zip pequeno) ou {resumo, zip_nome, zip_url}
 (zip grande: enviado ao Supabase Storage; exige SUPABASE_URL e SUPABASE_SERVICE_KEY).
 """
+import os
+import sys
+
+_AQUI = os.path.dirname(os.path.abspath(__file__))
+for _p in (_AQUI, os.path.dirname(_AQUI)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 import base64
 import json
 import os
