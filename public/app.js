@@ -348,7 +348,10 @@ function iniciar() {
   $("gate-lang").addEventListener("click", () => { trocarIdioma(); });
   $("btn-lang").addEventListener("click", trocarIdioma);
   $("btn-sair").addEventListener("click", sair);
-  $("btn-menu").addEventListener("click", () => $("lateral").classList.toggle("aberta"));
+  $("btn-menu").addEventListener("click", () => {
+    if (window.matchMedia("(max-width:820px)").matches) $("lateral").classList.toggle("aberta");
+    else document.querySelector(".corpo").classList.toggle("recolhido");
+  });
   $("busca").addEventListener("input", preencherSetores);
   $("linhas").addEventListener("input", () => { $("linhas-v").textContent = Number($("linhas").value).toLocaleString("pt-BR"); });
   $("sql-tipo").addEventListener("change", () => { $("sql-aviso").hidden = !["insert", "completo"].includes($("sql-tipo").value); });

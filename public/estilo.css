@@ -30,7 +30,7 @@ input:focus,select:focus,.btn:focus-visible{outline:2px solid var(--ac);outline-
 .lateral{padding:1rem;border-right:1px solid var(--borda);background:#171717}
 .principal{padding:1.25rem;min-width:0}
 .indicacao{margin-top:1.25rem;display:grid;gap:.4rem}
-#btn-menu{display:none}
+#btn-menu{display:inline-block}.corpo.recolhido{grid-template-columns:1fr}.corpo.recolhido .lateral{display:none}
 .barra{height:8px;background:#2a2a2a;border-radius:4px;overflow:hidden}#barra-in{height:100%;width:5%;background:var(--ac);transition:width .4s}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem}
 .stat{background:var(--card);border:1px solid var(--borda);border-radius:10px;padding:.8rem;overflow:hidden}

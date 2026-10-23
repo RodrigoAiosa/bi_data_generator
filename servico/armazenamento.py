@@ -4,6 +4,9 @@ import json
 import os
 import sys
 import urllib.error
+import re
+import unicodedata
+import urllib.parse
 import urllib.request
 import uuid
 
@@ -24,13 +27,14 @@ def enviar(nome: str, dados: bytes, mime: str = "application/zip") -> str | None
 
 
 def _enviar(url, chave, nome, dados, mime):
-    caminho = f"{uuid.uuid4().hex}/{nome}"
+    seguro = re.sub(r"[^A-Za-z0-9._-]+", "_", unicodedata.normalize("NFKD", nome).encode("ascii", "ignore").decode()).strip("_") or "arquivo"
+    caminho = f"{uuid.uuid4().hex}/{seguro}"
     cab = {"apikey": chave, "Authorization": f"Bearer {chave}"}
     urllib.request.urlopen(urllib.request.Request(
-        f"{url}/storage/v1/object/pacotes/{caminho}", data=dados, method="POST",
+        f"{url}/storage/v1/object/pacotes/{urllib.parse.quote(caminho)}", data=dados, method="POST",
         headers={**cab, "Content-Type": mime}), timeout=40).read()
     assinada = json.loads(urllib.request.urlopen(urllib.request.Request(
-        f"{url}/storage/v1/object/sign/pacotes/{caminho}", method="POST",
+        f"{url}/storage/v1/object/sign/pacotes/{urllib.parse.quote(caminho)}", method="POST",
         data=json.dumps({"expiresIn": 3600}).encode(),
         headers={**cab, "Content-Type": "application/json"}), timeout=15).read())["signedURL"]
     return f"{url}/storage/v1{assinada}"
