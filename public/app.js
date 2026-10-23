@@ -13,6 +13,12 @@ const MESES = {
 
 const TXT = {
   pt: {
+    sql_t: "🗄️ Gerar SQL", sql_hint: "Gera DDL, INSERT ou script completo para o setor selecionado.", sql_dial: "Dialeto", sql_tipo: "Tipo de script",
+    sql_warn: "⚠️ INSERT usa o volume definido no controle acima.", sql_btn: "⬇️ Gerar & Baixar SQL", pptx: "📊 Apresentação (.pptx)",
+    sql_ddl: "CREATE TABLE (DDL)", sql_ins: "INSERT INTO (dados)", sql_full: "Completo (DDL + INSERT + Relatórios)", sql_rel: "📊 Somente Relatórios Gerenciais (Views)",
+    sql_gerando: "Gerando script SQL…", sql_prev: "👁️ Preview SQL", sql_trunc: "-- ... (truncado, baixe o arquivo para o script completo)",
+    hero_s1: "setores", hero_s2: "linhas", hero_s3: "download", hero_s4: "grátis",
+    achados: (n) => `${n} setor(es) encontrado(s)`, vazio: "Nenhum setor encontrado — mostrando todos.",
     gate_sub: "Cadastre-se gratuitamente para gerar bases de dados para Power BI.",
     tab_novo: "Cadastrar", tab_existente: "Já sou cadastrado",
     f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade",
@@ -38,6 +44,12 @@ const TXT = {
     prog: ["Criando dimensões…", "Gerando tabela fato…", "Calculando métricas…", "Compactando ZIP…"],
   },
   en: {
+    sql_t: "🗄️ Generate SQL", sql_hint: "Generates DDL, INSERT or full script for the selected sector.", sql_dial: "Dialect", sql_tipo: "Script type",
+    sql_warn: "⚠️ INSERT uses the volume set above.", sql_btn: "⬇️ Generate & Download SQL", pptx: "📊 Presentation (.pptx)",
+    sql_ddl: "CREATE TABLE (DDL)", sql_ins: "INSERT INTO (data)", sql_full: "Full (DDL + INSERT + Reports)", sql_rel: "📊 Managerial Reports Only (Views)",
+    sql_gerando: "Generating SQL script…", sql_prev: "👁️ SQL Preview", sql_trunc: "-- ... (truncated, download the file for the full script)",
+    hero_s1: "sectors", hero_s2: "rows", hero_s3: "download", hero_s4: "free",
+    achados: (n) => `${n} sector(s) found`, vazio: "No sector found — showing all.",
     gate_sub: "Sign up for free to generate datasets for Power BI.",
     tab_novo: "Sign up", tab_existente: "I'm already registered",
     f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City",
@@ -118,6 +130,9 @@ function aplicarIdioma() {
   document.querySelectorAll("[data-i18n]").forEach((el) => { const v = TXT[estado.lang][el.dataset.i18n]; if (typeof v === "string") el.textContent = v; });
   $("btn-lang").textContent = estado.lang === "pt" ? "EN" : "PT";
   $("gate-lang").textContent = estado.lang === "pt" ? "English" : "Português";
+  const st_ = $("sql-tipo"), at = st_.value || "ddl";
+  st_.innerHTML = [["ddl", "sql_ddl"], ["insert", "sql_ins"], ["completo", "sql_full"], ["relatorios", "sql_rel"]].map(([v, k]) => `<option value="${v}">${esc(t(k))}</option>`).join("");
+  st_.value = at; $("sql-aviso").hidden = !["insert", "completo"].includes(at);
   const sel = $("mes-fiscal"), atual = sel.value || "1";
   sel.innerHTML = MESES[estado.lang].map((m, i) => `<option value="${i + 1}">${m}</option>`).join("");
   sel.value = atual;
@@ -198,7 +213,9 @@ function sair() {
 const normalizar = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 function preencherSetores() {
   const q = normalizar($("busca").value.trim()), sel = $("setor"), atual = sel.value;
-  const lista = estado.setores.filter((s) => normalizar(s).includes(q));
+  let lista = estado.setores.filter((s) => normalizar(s).includes(q));
+  const info = $("busca-info");
+  if (q && !lista.length) { info.textContent = t("vazio"); lista = estado.setores; } else info.textContent = q ? t("achados", lista.length) : "";
   sel.innerHTML = lista.map((s) => `<option>${esc(s)}</option>`).join("");
   if (lista.includes(atual)) sel.value = atual;
 }
@@ -288,6 +305,28 @@ function desenhar(j) {
   $("medidas").innerHTML = html;
 }
 
+async function gerarSql() {
+  const out = $("sql-out"), btn = $("btn-sql");
+  let base;
+  try { base = baseSidebar(); } catch (e) { out.innerHTML = `<div class="card erro">${esc(e.message)}</div>`; return; }
+  btn.disabled = true; out.innerHTML = `<p class="muted" role="status">⏳ ${esc(t("sql_gerando"))}</p>`;
+  try {
+    const r = await api("sql", { base, dialeto: $("sql-dial").value, tipo: $("sql-tipo").value });
+    let href;
+    if (r.url) href = r.url;
+    else if (r.zip_base64) href = URL.createObjectURL(b64Blob(r.zip_base64, "application/zip"));
+    else href = URL.createObjectURL(new Blob([r.sql], { type: "text/plain;charset=utf-8" }));
+    out.innerHTML = `<p class="muted"><small>✅ ${estado.lang === "pt" ? "Gerado em" : "Generated in"} ${r.segundos}s</small></p>
+      <a class="btn primario" href="${esc(href)}" download="${esc(r.nome)}">📥 ${esc(r.nome)} (${r.kb.toLocaleString("pt-BR")} KB)</a>
+      <details open><summary>${esc(t("sql_prev"))}</summary><pre>${esc(r.preview)}${r.truncado ? "\n\n" + esc(t("sql_trunc")) : ""}</pre></details>`;
+    out.querySelector("a").addEventListener("click", () => log("baixou_sql", { setor_gerado: base.setor }));
+    log("gerou_sql", { setor_gerado: base.setor, volume_linhas: base.linhas });
+  } catch (e) {
+    out.innerHTML = `<div class="card erro">${esc(e.message)}</div>`;
+    log("gerou_sql", { setor_gerado: base.setor, volume_linhas: base.linhas, status: "erro", erro_detalhe: String(e.message).slice(0, 200) });
+  } finally { btn.disabled = false; }
+}
+
 /* ── Inicialização ─────────────────────────────────────────────────────── */
 function iniciar() {
   const l = ler("idioma"); if (l === "en" || l === "pt") estado.lang = l; else if (/^en/i.test(navigator.language)) estado.lang = "en";
@@ -311,6 +350,10 @@ function iniciar() {
   $("btn-sair").addEventListener("click", sair);
   $("btn-menu").addEventListener("click", () => $("lateral").classList.toggle("aberta"));
   $("busca").addEventListener("input", preencherSetores);
+  $("linhas").addEventListener("input", () => { $("linhas-v").textContent = Number($("linhas").value).toLocaleString("pt-BR"); });
+  $("sql-tipo").addEventListener("change", () => { $("sql-aviso").hidden = !["insert", "completo"].includes($("sql-tipo").value); });
+  $("btn-pptx").addEventListener("click", () => log("baixou_apresentacao"));
+  $("btn-sql").addEventListener("click", gerarSql);
   $("btn-gerar").addEventListener("click", () => { $("lateral").classList.remove("aberta"); gerar(); });
   $("btn-copiar").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText($("link-ref").value); $("btn-copiar").textContent = t("copiado"); setTimeout(() => ($("btn-copiar").textContent = t("copiar")), 1500); log("copiou_link"); } catch (_) { $("link-ref").select(); }

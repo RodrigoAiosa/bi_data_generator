@@ -13,6 +13,10 @@ import base64
 import io
 import json
 import random
+import re
+import time
+import unicodedata
+import zipfile
 from datetime import date
 
 import pandas as pd
@@ -371,12 +375,50 @@ def automatizar_gerar(p: dict) -> dict:
     }
 
 
+def sql(p: dict) -> dict:
+    from generators.relatorios_gerenciais import gerar_relatorios_gerenciais
+    from generators.sql_generator import gerar_sql, gerar_sql_completo, gerar_sql_insert
+    dialeto, tipo = str(p.get("dialeto", "")), str(p.get("tipo", ""))
+    if dialeto not in ("sqlserver", "postgresql", "mysql") or tipo not in ("ddl", "insert", "completo", "relatorios"):
+        raise ErroUsuario("Dialeto ou tipo de script inválido.")
+    tabelas, setor = _base(p, bruta=True)
+    gera = {"ddl": ("DDL", gerar_sql), "insert": ("INSERT", gerar_sql_insert), "relatorios": ("RELATORIOS", gerar_relatorios_gerenciais),
+            "completo": ("COMPLETO", gerar_sql_completo)}[tipo]
+    t0 = time.perf_counter()
+    conteudo = gera[1](setor, tabelas, dialeto)
+    slug = re.sub(r"[^A-Za-z0-9_-]+", "_", unicodedata.normalize("NFKD", setor).encode("ascii", "ignore").decode()).strip("_")
+    nome = f"{gera[0]}_{slug}_{dialeto}.sql"
+    bruto = conteudo.encode("utf-8")
+    r = {"nome": nome, "kb": round(len(bruto) / 1024), "segundos": round(time.perf_counter() - t0, 1),
+         "preview": conteudo[:3000], "truncado": len(conteudo) > 3000}
+    if len(bruto) <= LIMITE_ARQUIVO * 1.5:
+        r["sql"] = conteudo
+        return r
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(nome, bruto)
+    z = buf.getvalue()
+    r["nome"] = nome[:-4] + ".zip"
+    if len(z) <= 3_000_000:
+        r["zip_base64"] = base64.b64encode(z).decode()
+        return r
+    from servico.armazenamento import enviar
+    try:
+        url = enviar(r["nome"], z)
+    except Exception:
+        url = None
+    if not url:
+        raise ErroUsuario("O script ficou grande demais para baixar direto. Reduza o volume de linhas ou escolha DDL/Relatórios.")
+    r["url"] = url
+    return r
+
+
 ACOES = {
     "formatar_dax": formatar_dax, "formatar_m": formatar_m, "auditar": auditar,
     "carrossel_paginas": carrossel_paginas, "carrossel_html": carrossel_html,
     "pl300": pl300, "scd_info": scd_info, "scd": scd, "causal_info": causal_info, "causal": causal,
     "sandbox_modelo": sandbox_modelo, "sandbox_exec": sandbox_exec, "qa_catalogo": qa_catalogo, "qa_perguntar": qa_perguntar,
-    "automatizar_ler": automatizar_ler, "automatizar_gerar": automatizar_gerar,
+    "sql": sql, "automatizar_ler": automatizar_ler, "automatizar_gerar": automatizar_gerar,
 }
 
 

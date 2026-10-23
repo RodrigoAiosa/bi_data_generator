@@ -25,25 +25,6 @@ from _comum import responder
 LIMITE_INLINE = 3_000_000  # bytes; base64 (+33%) precisa caber em ~4,5 MB da resposta
 
 
-def _enviar_storage(nome: str, dados: bytes) -> str | None:
-    url = os.environ.get("SUPABASE_URL", "").rstrip("/")
-    chave = os.environ.get("SUPABASE_SERVICE_KEY", "")
-    if not url or not chave:
-        return None
-    caminho = f"{uuid.uuid4().hex}/{nome}"
-    cab = {"apikey": chave, "Authorization": f"Bearer {chave}"}
-    req = urllib.request.Request(
-        f"{url}/storage/v1/object/pacotes/{caminho}", data=dados, method="POST",
-        headers={**cab, "Content-Type": "application/zip"})
-    urllib.request.urlopen(req, timeout=40).read()
-    req = urllib.request.Request(
-        f"{url}/storage/v1/object/sign/pacotes/{caminho}", method="POST",
-        data=json.dumps({"expiresIn": 3600}).encode(),
-        headers={**cab, "Content-Type": "application/json"})
-    assinada = json.loads(urllib.request.urlopen(req, timeout=15).read())["signedURL"]
-    return f"{url}/storage/v1{assinada}"
-
-
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
@@ -70,7 +51,8 @@ class handler(BaseHTTPRequestHandler):
             corpo["zip_base64"] = base64.b64encode(zip_bytes).decode()
         else:
             try:
-                url = _enviar_storage(nome, zip_bytes)
+                from servico.armazenamento import enviar
+                url = enviar(nome, zip_bytes)
             except Exception:
                 url = None
             if not url:

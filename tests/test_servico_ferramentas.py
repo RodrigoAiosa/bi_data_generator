@@ -70,3 +70,13 @@ def test_erros_de_usuario(corpo):
 
 def test_resposta_serializavel():
     json.dumps(executar({"acao": "scd", "base": BASE, "dim": executar({"acao": "scd_info", "base": BASE})["dimensoes"][0]["nome"], "n_mudancas": 2}))
+
+
+def test_sql_dialetos_e_tipos():
+    from servico.ferramentas import executar
+    base = {"setor": "🏪 E-commerce", "linhas": 200, "inicio": "2024-01-01", "fim": "2024-06-30",
+            "mes_fiscal": 1, "seed": 1, "anomalia": False, "deriva": False, "idioma": "pt"}
+    for d in ("sqlserver", "postgresql", "mysql"):
+        for tp in ("ddl", "insert", "completo", "relatorios"):
+            r = executar({"acao": "sql", "base": base, "dialeto": d, "tipo": tp})
+            assert r["nome"] and r["kb"] > 0 and (r.get("sql") or r.get("zip_base64") or r.get("url"))

@@ -48,9 +48,9 @@
   <div class="corpo">
     <aside id="lateral" class="lateral">
       <h2 data-i18n="cfg">⚙️ Configurações</h2>
-      <label><span data-i18n="busca">Buscar setor</span><input id="busca" type="search" placeholder="ex.: saúde, varejo…"></label>
+      <label><span data-i18n="busca">Buscar setor</span><input id="busca" type="search" placeholder="ex.: saúde, varejo…"><small id="busca-info" class="muted"></small></label>
       <label><span data-i18n="setor">Setor</span><select id="setor" size="1"></select></label>
-      <label><span data-i18n="linhas">Linhas na tabela fato</span><input id="linhas" type="number" min="100" max="100000" step="100" value="1000"></label>
+      <label><span class="slider-l"><span data-i18n="linhas">Linhas na tabela fato</span><b id="linhas-v">5.000</b></span><input id="linhas" type="range" min="100" max="100000" step="100" value="5000"></label>
       <div class="linha2">
         <label><span data-i18n="ini">Data inicial</span><input id="inicio" type="date"></label>
         <label><span data-i18n="fim">Data final</span><input id="fim" type="date"></label>
@@ -59,6 +59,16 @@
       <label class="check"><input id="anomalia" type="checkbox"><span data-i18n="anomalia">Injetar anomalias (causa raiz)</span></label>
       <label class="check"><input id="deriva" type="checkbox"><span data-i18n="deriva">Simular deriva temporal</span></label>
       <button id="btn-gerar" class="btn primario" type="button" data-i18n="gerar">Gerar base agora</button>
+      <hr class="sep">
+      <h2 data-i18n="sql_t">🗄️ Gerar SQL</h2>
+      <p class="muted"><small data-i18n="sql_hint">Gera DDL, INSERT ou script completo para o setor selecionado.</small></p>
+      <label><span data-i18n="sql_dial">Dialeto</span><select id="sql-dial"><option value="sqlserver">SQL Server</option><option value="postgresql">PostgreSQL</option><option value="mysql">MySQL</option></select></label>
+      <label><span data-i18n="sql_tipo">Tipo de script</span><select id="sql-tipo"></select></label>
+      <p id="sql-aviso" class="aviso" hidden data-i18n="sql_warn">⚠️ INSERT usa o volume definido no controle acima.</p>
+      <button id="btn-sql" class="btn" type="button" data-i18n="sql_btn">⬇️ Gerar & Baixar SQL</button>
+      <div id="sql-out"></div>
+      <hr class="sep">
+      <a class="btn" id="btn-pptx" href="/BI_Data_Generator_Apresentacao.pptx" download data-i18n="pptx">📊 Apresentação (.pptx)</a>
       <div id="indicacao" class="indicacao" hidden>
         <strong data-i18n="indique">🔗 Seu link de indicação</strong>
         <input id="link-ref" readonly>
@@ -82,6 +92,7 @@
       <div id="p-gerador" class="painel">
       <section id="hero" class="card">
         <h2 data-i18n="hero_t">Bases prontas para Power BI</h2>
+        <p class="hero-stats"><span><b id="hero-n">200</b> <span data-i18n="hero_s1">setores</span></span><span><b>100k</b> <span data-i18n="hero_s2">linhas</span></span><span><b>.zip</b> <span data-i18n="hero_s3">download</span></span><span><b>free</b> <span data-i18n="hero_s4">grátis</span></span></p>
         <p class="muted" data-i18n="hero_p">Escolha um setor na barra lateral e clique em “Gerar base agora”. Você recebe um .zip com os CSVs das tabelas fato e dimensão, um projeto Power BI com painel de exemplo, medidas DAX, case de negócio e dicionário de dados.</p>
       </section>
       <section id="progresso" class="card" hidden><div class="barra"><div id="barra-in"></div></div><p id="prog-txt" class="muted"></p></section>
