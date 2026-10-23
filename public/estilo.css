@@ -28,7 +28,7 @@ input:focus,select:focus,.btn:focus-visible{outline:2px solid var(--ac);outline-
 .espaco{flex:1}
 .corpo{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 56px)}
 .lateral{padding:1rem;border-right:1px solid var(--borda);background:#171717}
-.principal{padding:1.25rem;min-width:0;max-width:1100px}
+.principal{padding:1.25rem;min-width:0}
 .indicacao{margin-top:1.25rem;display:grid;gap:.4rem}
 #btn-menu{display:none}
 .barra{height:8px;background:#2a2a2a;border-radius:4px;overflow:hidden}#barra-in{height:100%;width:5%;background:var(--ac);transition:width .4s}
