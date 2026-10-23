@@ -313,6 +313,9 @@ def _inferir_desc(col: str, lang: str = "pt") -> str:
 def _get_lang() -> str:
     """Lê o idioma atual do session_state do Streamlit."""
     try:
+        import contexto
+        if contexto.lang():
+            return contexto.lang()
         import streamlit as st
         return st.session_state.get("lang", "pt")
     except Exception:

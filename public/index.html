@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BI Data Generator PRO</title>
+<meta name="description" content="Gere bases de dados sintéticas (modelo estrela) de 200 setores, com projeto Power BI pronto, medidas DAX e dicionário de dados.">
+<link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+<div id="gate" class="gate" hidden>
+  <div class="card gate-card">
+    <h1>📊 BI Data Generator <span class="pro">PRO</span></h1>
+    <p class="muted" data-i18n="gate_sub">Cadastre-se gratuitamente para gerar bases de dados para Power BI.</p>
+    <div class="tabs" role="tablist">
+      <button class="tab ativo" data-modo="novo" data-i18n="tab_novo">Cadastrar</button>
+      <button class="tab" data-modo="existente" data-i18n="tab_existente">Já sou cadastrado</button>
+    </div>
+    <form id="form-novo" class="form">
+      <label><span data-i18n="f_nome">Nome completo</span><input name="nome" required minlength="3" autocomplete="name"></label>
+      <label><span data-i18n="f_sexo">Sexo</span>
+        <select name="sexo" required><option value="">—</option><option>Feminino</option><option>Masculino</option><option>Outro</option><option>Prefiro não informar</option></select></label>
+      <label><span>E-mail</span><input name="email" type="email" required autocomplete="email"></label>
+      <label><span data-i18n="f_cel">Celular (com DDD)</span><input name="celular" inputmode="numeric" placeholder="(11) 99999-9999" required></label>
+      <div class="linha2">
+        <label><span data-i18n="f_uf">Estado</span><select name="estado" required></select></label>
+        <label><span data-i18n="f_cidade">Cidade</span><input name="cidade" list="lista-cidades" required autocomplete="off"><datalist id="lista-cidades"></datalist></label>
+      </div>
+      <button class="btn primario" type="submit" data-i18n="btn_cadastrar">Cadastrar e entrar</button>
+    </form>
+    <form id="form-existente" class="form" hidden>
+      <label><span>E-mail</span><input name="email" type="email" required autocomplete="email"></label>
+      <button class="btn primario" type="submit" data-i18n="btn_entrar">Entrar</button>
+    </form>
+    <p id="gate-msg" class="msg" role="alert"></p>
+    <button id="gate-lang" class="link" type="button">English</button>
+  </div>
+</div>
+
+<div id="app" class="app" hidden>
+  <header class="topo">
+    <button id="btn-menu" class="btn icone" aria-label="Menu">☰</button>
+    <h1>📊 BI Data Generator <span class="pro">PRO</span></h1>
+    <span class="espaco"></span>
+    <button id="btn-lang" class="btn pequeno" type="button">EN</button>
+    <button id="btn-sair" class="btn pequeno" type="button" data-i18n="sair">Sair</button>
+  </header>
+  <div class="corpo">
+    <aside id="lateral" class="lateral">
+      <h2 data-i18n="cfg">⚙️ Configurações</h2>
+      <label><span data-i18n="busca">Buscar setor</span><input id="busca" type="search" placeholder="ex.: saúde, varejo…"></label>
+      <label><span data-i18n="setor">Setor</span><select id="setor" size="1"></select></label>
+      <label><span data-i18n="linhas">Linhas na tabela fato</span><input id="linhas" type="number" min="100" max="100000" step="100" value="1000"></label>
+      <div class="linha2">
+        <label><span data-i18n="ini">Data inicial</span><input id="inicio" type="date"></label>
+        <label><span data-i18n="fim">Data final</span><input id="fim" type="date"></label>
+      </div>
+      <label><span data-i18n="fiscal">Início do ano fiscal</span><select id="mes-fiscal"></select></label>
+      <label class="check"><input id="anomalia" type="checkbox"><span data-i18n="anomalia">Injetar anomalias (causa raiz)</span></label>
+      <label class="check"><input id="deriva" type="checkbox"><span data-i18n="deriva">Simular deriva temporal</span></label>
+      <button id="btn-gerar" class="btn primario" type="button" data-i18n="gerar">Gerar base agora</button>
+      <div id="indicacao" class="indicacao" hidden>
+        <strong data-i18n="indique">🔗 Seu link de indicação</strong>
+        <input id="link-ref" readonly>
+        <button id="btn-copiar" class="btn pequeno" type="button" data-i18n="copiar">Copiar</button>
+      </div>
+    </aside>
+    <main class="principal">
+      <section id="hero" class="card">
+        <h2 data-i18n="hero_t">Bases prontas para Power BI</h2>
+        <p class="muted" data-i18n="hero_p">Escolha um setor na barra lateral e clique em “Gerar base agora”. Você recebe um .zip com os CSVs das tabelas fato e dimensão, um projeto Power BI com painel de exemplo, medidas DAX, case de negócio e dicionário de dados.</p>
+      </section>
+      <section id="progresso" class="card" hidden><div class="barra"><div id="barra-in"></div></div><p id="prog-txt" class="muted"></p></section>
+      <section id="erro" class="card erro" hidden></section>
+      <section id="resultado" hidden>
+        <div class="card ok"><span id="ok-txt"></span></div>
+        <a id="btn-baixar" class="btn primario grande" download>📥 Baixar</a>
+        <p class="muted" id="baixar-info"></p>
+        <h3 data-i18n="resumo">Resumo da base gerada</h3>
+        <div id="cards" class="cards"></div>
+        <h3 data-i18n="preview">Preview das tabelas</h3>
+        <div id="abas" class="abas"></div>
+        <div id="tabela" class="tabela-wrap"></div>
+        <h3 data-i18n="case">📖 Seu case de negócio</h3>
+        <div id="case" class="card pre"></div>
+        <div id="gab-wrap" hidden><h3 data-i18n="gab">🔍 Gabarito (spoiler)</h3>
+          <details class="card"><summary data-i18n="gab_ver">Ver gabarito</summary><div id="gab"></div></details></div>
+        <h3 id="med-t"></h3>
+        <div id="medidas"></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

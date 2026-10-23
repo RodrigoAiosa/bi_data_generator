@@ -1,15 +1,25 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "echo sem dependencias",
-  "buildCommand": "mkdir -p dist && cp index.html dist/index.html",
-  "outputDirectory": "dist",
+  "outputDirectory": "public",
+  "functions": {
+    "api/gerar.py": {
+      "maxDuration": 60,
+      "memory": 1769,
+      "excludeFiles": "{tests/**,ui/**,styles/**,assets/**,scripts/**,sql/**,app.py,styles.py,helpers.py,.claude/**,.github/**}"
+    },
+    "api/setores.py": {
+      "maxDuration": 10,
+      "excludeFiles": "{tests/**,ui/**,styles/**,assets/**,scripts/**,sql/**,app.py,.claude/**,.github/**}"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "DENY" }
       ]
     }
   ]

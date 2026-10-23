@@ -125,7 +125,15 @@ def get_faker():
         locale = FAKER_LOCALE.get(get_lang(), "pt_BR")
     except Exception:
         locale = "pt_BR"
-    return Faker(locale)
+    fk = Faker(locale)
+    if locale != "pt_BR":
+        # Documentos brasileiros (CPF/CNPJ) não existem nos locales em inglês:
+        # delega ao locale pt_BR para os geradores que dependem deles.
+        br = Faker("pt_BR")
+        for attr in ("cpf", "cnpj", "rg", "cep", "estado_sigla"):
+            if not hasattr(fk, attr) and hasattr(br, attr):
+                setattr(fk, attr, getattr(br, attr))
+    return fk
 
 
 # ── Datas aleatórias ─────────────────────────────────────────────────────────

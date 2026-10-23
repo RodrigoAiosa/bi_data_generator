@@ -51,12 +51,23 @@ SLIDER_STEP = 100
 # `dcalendario(start, end)` espalhadas pelos geradores de setor.
 def get_mes_fiscal() -> int:
     """Mês (1-12) em que o ano fiscal começa. Default 1 (ano fiscal = ano civil)."""
-    import streamlit as st
+    import contexto
+    if contexto.mes_fiscal():
+        return contexto.mes_fiscal()
+    try:
+        import streamlit as st
+    except ImportError:
+        return 1
     return st.session_state.get("mes_fiscal", 1)
 
 
 def set_mes_fiscal(mes: int) -> None:
-    import streamlit as st
+    try:
+        import streamlit as st
+    except ImportError:
+        import contexto
+        contexto.definir(contexto.lang(), mes)
+        return
     st.session_state["mes_fiscal"] = mes
 
 # ═══════════════════════════════════════════════════════════════
