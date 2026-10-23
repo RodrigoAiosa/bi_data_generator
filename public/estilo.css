@@ -32,7 +32,7 @@ input:focus,select:focus,.btn:focus-visible{outline:2px solid var(--ac);outline-
 .indicacao{margin-top:1.25rem;display:grid;gap:.4rem}
 #btn-menu{display:none}
 .barra{height:8px;background:#2a2a2a;border-radius:4px;overflow:hidden}#barra-in{height:100%;width:5%;background:var(--ac);transition:width .4s}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem}
 .stat{background:var(--card);border:1px solid var(--borda);border-radius:10px;padding:.8rem;overflow:hidden}
 .stat b{display:block;font-size:1.4rem;color:var(--ac)}.stat span{display:block;overflow-wrap:anywhere}.stat small{color:var(--mut)}
 .abas{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem}
