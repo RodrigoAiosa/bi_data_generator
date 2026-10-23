@@ -2,6 +2,8 @@
 e devolve uma URL assinada (1 h). Exige SUPABASE_URL e SUPABASE_SERVICE_KEY (só no servidor)."""
 import json
 import os
+import sys
+import urllib.error
 import urllib.request
 import uuid
 
@@ -10,7 +12,18 @@ def enviar(nome: str, dados: bytes, mime: str = "application/zip") -> str | None
     url = os.environ.get("SUPABASE_URL", "").rstrip("/")
     chave = os.environ.get("SUPABASE_SERVICE_KEY", "")
     if not url or not chave:
+        print(f"[armazenamento] variáveis ausentes: url={bool(url)} chave={bool(chave)}", file=sys.stderr)
         return None
+    try:
+        return _enviar(url, chave, nome, dados, mime)
+    except urllib.error.HTTPError as e:
+        print(f"[armazenamento] HTTP {e.code}: {e.read()[:300]!r}", file=sys.stderr)
+    except Exception as e:  # nunca registra a chave
+        print(f"[armazenamento] {type(e).__name__}: {str(e)[:200]}", file=sys.stderr)
+    return None
+
+
+def _enviar(url, chave, nome, dados, mime):
     caminho = f"{uuid.uuid4().hex}/{nome}"
     cab = {"apikey": chave, "Authorization": f"Bearer {chave}"}
     urllib.request.urlopen(urllib.request.Request(
