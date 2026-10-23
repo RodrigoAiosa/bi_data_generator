@@ -224,11 +224,12 @@ async function gerar() {
   anima(); const timer = setInterval(anima, linhas > 20000 ? 3500 : 1200);
 
   try {
-    const r = await fetch("/api/gerar", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ setor, linhas, inicio, fim, mes_fiscal: Number($("mes-fiscal").value), anomalia, deriva, idioma: estado.lang }) });
+    const base = { setor, linhas, inicio, fim, mes_fiscal: Number($("mes-fiscal").value), anomalia, deriva, idioma: estado.lang,
+      seed: Math.floor(Math.random() * 2147483647) };
+    const r = await fetch("/api/gerar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(base) });
     let j = null; try { j = await r.json(); } catch (_) {}
     if (!r.ok || !j || !j.resumo) throw new Error((j && j.erro) || t("e_gen"));
-    estado.resultado = j;
+    estado.resultado = j; estado.baseGerada = base;
     desenhar(j);
     log("gerou_base", { setor_gerado: setor, volume_linhas: linhas, anomalia_ativada: anomalia, deriva_temporal_ativada: deriva });
   } catch (e) {

@@ -57,7 +57,8 @@ class handler(BaseHTTPRequestHandler):
                 date.fromisoformat(p["inicio"]), date.fromisoformat(p["fim"]),
                 mes_fiscal=int(p.get("mes_fiscal", 1)),
                 anomalia=bool(p.get("anomalia")), drift=bool(p.get("deriva")),
-                lang=str(p.get("idioma", "pt")))
+                lang=str(p.get("idioma", "pt")),
+                seed=int(p["seed"]) if p.get("seed") is not None else None)
         except (ValueError, KeyError, TypeError) as e:
             return responder(self, 400, {"erro": str(e) or "Parâmetros inválidos."})
         except Exception:

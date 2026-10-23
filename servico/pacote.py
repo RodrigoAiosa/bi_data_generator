@@ -21,6 +21,7 @@ from generators.pbip_generator import gerar_pbip
 from generators.pbip_leiame import LEIAME_PBIP
 from generators.tmdl_generator import gerar_tmdl
 from servico.anomalias import _injetar_anomalias
+from servico.ferramentas import df_json
 
 MIN_LINHAS = 100
 MAX_LINHAS = 100_000
@@ -57,17 +58,39 @@ def validar_parametros(setor: str, n_linhas: int, inicio: date, fim: date, mes_f
         raise ValueError("Mês fiscal inválido.")
 
 
-def gerar_pacote(setor: str, n_linhas: int, inicio: date, fim: date, *,
-                 mes_fiscal: int = 1, anomalia: bool = False, drift: bool = False,
-                 lang: str = "pt") -> tuple[bytes, dict]:
-    """Retorna (bytes_do_zip, resumo). `resumo` é JSON-serializável e traz
-    tabelas (contagem, colunas, 20 primeiras linhas) e medidas DAX."""
+def gerar_tabelas(setor: str, n_linhas: int, inicio: date, fim: date, *, mes_fiscal: int = 1,
+                  anomalia: bool = False, drift: bool = False, lang: str = "pt",
+                  seed: int | None = None) -> tuple[dict, list[dict]]:
+    """Gera as tabelas (e o gabarito de anomalias/deriva). Com `seed`, o resultado é
+    reproduzível: as ferramentas que dependem da base (SCD, Causais, Sandbox,
+    Pergunte aos Dados) regeneram exatamente a mesma base a cada chamada."""
+    import random
+
+    import numpy as np
+    from faker import Faker
+
     lang = "en" if lang == "en" else "pt"
     validar_parametros(setor, n_linhas, inicio, fim, mes_fiscal)
-    t0 = time.perf_counter()
     contexto.definir(lang, mes_fiscal)
     try:
-        tabelas = obter_gerador(setor)(n_linhas, inicio, fim)
+        # O módulo do setor sorteia "pools" já no import (primeira chamada do processo).
+        # Importa sob uma seed FIXA para esses pools serem idênticos em qualquer
+        # instância/processo, e só depois aplica a seed da base.
+        def _semear(v: int) -> None:
+            random.seed(v)
+            np.random.seed(v % (2**32))
+            Faker.seed(v)
+            # `rng` é um Generator de módulo, importado por nome nos geradores:
+            # precisa ser reiniciado no próprio objeto (não substituído).
+            from generators import helpers as _h
+            _h.rng.bit_generator.state = np.random.default_rng(v).bit_generator.state
+
+        if seed is not None:
+            _semear(0)
+        gerador = obter_gerador(setor)
+        if seed is not None:
+            _semear(seed)
+        tabelas = gerador(n_linhas, inicio, fim)
         gabarito: list[dict] = []
         if anomalia:
             tabelas, g = _injetar_anomalias(tabelas)
@@ -75,7 +98,23 @@ def gerar_pacote(setor: str, n_linhas: int, inicio: date, fim: date, *,
         if drift:
             tabelas, g = injetar_concept_drift(tabelas)
             gabarito.extend(g)
+    finally:
+        contexto.limpar()
+    return tabelas, gabarito
 
+
+def gerar_pacote(setor: str, n_linhas: int, inicio: date, fim: date, *,
+                 mes_fiscal: int = 1, anomalia: bool = False, drift: bool = False,
+                 lang: str = "pt", seed: int | None = None) -> tuple[bytes, dict]:
+    """Retorna (bytes_do_zip, resumo). `resumo` é JSON-serializável e traz
+    tabelas (contagem, colunas, 20 primeiras linhas) e medidas DAX."""
+    lang = "en" if lang == "en" else "pt"
+    validar_parametros(setor, n_linhas, inicio, fim, mes_fiscal)
+    t0 = time.perf_counter()
+    tabelas, gabarito = gerar_tabelas(setor, n_linhas, inicio, fim, mes_fiscal=mes_fiscal,
+                                      anomalia=anomalia, drift=drift, lang=lang, seed=seed)
+    contexto.definir(lang, mes_fiscal)
+    try:
         case_texto = gerar_case_negocio(setor, detectar_kpi_label(tabelas), lang=lang,
                                         anomalia_ativa=anomalia, drift_ativo=drift)
         arquivos = {"model.tmdl": gerar_tmdl(setor, tabelas), "case_negocio.txt": case_texto,
@@ -105,8 +144,7 @@ def gerar_pacote(setor: str, n_linhas: int, inicio: date, fim: date, *,
         "segundos": round(time.perf_counter() - t0, 2),
         "tabelas": [
             {"nome": k, "linhas": int(len(v)), "colunas": list(map(str, v.columns)),
-             "amostra": v.head(20).astype(object).where(v.head(20).notna(), None)
-                          .astype(str).values.tolist()}
+             "amostra": df_json(v, 20)["linhas"]}
             for k, v in tabelas.items()
         ],
         "case": case_texto,

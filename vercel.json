@@ -11,15 +11,29 @@
     "api/setores.py": {
       "maxDuration": 10,
       "excludeFiles": "{tests/**,ui/**,styles/**,assets/**,scripts/**,sql/**,app.py,.claude/**,.github/**}"
+    },
+    "api/ferramenta.py": {
+      "maxDuration": 60,
+      "memory": 1769,
+      "excludeFiles": "{tests/**,ui/**,styles/**,assets/**,scripts/**,sql/**,app.py,styles.py,helpers.py,.claude/**,.github/**}"
     }
   },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-Frame-Options", "value": "DENY" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
       ]
     }
   ]

@@ -66,6 +66,20 @@
       </div>
     </aside>
     <main class="principal">
+      <nav id="abas-ferramentas" class="ferr-abas" role="tablist" aria-label="Ferramentas">
+        <button class="ativo" data-aba="gerador">🏭 Gerador de Setores</button>
+        <button data-aba="automatizar">🤖 Automatizar BI</button>
+        <button data-aba="pl300">🎓 Simulador PL-300</button>
+        <button data-aba="causal">🧬 Dados Causais</button>
+        <button data-aba="scd">🕰️ Dimensões Mutáveis</button>
+        <button data-aba="dax">📐 Formatar DAX</button>
+        <button data-aba="m">🔧 Formatar M</button>
+        <button data-aba="auditor">🩺 Auditor de Modelo</button>
+        <button data-aba="sandbox">🧮 DAX Sandbox</button>
+        <button data-aba="pergunte">💬 Pergunte aos Dados</button>
+        <button data-aba="carrossel">🖥️ Carrossel Power BI</button>
+      </nav>
+      <div id="p-gerador" class="painel">
       <section id="hero" class="card">
         <h2 data-i18n="hero_t">Bases prontas para Power BI</h2>
         <p class="muted" data-i18n="hero_p">Escolha um setor na barra lateral e clique em “Gerar base agora”. Você recebe um .zip com os CSVs das tabelas fato e dimensão, um projeto Power BI com painel de exemplo, medidas DAX, case de negócio e dicionário de dados.</p>
@@ -88,9 +102,22 @@
         <h3 id="med-t"></h3>
         <div id="medidas"></div>
       </section>
+</div>
+      <div id="p-automatizar" class="painel" hidden></div>
+      <div id="p-pl300" class="painel" hidden></div>
+      <div id="p-causal" class="painel" hidden></div>
+      <div id="p-scd" class="painel" hidden></div>
+      <div id="p-dax" class="painel" hidden></div>
+      <div id="p-m" class="painel" hidden></div>
+      <div id="p-auditor" class="painel" hidden></div>
+      <div id="p-sandbox" class="painel" hidden></div>
+      <div id="p-pergunte" class="painel" hidden></div>
+      <div id="p-carrossel" class="painel" hidden></div>
     </main>
   </div>
 </div>
+<script src="/vendor/fflate.js"></script>
 <script src="/app.js"></script>
+<script src="/ferramentas.js"></script>
 </body>
 </html>
