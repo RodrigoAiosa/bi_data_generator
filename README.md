@@ -1042,3 +1042,12 @@ Contribuições e sugestões são bem-vindas via *issues* e *pull requests*.
 ## ⚖️ Aviso legal
 
 Todos os dados gerados são **100% fictícios e sintéticos**, criados com o pacote [`Faker`](https://faker.readthedocs.io/) e regras de negócio simuladas. Nenhuma informação real de pessoas, empresas ou entidades é utilizada. O projeto é destinado a fins **educacionais e de portfólio**, para estudo de Power BI, DAX, modelagem dimensional e SQL.
+
+## Versão nativa (Vercel + Supabase) — em migração
+
+- `public/` — site estático (login/cadastro no Supabase, escolha de setor, geração e download).
+- `api/gerar.py`, `api/setores.py` — funções Python da Vercel que reutilizam `generators/` via `servico/pacote.py` (sem Streamlit).
+- Variáveis de ambiente na Vercel (apenas para pacotes > 3 MB, que vão ao bucket privado `pacotes` do Supabase Storage):
+  `SUPABASE_URL` e `SUPABASE_SERVICE_KEY` (nunca expor no front-end).
+- Teste local: `python scripts/dev_local.py 8765`.
+- Streamlit (`app.py`, `ui/`, `styles/`) permanece até as demais abas serem migradas; dependências em `requirements-streamlit.txt`.

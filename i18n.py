@@ -6,7 +6,11 @@ Uso:
     st.button(t("gerar_btn"))
 """
 
-import streamlit as st
+try:
+    import streamlit as st
+except ImportError:  # versão serverless (Vercel) não usa Streamlit
+    st = None
+import contexto
 
 # ── Textos da interface ───────────────────────────────────────────────────────
 
@@ -87,10 +91,18 @@ FAKER_LOCALE: dict[str, str] = {
 
 def get_lang() -> str:
     """Retorna 'pt' ou 'en' conforme seleção do usuário."""
+    c = contexto.lang()
+    if c:
+        return c
+    if st is None:
+        return "pt"
     return st.session_state.get("lang", "pt")
 
 
 def set_lang(lang: str) -> None:
+    if st is None:
+        contexto.definir(lang, contexto.mes_fiscal())
+        return
     st.session_state["lang"] = lang
 
 
