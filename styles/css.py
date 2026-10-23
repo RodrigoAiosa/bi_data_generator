@@ -656,10 +656,10 @@ button[data-testid="stBaseButton-headerNoPadding"]:hover,
     color: #F3F2F1 !important;
 }
 
-/* ── Esconde os controles do Streamlit Cloud (Share / favorito / editar / menu ⋮ e
+/* ── (NÃO esconder [data-testid="stToolbar"]: o botão de reabrir a barra lateral mora dentro dele.)
+      Esconde os controles do Streamlit Cloud (Share / favorito / editar / menu ⋮ e
       o botão "Manage app"). Não esconde o stHeader inteiro: o botão de abrir a
       barra lateral mora nele. ── */
-[data-testid="stToolbar"],
 [data-testid="stToolbarActions"],
 [data-testid="stAppDeployButton"],
 [data-testid="stMainMenu"],
@@ -681,6 +681,16 @@ div:has(> a[href*="streamlit.io/cloud"]),
 footer {
     display: none !important;
     visibility: hidden !important;
+}
+
+/* O botão de abrir/fechar a barra lateral precisa continuar visível (inclusive o contêiner). */
+[data-testid="stToolbar"] { visibility: visible !important; display: flex !important; }
+[data-testid="stExpandSidebarButton"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapseButton"] button,
+[data-testid="stExpandSidebarButton"] button {
+    visibility: visible !important;
 }
 
 /* iframes de 1px usados só para rodar scripts (st.iframe com height=1 — único uso de st.iframe no app): sem isso

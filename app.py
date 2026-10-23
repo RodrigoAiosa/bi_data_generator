@@ -133,13 +133,14 @@ _TABS_GUIA_TEXTO = {
     ),
 }
 
-# Oculta o rodapé "Built with...", menu e cabeçalhos
+# Oculta o rodapé "Built with...", menu e barra de ferramentas. NÃO esconder o <header>
+# inteiro: o botão de abrir/fechar a barra lateral mora nele (sem ele, uma vez recolhida,
+# a barra lateral não volta, que era o "menu lateral some depois do login").
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
     footer {visibility: hidden;}
-    div[data-testid="stToolbar"] {visibility: hidden !important;}
+    div[data-testid="stToolbarActions"] {visibility: hidden !important;}
     div[data-testid="stDecoration"] {visibility: hidden !important;}
     div[data-testid="stStatusWidget"] {visibility: hidden !important;}
     footer {display: none !important;}
