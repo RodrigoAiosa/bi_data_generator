@@ -52,10 +52,13 @@ jobs:
       - name: Sincronizar o README
         run: python scripts/sync_readme.py
 
+      - name: Copiar a apresentação para o site (public/)
+        run: cp assets/BI_Data_Generator_Apresentacao.pptx public/BI_Data_Generator_Apresentacao.pptx
+
       - name: Verificar se algum arquivo mudou
         id: diff
         run: |
-          if git diff --quiet -- assets/BI_Data_Generator_Apresentacao.pptx README.md; then
+          if git diff --quiet -- assets/BI_Data_Generator_Apresentacao.pptx public/BI_Data_Generator_Apresentacao.pptx README.md; then
             echo "mudou=false" >> "$GITHUB_OUTPUT"
           else
             echo "mudou=true" >> "$GITHUB_OUTPUT"
@@ -66,6 +69,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add assets/BI_Data_Generator_Apresentacao.pptx README.md
+          git add assets/BI_Data_Generator_Apresentacao.pptx public/BI_Data_Generator_Apresentacao.pptx README.md
           git commit -m "chore(docs): sincroniza numeros da apresentacao e do README automaticamente [skip ci]"
           git push

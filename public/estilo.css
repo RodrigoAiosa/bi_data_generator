@@ -83,3 +83,4 @@ input[type=file]{padding:.4rem}
 .hero-stats{display:flex;gap:1.4rem;flex-wrap:wrap;margin:.2rem 0 .8rem}.hero-stats b{color:var(--ac);font-size:1.3rem}
 .lateral .btn{width:100%}.lateral pre{max-height:240px;overflow:auto;font-size:.72rem;white-space:pre-wrap}
 #sql-out{margin-top:.6rem}
+#gate-pptx{display:block;text-align:center;margin-top:.8rem;text-decoration:none}
