@@ -369,7 +369,12 @@ function iniciar() {
   $("busca").addEventListener("input", preencherSetores);
   $("linhas-r").addEventListener("input", () => mostrarLinhas(Number($("linhas-r").value)));
   $("linhas").addEventListener("blur", () => { let n = linhasVal(); if (!isFinite(n)) n = 5000; mostrarLinhas(Math.min(100000, Math.max(100, n))); });
-  $("linhas").addEventListener("input", () => { const n = linhasVal(); if (isFinite(n)) $("linhas-r").value = Math.min(100000, Math.max(100, n)); });
+  $("linhas").setAttribute("maxlength", "9");
+  $("linhas").addEventListener("input", () => {
+    const n = linhasVal();
+    if (isFinite(n) && n > 100000) { mostrarLinhas(100000); return; }   // teto: nunca aceita mais que 100.000
+    if (isFinite(n)) $("linhas-r").value = Math.min(100000, Math.max(100, n));
+  });
   $("busca").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("btn-gerar").click(); } });
   document.addEventListener("keydown", (e) => {
     const alvo = e.target.tagName, digitando = ["INPUT", "TEXTAREA", "SELECT"].includes(alvo);
