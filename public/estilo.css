@@ -93,10 +93,7 @@ input[type=file]{padding:.4rem}
 .campo-linhas label{display:block;margin-bottom:.3rem}
 .linhas-in{display:flex;flex-direction:column;gap:.5rem}
 .linhas-in input[type=text],#linhas{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
-.ferr-abas{align-items:center}
 .ferr-abas button{min-height:44px}
-.ferr-abas .grupo{flex:none;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:0 .3rem 0 .9rem;border-left:1px solid var(--borda);margin-left:.4rem;align-self:center}
-.ferr-abas .grupo:first-child{border-left:0;margin-left:0;padding-left:.2rem}
 .passos ol{margin:.5rem 0 0;padding-left:1.3rem}.passos li{margin:.2rem 0}
 #topo-prog{position:fixed;left:0;top:0;height:3px;width:0;background:linear-gradient(90deg,var(--ac),#00e5ff);z-index:99;opacity:0;transition:width .3s,opacity .2s;pointer-events:none}
 #topo-prog.on{opacity:1;width:85%;transition:width 6s cubic-bezier(.1,.7,.3,1),opacity .1s}
