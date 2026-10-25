@@ -19,6 +19,9 @@ const TXT = {
     sql_gerando: "Gerando script SQL…", sql_prev: "👁️ Preview SQL", sql_trunc: "-- ... (truncado, baixe o arquivo para o script completo)",
     hero_s1: "setores", hero_s2: "linhas", hero_s3: "download", hero_s4: "grátis",
     achados: (n) => `${n} setor(es) encontrado(s)`, vazio: "Nenhum setor encontrado — mostrando todos.",
+    avancado: "Opções avançadas", linhas_dica: "Aceita 5000, 5.000 ou 5k · de 100 a 100.000", atalho: "Atalhos: / busca · Ctrl+Enter gera",
+    g_gerar: "Gerar", g_modelar: "Modelar", g_explorar: "Explorar", g_aprender: "Aprender",
+    prox_t: "Próximos passos", prox_1: "Extraia o .zip em uma pasta.", prox_2: "Abra PowerBI/*.pbip no Power BI Desktop.", prox_3: "Teste as medidas DAX e tente resolver o case de negócio.",
     gate_sub: "Cadastre-se gratuitamente para gerar bases de dados para Power BI.",
     tab_novo: "Cadastrar", tab_existente: "Já sou cadastrado",
     f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade",
@@ -50,6 +53,9 @@ const TXT = {
     sql_gerando: "Generating SQL script…", sql_prev: "👁️ SQL Preview", sql_trunc: "-- ... (truncated, download the file for the full script)",
     hero_s1: "sectors", hero_s2: "rows", hero_s3: "download", hero_s4: "free",
     achados: (n) => `${n} sector(s) found`, vazio: "No sector found — showing all.",
+    avancado: "Advanced options", linhas_dica: "Accepts 5000, 5,000 or 5k · from 100 to 100,000", atalho: "Shortcuts: / search · Ctrl+Enter generates",
+    g_gerar: "Generate", g_modelar: "Model", g_explorar: "Explore", g_aprender: "Learn",
+    prox_t: "Next steps", prox_1: "Unzip the file into a folder.", prox_2: "Open PowerBI/*.pbip in Power BI Desktop.", prox_3: "Try the DAX measures and solve the business case.",
     gate_sub: "Sign up for free to generate datasets for Power BI.",
     tab_novo: "Sign up", tab_existente: "I'm already registered",
     f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City",
@@ -210,6 +216,16 @@ function sair() {
 }
 
 /* ── Setores e geração ─────────────────────────────────────────────────── */
+/* Postel: aceita "5000", "5.000", "5 000", "5k", "1,5k" */
+function lerLinhas(txt) {
+  let v = String(txt || "").trim().toLowerCase().replace(/\s/g, "");
+  const k = /k$/.test(v); v = v.replace(/k$/, "");
+  if (k) v = v.replace(",", ".") ; else v = v.replace(/[.,](?=\d{3}(\D|$))/g, "");
+  let n = parseFloat(v.replace(/[^0-9.]/g, "")); if (!isFinite(n)) return NaN;
+  if (k) n *= 1000; return Math.round(n);
+}
+const linhasVal = () => { const n = lerLinhas($("linhas").value); return isFinite(n) ? n : NaN; };
+function mostrarLinhas(n) { $("linhas").value = n.toLocaleString("pt-BR"); $("linhas-r").value = Math.min(100000, Math.max(100, n)); }
 const normalizar = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 function preencherSetores() {
   const q = normalizar($("busca").value.trim()), sel = $("setor"), atual = sel.value;
@@ -228,7 +244,7 @@ function mostrarErro(txt) { const e = $("erro"); e.textContent = txt; e.hidden =
 
 async function gerar() {
   mostrarErro("");
-  const setor = $("setor").value, linhas = parseInt($("linhas").value, 10);
+  const setor = $("setor").value, linhas = linhasVal();
   const inicio = $("inicio").value, fim = $("fim").value;
   if (!(linhas >= 100 && linhas <= 100000)) return mostrarErro(t("e_lin"));
   if (!inicio || !fim || inicio >= fim) return mostrarErro(t("e_per"));
@@ -353,7 +369,15 @@ function iniciar() {
     else document.querySelector(".corpo").classList.toggle("recolhido");
   });
   $("busca").addEventListener("input", preencherSetores);
-  $("linhas").addEventListener("input", () => { $("linhas-v").textContent = Number($("linhas").value).toLocaleString("pt-BR"); });
+  $("linhas-r").addEventListener("input", () => mostrarLinhas(Number($("linhas-r").value)));
+  $("linhas").addEventListener("blur", () => { let n = linhasVal(); if (!isFinite(n)) n = 5000; mostrarLinhas(Math.min(100000, Math.max(100, n))); });
+  $("linhas").addEventListener("input", () => { const n = linhasVal(); if (isFinite(n)) $("linhas-r").value = Math.min(100000, Math.max(100, n)); });
+  $("busca").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("btn-gerar").click(); } });
+  document.addEventListener("keydown", (e) => {
+    const alvo = e.target.tagName, digitando = ["INPUT", "TEXTAREA", "SELECT"].includes(alvo);
+    if (e.key === "/" && !digitando && !$("app").hidden) { e.preventDefault(); $("busca").focus(); }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !$("app").hidden) { e.preventDefault(); $("btn-gerar").click(); }
+  });
   $("sql-tipo").addEventListener("change", () => { $("sql-aviso").hidden = !["insert", "completo"].includes($("sql-tipo").value); });
   $("btn-pptx").addEventListener("click", () => log("baixou_apresentacao"));
   $("btn-sql").addEventListener("click", gerarSql);

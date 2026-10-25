@@ -38,6 +38,7 @@
   </div>
 </div>
 
+<div id="topo-prog" aria-hidden="true"></div>
 <div id="app" class="app" hidden>
   <header class="topo">
     <button id="btn-menu" class="btn icone" aria-label="Menu">☰</button>
@@ -51,15 +52,22 @@
       <h2 data-i18n="cfg">⚙️ Configurações</h2>
       <label><span data-i18n="busca">Buscar setor</span><input id="busca" type="search" placeholder="ex.: saúde, varejo…"><small id="busca-info" class="muted"></small></label>
       <label><span data-i18n="setor">Setor</span><select id="setor" size="1"></select></label>
-      <label><span class="slider-l"><span data-i18n="linhas">Linhas na tabela fato</span><b id="linhas-v">5.000</b></span><input id="linhas" type="range" min="100" max="100000" step="100" value="5000"></label>
+      <div class="campo-linhas">
+        <label for="linhas"><span data-i18n="linhas">Linhas na tabela fato</span></label>
+        <div class="linhas-in"><input id="linhas" inputmode="numeric" autocomplete="off" value="5.000" aria-describedby="linhas-dica"><input id="linhas-r" type="range" min="100" max="100000" step="100" value="5000" aria-label="Linhas (controle deslizante)"></div>
+        <small id="linhas-dica" class="muted" data-i18n="linhas_dica">Aceita 5000, 5.000 ou 5k · de 100 a 100.000</small>
+      </div>
       <div class="linha2">
         <label><span data-i18n="ini">Data inicial</span><input id="inicio" type="date"></label>
         <label><span data-i18n="fim">Data final</span><input id="fim" type="date"></label>
       </div>
-      <label><span data-i18n="fiscal">Início do ano fiscal</span><select id="mes-fiscal"></select></label>
-      <label class="check"><input id="anomalia" type="checkbox"><span data-i18n="anomalia">Injetar anomalias (causa raiz)</span></label>
-      <label class="check"><input id="deriva" type="checkbox"><span data-i18n="deriva">Simular deriva temporal</span></label>
-      <button id="btn-gerar" class="btn primario" type="button" data-i18n="gerar">Gerar base agora</button>
+      <details id="avancado" class="avancado"><summary data-i18n="avancado">Opções avançadas</summary>
+        <label><span data-i18n="fiscal">Início do ano fiscal</span><select id="mes-fiscal"></select></label>
+        <label class="check"><input id="anomalia" type="checkbox"><span data-i18n="anomalia">Injetar anomalias (causa raiz)</span></label>
+        <label class="check"><input id="deriva" type="checkbox"><span data-i18n="deriva">Simular deriva temporal</span></label>
+      </details>
+      <button id="btn-gerar" class="btn primario fixo" type="button" data-i18n="gerar">Gerar base agora</button>
+      <small class="muted atalho" data-i18n="atalho">Atalhos: / busca · Ctrl+Enter gera</small>
       <hr class="sep">
       <h2 data-i18n="sql_t">🗄️ Gerar SQL</h2>
       <p class="muted"><small data-i18n="sql_hint">Gera DDL, INSERT ou script completo para o setor selecionado.</small></p>
@@ -78,17 +86,21 @@
     </aside>
     <main class="principal">
       <nav id="abas-ferramentas" class="ferr-abas" role="tablist" aria-label="Ferramentas">
+        <span class="grupo" data-i18n="g_gerar">Gerar</span>
         <button class="ativo" data-aba="gerador">🏭 Gerador de Setores</button>
         <button data-aba="automatizar">🤖 Automatizar BI</button>
-        <button data-aba="pl300">🎓 Simulador PL-300</button>
         <button data-aba="causal">🧬 Dados Causais</button>
         <button data-aba="scd">🕰️ Dimensões Mutáveis</button>
+        <span class="grupo" data-i18n="g_modelar">Modelar</span>
         <button data-aba="dax">📐 Formatar DAX</button>
         <button data-aba="m">🔧 Formatar M</button>
         <button data-aba="auditor">🩺 Auditor de Modelo</button>
+        <span class="grupo" data-i18n="g_explorar">Explorar</span>
         <button data-aba="sandbox">🧮 DAX Sandbox</button>
         <button data-aba="pergunte">💬 Pergunte aos Dados</button>
         <button data-aba="carrossel">🖥️ Carrossel Power BI</button>
+        <span class="grupo" data-i18n="g_aprender">Aprender</span>
+        <button data-aba="pl300">🎓 Simulador PL-300</button>
       </nav>
       <div id="p-gerador" class="painel">
       <section id="hero" class="card">
@@ -102,6 +114,8 @@
         <div class="card ok"><span id="ok-txt"></span></div>
         <a id="btn-baixar" class="btn primario grande" download>📥 Baixar</a>
         <p class="muted" id="baixar-info"></p>
+        <div class="card passos"><strong data-i18n="prox_t">Próximos passos</strong>
+          <ol><li data-i18n="prox_1">Extraia o .zip em uma pasta.</li><li data-i18n="prox_2">Abra PowerBI/*.pbip no Power BI Desktop.</li><li data-i18n="prox_3">Teste as medidas DAX e tente resolver o case de negócio.</li></ol></div>
         <h3 data-i18n="resumo">Resumo da base gerada</h3>
         <div id="cards" class="cards"></div>
         <h3 data-i18n="preview">Preview das tabelas</h3>

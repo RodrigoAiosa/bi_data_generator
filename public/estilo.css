@@ -84,3 +84,24 @@ input[type=file]{padding:.4rem}
 .lateral .btn{width:100%}.lateral pre{max-height:240px;overflow:auto;font-size:.72rem;white-space:pre-wrap}
 #sql-out{margin-top:.6rem}
 #gate-pptx{display:block;text-align:center;margin-top:.8rem;text-decoration:none}
+
+/* Usabilidade: Fitts / Hick / Miller / Doherty / Estética */
+#btn-gerar.fixo{position:sticky;bottom:.6rem;min-height:52px;font-size:1.05rem;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.55);z-index:3}
+.atalho{display:block;margin-top:.4rem}
+.avancado{margin:.6rem 0 .9rem;border:1px solid var(--borda);border-radius:8px;padding:.2rem .7rem .5rem}
+.avancado summary{padding:.55rem 0;min-height:24px;color:var(--mut)}
+.campo-linhas label{display:block;margin-bottom:.3rem}
+.linhas-in{display:flex;flex-direction:column;gap:.5rem}
+.linhas-in input[type=text],#linhas{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.ferr-abas{align-items:center}
+.ferr-abas button{min-height:44px}
+.ferr-abas .grupo{flex:none;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:0 .3rem 0 .9rem;border-left:1px solid var(--borda);margin-left:.4rem;align-self:center}
+.ferr-abas .grupo:first-child{border-left:0;margin-left:0;padding-left:.2rem}
+.passos ol{margin:.5rem 0 0;padding-left:1.3rem}.passos li{margin:.2rem 0}
+#topo-prog{position:fixed;left:0;top:0;height:3px;width:0;background:linear-gradient(90deg,var(--ac),#00e5ff);z-index:99;opacity:0;transition:width .3s,opacity .2s;pointer-events:none}
+#topo-prog.on{opacity:1;width:85%;transition:width 6s cubic-bezier(.1,.7,.3,1),opacity .1s}
+#topo-prog.fim{width:100%;opacity:0;transition:width .15s,opacity .4s .15s}
+.btn,select,input,summary,button{touch-action:manipulation}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.campo-linhas{margin-bottom:.9rem}

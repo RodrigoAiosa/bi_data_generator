@@ -2,12 +2,21 @@
 "use strict";
 
 /* ── infraestrutura ────────────────────────────────────────────────────── */
+/* Doherty: feedback imediato — barra fina no topo enquanto houver requisição pendente */
+let _pend = 0, _tmr = null;
+function indicarCarga(on) {
+  const b = document.getElementById("topo-prog"); if (!b) return;
+  _pend = Math.max(0, _pend + (on ? 1 : -1));
+  if (on && _pend === 1) { clearTimeout(_tmr); b.className = ""; void b.offsetWidth; _tmr = setTimeout(() => { b.className = "on"; }, 120); }
+  if (!on && _pend === 0) { clearTimeout(_tmr); b.className = "fim"; }
+}
 async function api(acao, dados = {}) {
-  let r, j = null;
+  let r, j = null; indicarCarga(true);
   try {
     r = await fetch("/api/ferramenta", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ acao, ...dados }) });
     j = await r.json();
   } catch (_) { throw new Error("Não foi possível conectar. Tente novamente."); }
+  finally { indicarCarga(false); }
   if (!r.ok) throw new Error((j && j.erro) || "Não foi possível concluir a operação.");
   return j;
 }
@@ -42,7 +51,7 @@ async function comBotao(btn, fn) {
 function hashSeed(txt) { let h = 2166136261; for (let i = 0; i < txt.length; i++) { h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) % 2147483647; }
 let saltBase = "";
 function baseSidebar() {
-  const setor = $("setor").value, linhas = parseInt($("linhas").value, 10), inicio = $("inicio").value, fim = $("fim").value;
+  const setor = $("setor").value, linhas = linhasVal(), inicio = $("inicio").value, fim = $("fim").value;
   if (!setor) throw new Error("Escolha um setor na barra lateral para começar.");
   if (!(linhas >= 100 && linhas <= 100000)) throw new Error(t("e_lin"));
   if (!inicio || !fim || inicio >= fim) throw new Error(t("e_per"));
