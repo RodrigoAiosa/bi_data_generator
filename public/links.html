@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Gerador de links por grupo · BI Data Generator</title>
+<style>
+:root{--bg:#121212;--card:#1c1c1c;--borda:#333;--txt:#f1f1f1;--mut:#a0a0a0;--ac:#F2C811}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:1rem}
+main{max-width:980px;margin:0 auto}h1{font-size:1.4rem;margin:.2rem 0 .3rem}.mut{color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:1rem;margin:1rem 0}
+label{display:block;margin:.7rem 0 .25rem;font-size:.9rem;color:var(--mut)}
+input,select,textarea{width:100%;background:#111;color:var(--txt);border:1px solid var(--borda);border-radius:8px;padding:.6rem .7rem;font:inherit}
+textarea{min-height:110px;resize:vertical}.dois{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}@media(max-width:700px){.dois{grid-template-columns:1fr}}
+button,.btn{background:#2a2a2a;color:var(--txt);border:1px solid var(--borda);border-radius:8px;padding:.6rem 1rem;font:inherit;cursor:pointer;text-decoration:none;display:inline-block;min-height:44px}
+.primario{background:var(--ac);color:#000;border-color:var(--ac);font-weight:700}
+.linha{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem}
+.item{border-top:1px solid var(--borda);padding:.9rem 0}.item:first-child{border-top:0}
+.item h3{margin:.1rem 0;font-size:1rem}.item small{color:var(--mut)}code{color:var(--ac);word-break:break-all}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+  <h1>🔗 Gerador de links por grupo</h1>
+  <p class="mut">Cole os nomes dos seus grupos (um por linha). A página cria <b>um link para cada grupo</b>, com a etiqueta feita a partir do nome. Assim, nas métricas você vê qual grupo trouxe cada visita.</p>
+
+  <section class="card">
+    <div class="dois">
+      <div><label for="plat">Plataforma</label>
+        <select id="plat"><option value="whatsapp">WhatsApp</option><option value="linkedin">LinkedIn</option></select></div>
+      <div><label for="prefixo">Prefixo da campanha (opcional)</label><input id="prefixo" value="grupo-" autocomplete="off"></div>
+    </div>
+    <label for="base">Endereço do site</label><input id="base" autocomplete="off">
+    <label for="grupos">Nomes dos grupos (um por linha)</label>
+    <textarea id="grupos" placeholder="Dicas>Python|SQL|Power BI|Excel (B.I.)&#10;Power BI Brasil&#10;Dados e BI"></textarea>
+    <label for="msg">Mensagem (use <code>{link}</code> onde o link deve entrar)</label>
+    <textarea id="msg"></textarea>
+    <div class="linha"><button id="gerar" class="primario" type="button">Gerar links</button><button id="csv" type="button" hidden>⬇️ Baixar lista (CSV)</button></div>
+  </section>
+
+  <section id="saida"></section>
+
+  <p class="mut"><small>Dica: cada pessoa que clicar no link do grupo é contada naquele grupo. Se alguém encaminhar a mensagem para outro grupo, a visita continua contando para o grupo original do link. As etiquetas ficam visíveis na barra de endereço, então use nomes que você aceite que os membros vejam.</small></p>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const MSG = "Pessoal, quem estuda Power BI: criei uma ferramenta gratuita que gera bases de dados prontas pra praticar 📊\n\n✅ 200 setores de negócio\n✅ até 100 mil linhas\n✅ modelo estrela + medidas DAX + projeto .pbip\n\nÉ só escolher o setor, gerar e baixar o .zip. Sem instalar nada.\n\n👉 {link}";
+const guardar = (k, v) => { try { localStorage.setItem("lk_" + k, v); } catch (_) {} };
+const ler = (k) => { try { return localStorage.getItem("lk_" + k); } catch (_) { return null; } };
+const slug = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let lista = [];
+
+$("base").value = ler("base") || location.origin;
+$("grupos").value = ler("grupos") || "";
+$("msg").value = ler("msg") || MSG;
+$("prefixo").value = ler("prefixo") ?? "grupo-";
+
+function link(base, plat, camp) {
+  const u = new URL(base.replace(/\/+$/, "") + "/");
+  u.searchParams.set("utm_source", plat);
+  u.searchParams.set("utm_campaign", camp);
+  return u.toString();
+}
+async function copiar(txt, btn) {
+  try { await navigator.clipboard.writeText(txt); } catch (_) { const t = document.createElement("textarea"); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); }
+  const o = btn.textContent; btn.textContent = "✅ Copiado"; setTimeout(() => (btn.textContent = o), 1400);
+}
+function gerar() {
+  const plat = $("plat").value, base = $("base").value.trim(), pref = $("prefixo").value.trim(), msg = $("msg").value;
+  ["base", "grupos", "msg", "prefixo"].forEach((k) => guardar(k, $(k).value));
+  const nomes = [...new Set($("grupos").value.split("\n").map((s) => s.trim()).filter(Boolean))];
+  const usados = new Map();
+  lista = nomes.map((nome) => {
+    let camp = (pref + slug(nome)).slice(0, 80) || "grupo"; const n = (usados.get(camp) || 0) + 1; usados.set(camp, n); if (n > 1) camp += "-" + n;
+    const url = link(base, plat, camp);
+    return { nome, camp, url, texto: msg.includes("{link}") ? msg.replaceAll("{link}", url) : msg + "\n" + url };
+  });
+  $("csv").hidden = !lista.length;
+  $("saida").innerHTML = lista.length ? `<div class="card">${lista.map((x, i) => `
+    <div class="item"><h3>${esc(x.nome)}</h3><small>campanha: <code>${esc(x.camp)}</code></small>
+      <input readonly value="${esc(x.url)}" aria-label="Link do grupo ${esc(x.nome)}" style="margin-top:.4rem">
+      <div class="linha"><button type="button" data-a="l" data-i="${i}">Copiar link</button><button type="button" class="primario" data-a="m" data-i="${i}">Copiar mensagem</button>
+      ${plat === "whatsapp" ? `<a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(x.texto)}">Abrir no WhatsApp</a>` : ""}</div></div>`).join("")}</div>` : `<p class="mut">Informe ao menos um grupo.</p>`;
+}
+$("gerar").addEventListener("click", gerar);
+$("saida").addEventListener("click", (e) => { const b = e.target.closest("button[data-a]"); if (!b) return; const x = lista[+b.dataset.i]; copiar(b.dataset.a === "l" ? x.url : x.texto, b); });
+$("csv").addEventListener("click", () => {
+  const csv = "﻿grupo;campanha;link\n" + lista.map((x) => [x.nome, x.camp, x.url].map((v) => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "links_por_grupo.csv"; a.click();
+});
+if ($("grupos").value) gerar();
+</script>
+</body>
+</html>

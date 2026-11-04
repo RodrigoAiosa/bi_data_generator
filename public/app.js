@@ -127,6 +127,11 @@ function origemAcesso() {
   } catch (_) {}
   return "direto";
 }
+/* Campanha (grupo/post): utm_campaign normalizado */
+function campanhaAcesso() {
+  const c = (new URLSearchParams(location.search).get("utm_campaign") || "").trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+  return c || null;
+}
 const ssGet = (k) => { try { return sessionStorage.getItem(k); } catch (_) { return null; } };
 const ssSet = (k, v) => { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (_) {} };
 
@@ -140,7 +145,7 @@ function iniciarSessao() {
     ssSet("sessaoId", estado.sessao); ssSet("sessaoInicio", String(estado.inicio));
     const [d, n] = dispositivo();
     sb("logs_uso", { id_registro: estado.idRegistro, id_sessao: estado.sessao, tipo_evento: "sessao_inicio", acao: "abriu_site",
-      origem: origemAcesso(), dispositivo: d, navegador: n, idioma_interface: estado.lang }, { Prefer: "return=minimal" }).catch(() => {});
+      origem: origemAcesso(), campanha: campanhaAcesso(), dispositivo: d, navegador: n, idioma_interface: estado.lang }, { Prefer: "return=minimal" }).catch(() => {});
     const ref = new URLSearchParams(location.search).get("ref");
     if (ref) {
       rpc("registrar_clique_compartilhamento", { p_codigo: ref, p_id_sessao: estado.sessao });
