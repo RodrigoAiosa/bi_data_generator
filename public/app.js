@@ -93,7 +93,7 @@ async function sb(caminho, corpo, extra = {}) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${caminho}`, {
     method: "POST",
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", ...extra },
-    body: JSON.stringify(corpo),
+    body: JSON.stringify(corpo), keepalive: true,
   });
   return r;
 }
@@ -115,17 +115,53 @@ function log(acao, extra = {}) {
   sb("logs_uso", p, { Prefer: "return=minimal" }).catch(() => {});
 }
 
+/* Origem do acesso: utm_source > indicação (?ref=) > domínio de referência > direto */
+function origemAcesso() {
+  const q = new URLSearchParams(location.search);
+  const utm = (q.get("utm_source") || "").trim().toLowerCase().slice(0, 40);
+  if (utm) return "utm:" + utm;
+  if (q.get("ref")) return "indicação";
+  try {
+    const h = new URL(document.referrer).hostname.replace(/^www\./, "");
+    if (h && h !== location.hostname.replace(/^www\./, "")) return h.slice(0, 60);
+  } catch (_) {}
+  return "direto";
+}
+const ssGet = (k) => { try { return sessionStorage.getItem(k); } catch (_) { return null; } };
+const ssSet = (k, v) => { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (_) {} };
+
+/* A sessão começa na abertura do site (antes do cadastro) e segue após o login */
 function iniciarSessao() {
-  estado.sessao = Math.random().toString(16).slice(2, 10);
-  estado.inicio = Date.now();
-  const [d, n] = dispositivo();
-  sb("logs_uso", { id_registro: estado.idRegistro, id_sessao: estado.sessao, tipo_evento: "sessao_inicio",
-    dispositivo: d, navegador: n, idioma_interface: estado.lang }, { Prefer: "return=minimal" }).catch(() => {});
-  const ref = new URLSearchParams(location.search).get("ref");
-  if (ref) {
-    rpc("registrar_clique_compartilhamento", { p_codigo: ref, p_id_sessao: estado.sessao });
-    history.replaceState(null, "", location.pathname);
+  if (estado.sessao) return;
+  const existente = ssGet("sessaoId");
+  estado.sessao = existente || Math.random().toString(16).slice(2, 10);
+  estado.inicio = Number(ssGet("sessaoInicio")) || Date.now();
+  if (!existente) {
+    ssSet("sessaoId", estado.sessao); ssSet("sessaoInicio", String(estado.inicio));
+    const [d, n] = dispositivo();
+    sb("logs_uso", { id_registro: estado.idRegistro, id_sessao: estado.sessao, tipo_evento: "sessao_inicio", acao: "abriu_site",
+      origem: origemAcesso(), dispositivo: d, navegador: n, idioma_interface: estado.lang }, { Prefer: "return=minimal" }).catch(() => {});
+    const ref = new URLSearchParams(location.search).get("ref");
+    if (ref) {
+      rpc("registrar_clique_compartilhamento", { p_codigo: ref, p_id_sessao: estado.sessao });
+      history.replaceState(null, "", location.pathname);
+    }
   }
+  iniciarBatimento();
+}
+
+/* Batimento: a cada 60 s com a aba visível (máx. 120) e ao sair/ocultar a aba — mede o tempo real de uso */
+let _batidas = 0, _timerBat = null;
+function batimento(final = false) {
+  if (!estado.sessao || _batidas >= 120) return;
+  _batidas++;
+  sb("logs_uso", { id_registro: estado.idRegistro, id_sessao: estado.sessao, tipo_evento: "batimento", acao: final ? "saiu_aba" : "batimento",
+    duracao_segundos: Math.round((Date.now() - estado.inicio) / 1000) }, { Prefer: "return=minimal" }).catch(() => {});
+}
+function iniciarBatimento() {
+  if (_timerBat) return;
+  _timerBat = setInterval(() => { if (document.visibilityState === "visible") batimento(); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") batimento(true); });
 }
 
 /* ── i18n ──────────────────────────────────────────────────────────────── */
@@ -209,7 +245,7 @@ async function abrirApp() {
 
 function sair() {
   guardar("email", null); guardar("idRegistro", null);
-  estado.email = ""; estado.idRegistro = null; estado.sessao = "";
+  estado.email = ""; estado.idRegistro = null; estado.sessao = ""; ssSet("sessaoId", null); ssSet("sessaoInicio", null);
   $("app").hidden = true; $("gate").hidden = false;
 }
 
@@ -391,6 +427,6 @@ function iniciar() {
 
   const email = ler("email");
   if (email) { estado.email = email; const id = ler("idRegistro"); estado.idRegistro = id ? Number(id) : null; abrirApp(); }
-  else { $("gate").hidden = false; aplicarIdioma(); if (new URLSearchParams(location.search).get("ref")) iniciarSessao(); }
+  else { $("gate").hidden = false; aplicarIdioma(); iniciarSessao(); }
 }
 document.addEventListener("DOMContentLoaded", iniciar);
