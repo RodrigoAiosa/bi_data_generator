@@ -35,8 +35,8 @@ button,.btn{background:#2a2a2a;color:var(--txt);border:1px solid var(--borda);bo
     <label for="base">Endereço do site</label><input id="base" autocomplete="off">
     <label for="grupos">Nomes dos grupos (um por linha)</label>
     <textarea id="grupos" placeholder="Dicas>Python|SQL|Power BI|Excel (B.I.)&#10;Power BI Brasil&#10;Dados e BI"></textarea>
-    <label for="msg">Mensagem (use <code>{link}</code> onde o link deve entrar)</label>
-    <textarea id="msg"></textarea>
+    <label for="msg">Modelos de mensagem — separe um do outro com uma linha contendo <code>---</code>. Use <code>{link}</code> (obrigatório) e <code>{grupo}</code> (nome do grupo). Os modelos são distribuídos em rodízio: cada grupo recebe um texto diferente.</label>
+    <textarea id="msg" style="min-height:260px"></textarea>
     <div class="linha"><button id="gerar" class="primario" type="button">Gerar links</button><button id="csv" type="button" hidden>⬇️ Baixar lista (CSV)</button></div>
   </section>
 
@@ -47,7 +47,12 @@ button,.btn{background:#2a2a2a;color:var(--txt);border:1px solid var(--borda);bo
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const MSG = "Pessoal, quem estuda Power BI: criei uma ferramenta gratuita que gera bases de dados prontas pra praticar 📊\n\n✅ 200 setores de negócio\n✅ até 100 mil linhas\n✅ modelo estrela + medidas DAX + projeto .pbip\n\nÉ só escolher o setor, gerar e baixar o .zip. Sem instalar nada.\n\n👉 {link}";
+const MODELOS = ["Pessoal, quem estuda Power BI: criei uma ferramenta gratuita que gera bases de dados prontas pra praticar 📊\n\n✅ 200 setores de negócio\n✅ até 100 mil linhas\n✅ modelo estrela + medidas DAX + projeto .pbip\n\nÉ só escolher o setor, gerar e baixar o .zip. Sem instalar nada.\n\n👉 {link}",
+  "Cansou de praticar Power BI com planilha de 20 linhas? 😅\n\nCriei o *BI Data Generator*: você escolhe um setor (varejo, saúde, bancos, logística…) e recebe em segundos uma base completa, com medidas DAX e um case de negócio pra resolver.\n\nÉ gratuito 👇\n{link}\n\nSe testar, me conta o que achou!",
+  "Bom dia, pessoal do {grupo}! ☀️\n\nCompartilhando uma ferramenta que fiz pra treinar Power BI, DAX e SQL com dados realistas:\n\n📊 *BI Data Generator*\n• 200 setores de negócio\n• .pbip pronto pra abrir no Power BI Desktop\n• simulado PL-300, auditor de modelo, DAX Sandbox e mais\n\nGrátis, direto no navegador:\n{link}\n\nSe for útil, encaminha pra quem está estudando dados! 🙌",
+  "Quem aqui já travou procurando uma base boa pra montar um dashboard? 🤔\n\nFiz uma ferramenta grátis que gera a base pra você: tabelas fato e dimensão, até 100 mil linhas, em 200 setores diferentes. Também gera o SQL (SQL Server, PostgreSQL e MySQL).\n\nTesta aí e diz o que achou: {link}",
+  "Dica pra quem está se preparando pro PL-300 e pra quem quer treinar DAX: o BI Data Generator tem simulado, formatador de DAX e M e um sandbox pra rodar medidas nos dados gerados. 🎓\n\nÉ gratuito e abre direto no navegador 👉 {link}"];
+const MSG = MODELOS.join("\n---\n");
 const guardar = (k, v) => { try { localStorage.setItem("lk_" + k, v); } catch (_) {} };
 const ler = (k) => { try { return localStorage.getItem("lk_" + k); } catch (_) { return null; } };
 const slug = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
@@ -56,7 +61,7 @@ let lista = [];
 
 $("base").value = ler("base") || location.origin;
 $("grupos").value = ler("grupos") || "";
-$("msg").value = ler("msg") || MSG;
+$("msg").value = ler("msgs") || MSG;
 $("prefixo").value = ler("prefixo") ?? "grupo-";
 
 function link(base, plat, camp) {
@@ -70,11 +75,12 @@ async function copiar(txt, btn) {
   const o = btn.textContent; btn.textContent = "✅ Copiado"; setTimeout(() => (btn.textContent = o), 1400);
 }
 function gerar() {
-  const plat = $("plat").value, base = $("base").value.trim(), pref = $("prefixo").value.trim(), msg = $("msg").value;
-  ["base", "grupos", "msg", "prefixo"].forEach((k) => guardar(k, $(k).value));
+  const plat = $("plat").value, base = $("base").value.trim(), pref = $("prefixo").value.trim(), modelos = $("msg").value.split(/\n\s*---\s*\n/).map((m) => m.trim()).filter(Boolean);
+  ["base", "grupos", "prefixo"].forEach((k) => guardar(k, $(k).value)); guardar("msgs", $("msg").value);
   const nomes = [...new Set($("grupos").value.split("\n").map((s) => s.trim()).filter(Boolean))];
-  const usados = new Map();
-  lista = nomes.map((nome) => {
+  const usados = new Map(); if (!modelos.length) modelos.push(MODELOS[0]);
+  lista = nomes.map((nome, idx) => {
+    const msg = modelos[idx % modelos.length].replaceAll("{grupo}", nome);
     let camp = (pref + slug(nome)).slice(0, 80) || "grupo"; const n = (usados.get(camp) || 0) + 1; usados.set(camp, n); if (n > 1) camp += "-" + n;
     const url = link(base, plat, camp);
     return { nome, camp, url, texto: msg.includes("{link}") ? msg.replaceAll("{link}", url) : msg + "\n" + url };
@@ -83,11 +89,15 @@ function gerar() {
   $("saida").innerHTML = lista.length ? `<div class="card">${lista.map((x, i) => `
     <div class="item"><h3>${esc(x.nome)}</h3><small>campanha: <code>${esc(x.camp)}</code></small>
       <input readonly value="${esc(x.url)}" aria-label="Link do grupo ${esc(x.nome)}" style="margin-top:.4rem">
+      <label for="t${i}">Mensagem deste grupo (pode editar)</label><textarea id="t${i}" data-t="${i}" style="min-height:150px">${esc(x.texto)}</textarea>
       <div class="linha"><button type="button" data-a="l" data-i="${i}">Copiar link</button><button type="button" class="primario" data-a="m" data-i="${i}">Copiar mensagem</button>
-      ${plat === "whatsapp" ? `<a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(x.texto)}">Abrir no WhatsApp</a>` : ""}</div></div>`).join("")}</div>` : `<p class="mut">Informe ao menos um grupo.</p>`;
+      ${plat === "whatsapp" ? `<button type="button" data-a="w" data-i="${i}">Abrir no WhatsApp</button>` : ""}</div></div>`).join("")}</div>` : `<p class="mut">Informe ao menos um grupo.</p>`;
 }
 $("gerar").addEventListener("click", gerar);
-$("saida").addEventListener("click", (e) => { const b = e.target.closest("button[data-a]"); if (!b) return; const x = lista[+b.dataset.i]; copiar(b.dataset.a === "l" ? x.url : x.texto, b); });
+$("saida").addEventListener("click", (e) => { const b = e.target.closest("button[data-a]"); if (!b) return; const x = lista[+b.dataset.i];
+  if (b.dataset.a === "w") { window.open("https://wa.me/?text=" + encodeURIComponent(x.texto), "_blank", "noopener"); return; }
+  copiar(b.dataset.a === "l" ? x.url : x.texto, b); });
+$("saida").addEventListener("input", (e) => { const t = e.target.closest("textarea[data-t]"); if (t) lista[+t.dataset.t].texto = t.value; });
 $("csv").addEventListener("click", () => {
   const csv = "\ufeffgrupo;campanha;link;mensagem\r\n" + lista.map((x) => [x.nome, x.camp, x.url, x.texto].map((v) => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\r\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "links_por_grupo.csv"; a.click();
