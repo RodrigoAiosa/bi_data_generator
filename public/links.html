@@ -56,6 +56,7 @@ const MSG = MODELOS.join("\n---\n");
 const guardar = (k, v) => { try { localStorage.setItem("lk_" + k, v); } catch (_) {} };
 const ler = (k) => { try { return localStorage.getItem("lk_" + k); } catch (_) { return null; } };
 const slug = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+const rotulo = (n) => { const m = n.match(/linkedin\.com\/groups\/(\d+)/i); return m ? "grupo " + m[1] : n; };
 const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 let lista = [];
 
@@ -75,13 +76,13 @@ async function copiar(txt, btn) {
   const o = btn.textContent; btn.textContent = "✅ Copiado"; setTimeout(() => (btn.textContent = o), 1400);
 }
 function gerar() {
-  const plat = $("plat").value, base = $("base").value.trim(), pref = $("prefixo").value.trim(), modelos = $("msg").value.split(/\n\s*---\s*\n/).map((m) => m.trim()).filter(Boolean);
+  const plat = $("plat").value, base = $("base").value.trim(), pref = slug($("prefixo").value) ? slug($("prefixo").value) + "-" : "", modelos = $("msg").value.split(/\n\s*---\s*\n/).map((m) => m.trim()).filter(Boolean);
   ["base", "grupos", "prefixo"].forEach((k) => guardar(k, $(k).value)); guardar("msgs", $("msg").value);
   const nomes = [...new Set($("grupos").value.split("\n").map((s) => s.trim()).filter(Boolean))];
   const usados = new Map(); if (!modelos.length) modelos.push(MODELOS[0]);
   lista = nomes.map((nome, idx) => {
     const msg = modelos[idx % modelos.length].replaceAll("{grupo}", nome);
-    let camp = (pref + slug(nome)).slice(0, 80) || "grupo"; const n = (usados.get(camp) || 0) + 1; usados.set(camp, n); if (n > 1) camp += "-" + n;
+    let camp = (pref + slug(rotulo(nome))).slice(0, 80) || "grupo"; const n = (usados.get(camp) || 0) + 1; usados.set(camp, n); if (n > 1) camp += "-" + n;
     const url = link(base, plat, camp);
     return { nome, camp, url, texto: msg.includes("{link}") ? msg.replaceAll("{link}", url) : msg + "\n" + url };
   });
