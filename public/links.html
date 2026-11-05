@@ -89,7 +89,7 @@ function gerar() {
 $("gerar").addEventListener("click", gerar);
 $("saida").addEventListener("click", (e) => { const b = e.target.closest("button[data-a]"); if (!b) return; const x = lista[+b.dataset.i]; copiar(b.dataset.a === "l" ? x.url : x.texto, b); });
 $("csv").addEventListener("click", () => {
-  const csv = "﻿grupo;campanha;link\n" + lista.map((x) => [x.nome, x.camp, x.url].map((v) => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\n");
+  const csv = "\ufeffgrupo;campanha;link;mensagem\r\n" + lista.map((x) => [x.nome, x.camp, x.url, x.texto].map((v) => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\r\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "links_por_grupo.csv"; a.click();
 });
 if ($("grupos").value) gerar();
