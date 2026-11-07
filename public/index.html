@@ -16,24 +16,26 @@
       <button class="tab ativo" data-modo="novo" data-i18n="tab_novo">Cadastrar</button>
       <button class="tab" data-modo="existente" data-i18n="tab_existente">Já sou cadastrado</button>
     </div>
-    <form id="form-novo" class="form">
-      <label><span data-i18n="f_nome">Nome completo</span><input name="nome" required minlength="3" autocomplete="name"></label>
-      <label><span data-i18n="f_sexo">Sexo</span>
-        <select name="sexo" required><option value="">—</option><option>Feminino</option><option>Masculino</option><option>Outro</option><option>Prefiro não informar</option></select></label>
-      <label><span>E-mail</span><input name="email" type="email" required autocomplete="email" maxlength="254"></label>
-      <label><span data-i18n="f_cel">Celular (com DDD)</span><input name="celular" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" required maxlength="15" autocomplete="tel-national" pattern="\(\d{2}\) 9\d{4}-\d{4}"></label>
+    <form id="form-novo" class="form" novalidate>
+      <p class="leg-obrig muted"><i class="ast" aria-hidden="true">*</i> <span data-i18n="leg_obrig">obrigatório</span></p>
+      <label><span class="rot"><b data-i18n="f_nome">Nome completo</b><i class="ast" aria-hidden="true"> *</i></span><input name="nome" required minlength="3" maxlength="120" autocomplete="name" aria-describedby="d-nome"><small class="dica" id="d-nome" aria-live="polite"></small></label>
+      <label><span class="rot"><b>E-mail</b><i class="ast" aria-hidden="true"> *</i></span><input name="email" type="email" required autocomplete="email" maxlength="254" aria-describedby="d-email"><small class="dica" id="d-email" aria-live="polite"></small></label>
+      <label><span class="rot"><b data-i18n="f_cel">Celular (com DDD)</b><i class="ast" aria-hidden="true"> *</i></span><input name="celular" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" required maxlength="15" autocomplete="tel-national" aria-describedby="d-cel"><small class="dica" id="d-cel" aria-live="polite" data-i18n="d_cel">DDD + 9 dígitos</small></label>
+      <label><span class="rot"><b data-i18n="f_sexo">Sexo</b> <em class="opc" data-i18n="opc">(opcional)</em></span>
+        <select name="sexo"><option value="">—</option><option>Feminino</option><option>Masculino</option><option>Outro</option><option>Prefiro não informar</option></select></label>
       <div class="linha2">
-        <label><span data-i18n="f_uf">Estado</span><select name="estado" required></select></label>
-        <label><span data-i18n="f_cidade">Cidade</span><select name="cidade" id="sel-cidade" required disabled></select></label>
+        <label><span class="rot"><b data-i18n="f_uf">Estado</b> <em class="opc" data-i18n="opc">(opcional)</em></span><select name="estado"></select></label>
+        <label><span class="rot"><b data-i18n="f_cidade">Cidade</b> <em class="opc" data-i18n="opc">(opcional)</em></span><select name="cidade" id="sel-cidade" disabled></select></label>
       </div>
-      <button class="btn primario" type="submit" data-i18n="btn_cadastrar">Cadastrar e entrar</button>
+      <button class="btn primario" id="btn-cadastrar" type="submit" data-i18n="btn_cadastrar">Cadastrar e entrar</button>
+      <p class="confianca" data-i18n="confianca">🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.</p>
     </form>
     <form id="form-existente" class="form" hidden>
       <label><span>E-mail</span><input name="email" type="email" required autocomplete="email" maxlength="254"></label>
       <button class="btn primario" type="submit" data-i18n="btn_entrar">Entrar</button>
     </form>
     <p id="gate-msg" class="msg" role="alert"></p>
-    <a class="btn" id="gate-pptx" href="/BI_Data_Generator_Apresentacao.pptx" download data-i18n="pptx">📊 Apresentação (.pptx)</a>
+    <a class="gate-pptx-link" id="gate-pptx" href="/BI_Data_Generator_Apresentacao.pptx" download data-i18n="pptx">📊 Apresentação (.pptx)</a>
     <button id="gate-lang" class="link" type="button">English</button>
   </div>
 </div>

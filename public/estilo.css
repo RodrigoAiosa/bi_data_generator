@@ -83,7 +83,7 @@ input[type=file]{padding:.4rem}
 .hero-stats{display:flex;gap:1.4rem;flex-wrap:wrap;margin:.2rem 0 .8rem}.hero-stats b{color:var(--ac);font-size:1.3rem}
 .lateral .btn{width:100%}.lateral pre{max-height:240px;overflow:auto;font-size:.72rem;white-space:pre-wrap}
 #sql-out{margin-top:.6rem}
-#gate-pptx{display:block;text-align:center;margin-top:.8rem;text-decoration:none}
+#gate-pptx{display:block;text-align:center;margin-top:1rem}
 
 /* Usabilidade: Fitts / Hick / Miller / Doherty / Estética */
 #btn-gerar.fixo{position:sticky;bottom:.6rem;min-height:52px;font-size:1.05rem;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.55);z-index:3}
@@ -109,3 +109,14 @@ input.invalido,select.invalido{border-color:#ff6b6b !important;box-shadow:0 0 0 
 .convite h2{margin:.1rem 0 .4rem}.convite input{width:100%;margin:.6rem 0}
 .convite-acoes{display:flex;gap:.5rem;flex-wrap:wrap}.convite-acoes .btn{flex:1 1 110px;min-height:44px}
 .convite-fechar{width:100%;margin-top:.8rem;min-height:44px}
+
+/* Formulário de cadastro: obrigatório x opcional, validação por campo, confiança */
+.rot b{font-weight:400}.ast{color:var(--erro);font-style:normal}.opc{font-style:normal;font-size:.78rem;opacity:.8}
+.leg-obrig{margin:0 0 .6rem;font-size:.78rem}
+.dica{min-height:1.05rem;font-size:.78rem;color:var(--mut)}.dica.ok{color:var(--ok)}.dica.erro{color:var(--erro)}
+input.valido{border-color:var(--ok)}
+.btn[disabled]{opacity:.7;cursor:progress}
+.confianca{margin:.7rem 0 0;font-size:.78rem;color:var(--mut);text-align:center}
+.gate-pptx-link{display:block;text-align:center;margin-top:1rem;padding:.6rem;color:var(--mut);font-size:.85rem;text-decoration:underline}
+.gate-pptx-link:hover{color:var(--txt)}
+@media(max-width:480px){.linha2{grid-template-columns:1fr}}

@@ -23,7 +23,7 @@ const TXT = {
     prox_t: "Próximos passos", prox_1: "Extraia o .zip em uma pasta.", prox_2: "Abra PowerBI/*.pbip no Power BI Desktop.", prox_3: "Teste as medidas DAX e tente resolver o case de negócio.",
     gate_sub: "Cadastre-se gratuitamente para gerar bases de dados para Power BI.",
     tab_novo: "Cadastrar", tab_existente: "Já sou cadastrado",
-    f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade", c_escolha_uf: "Selecione o estado primeiro", c_carregando: "Carregando…", c_escolha: "Selecione a cidade", c_erro: "Não foi possível carregar as cidades",
+    leg_obrig: "obrigatório", opc: "(opcional)", d_cel: "DDD + 9 dígitos", d_ok: "✓ Tudo certo", e_nome: "Informe nome e sobrenome.", confianca: "🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.", cadastrando: "Cadastrando…", f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade", c_escolha_uf: "Selecione o estado primeiro", c_carregando: "Carregando…", c_escolha: "Selecione a cidade", c_erro: "Não foi possível carregar as cidades",
     btn_cadastrar: "Cadastrar e entrar", btn_entrar: "Entrar", sair: "Sair",
     cfg: "⚙️ Configurações", busca: "Buscar setor", setor: "Setor", linhas: "Linhas na tabela fato",
     ini: "Data inicial", fim: "Data final", fiscal: "Início do ano fiscal",
@@ -56,7 +56,7 @@ const TXT = {
     prox_t: "Next steps", prox_1: "Unzip the file into a folder.", prox_2: "Open PowerBI/*.pbip in Power BI Desktop.", prox_3: "Try the DAX measures and solve the business case.",
     gate_sub: "Sign up for free to generate datasets for Power BI.",
     tab_novo: "Sign up", tab_existente: "I'm already registered",
-    f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City", c_escolha_uf: "Select the state first", c_carregando: "Loading…", c_escolha: "Select the city", c_erro: "Could not load the cities",
+    leg_obrig: "required", opc: "(optional)", d_cel: "Area code + 9 digits", d_ok: "✓ Looks good", e_nome: "Enter first and last name.", confianca: "🔒 We use your data only to identify your access and improve the tool.", cadastrando: "Signing up…", f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City", c_escolha_uf: "Select the state first", c_carregando: "Loading…", c_escolha: "Select the city", c_erro: "Could not load the cities",
     btn_cadastrar: "Sign up and enter", btn_entrar: "Enter", sair: "Sign out",
     cfg: "⚙️ Settings", busca: "Search sector", setor: "Sector", linhas: "Fact table rows",
     ini: "Start date", fim: "End date", fiscal: "Fiscal year start",
@@ -202,6 +202,17 @@ function trocarIdioma() { estado.lang = estado.lang === "pt" ? "en" : "pt"; guar
 const RE_EMAIL = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]{1,64}(?<!\.)@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
 // Celular BR: DDD válido + 9 + 8 dígitos (11 dígitos), sem sequências repetidas
 const RE_CEL = /^(?:1[1-9]|2[12478]|3[1-578]|4[1-9]|5[1345]|6[1-9]|7[1345779]|8[1-9]|9[1-9])9\d{8}$/;
+let CAMPOS = [];
+const nomeOk = (n) => { const v = (n || "").trim(); return v.length >= 5 && v.length <= 120 && /^\p{L}[\p{L}'’.\- ]*\s+\p{L}[\p{L}'’.\- ]*$/u.test(v); };
+function validarCampo(c) {
+  const vazio = !c.el.value.trim(), bom = !vazio && c.ok(c.el.value), d = $(c.dica);
+  c.el.classList.toggle("invalido", !vazio && !bom); c.el.classList.toggle("valido", bom);
+  c.el.setAttribute("aria-invalid", !vazio && !bom ? "true" : "false");
+  c.el.setCustomValidity(vazio ? t(c.el.name === "email" ? "e_email" : c.msg) : bom ? "" : t(c.msg));
+  d.className = "dica" + (bom ? " ok" : !vazio ? " erro" : "");
+  d.textContent = bom ? t("d_ok") : !vazio ? t(c.msg) : (c.base ? t(c.base) : "");
+  return bom;
+}
 const emailOk = (e) => { const v = (e || "").trim(); return v.length <= 254 && RE_EMAIL.test(v); };
 const celOk = (c) => { const d = (c || "").replace(/\D+/g, ""); return RE_CEL.test(d) && !/^(\d)\1+$/.test(d.slice(2)); };
 const soDigitos = (s) => (s || "").replace(/\D+/g, "");
@@ -239,19 +250,24 @@ async function entrarComEmail(email) {
 
 async function cadastrar(f) {
   const d = Object.fromEntries(new FormData(f));
-  if (!emailOk(d.email)) return msgGate(t("e_email"));
-  const cel = soDigitos(d.celular);
-  if (!celOk(cel)) return msgGate(t("e_cel"));
+  CAMPOS.forEach((c) => { c.el.dataset.tocou = "1"; });
+  const ruins = CAMPOS.filter((c) => !validarCampo(c));
+  if (ruins.length) { ruins[0].el.focus(); return msgGate(t(ruins[0].msg)); }
+  const cel = soDigitos(d.celular), mail = d.email.trim().toLowerCase();
+  const btn = $("btn-cadastrar"), txt = btn.textContent;
+  btn.disabled = true; btn.textContent = t("cadastrando"); btn.setAttribute("aria-busy", "true");
+  const livre = () => { btn.disabled = false; btn.textContent = txt; btn.removeAttribute("aria-busy"); };
   let r;
   try {
-    r = await sb("registros", { nome_completo: d.nome.trim(), sexo: d.sexo, email: d.email.trim().toLowerCase(), celular: cel, estado: d.estado, cidade: d.cidade.trim(), codigo_indicacao: lerRef() },
+    r = await sb("registros", { nome_completo: d.nome.trim(), sexo: d.sexo || null, email: mail, celular: cel, estado: d.estado || null, cidade: d.cidade || null, codigo_indicacao: lerRef() },
       { Prefer: "return=minimal" });
-  } catch (_) { return msgGate(t("e_rede")); }
-  if (r.status === 409) return msgGate(t("e_dup"));
-  if (!r.ok) return msgGate(t("e_rede"));
-  const id = await rpc("obter_id_registro", { p_email: d.email.trim().toLowerCase() });
+  } catch (_) { livre(); return msgGate(t("e_rede")); }
+  if (r.status === 409) { livre(); return msgGate(t("e_dup")); }
+  if (!r.ok) { livre(); return msgGate(t("e_rede")); }
+  const id = await rpc("obter_id_registro", { p_email: mail });
   guardar("ref", null);
-  concluirLogin(d.email.trim().toLowerCase(), id, true);
+  livre();
+  concluirLogin(mail, id, true);
 }
 
 function concluirLogin(email, id, novo = false) {
@@ -439,9 +455,16 @@ function iniciar() {
     document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("ativo", x === b));
     $("form-novo").hidden = b.dataset.modo !== "novo"; $("form-existente").hidden = b.dataset.modo === "novo"; msgGate("");
   }));
-  const valida = (el, ok, msg) => { el.setCustomValidity(!el.value || ok(el.value) ? "" : t(msg)); el.classList.toggle("invalido", !!el.value && !ok(el.value)); };
-  document.querySelector('input[name="celular"]').addEventListener("input", (e) => { e.target.value = mascaraCel(e.target.value); valida(e.target, celOk, "e_cel"); });
-  document.querySelectorAll('input[name="email"]').forEach((el) => { el.addEventListener("input", () => valida(el, emailOk, "e_email")); el.addEventListener("blur", () => { el.value = el.value.trim(); valida(el, emailOk, "e_email"); }); });
+  CAMPOS = [
+    { el: document.querySelector('#form-novo input[name="nome"]'), ok: nomeOk, msg: "e_nome", dica: "d-nome", base: "" },
+    { el: document.querySelector('#form-novo input[name="email"]'), ok: emailOk, msg: "e_email", dica: "d-email", base: "" },
+    { el: document.querySelector('#form-novo input[name="celular"]'), ok: celOk, msg: "e_cel", dica: "d-cel", base: "d_cel" },
+  ];
+  CAMPOS.forEach((c) => {
+    c.el.addEventListener("blur", () => { if (c.el.name !== "celular") c.el.value = c.el.value.trim(); c.el.dataset.tocou = "1"; validarCampo(c); });
+    c.el.addEventListener("input", () => { if (c.el.name === "celular") c.el.value = mascaraCel(c.el.value); if (c.el.dataset.tocou) validarCampo(c); else c.el.setCustomValidity(""); });
+  });
+  document.querySelectorAll('#form-existente input[name="email"]').forEach((el) => el.addEventListener("input", () => el.setCustomValidity("")));
   document.querySelector('select[name="estado"]').addEventListener("change", (e) => carregarCidades(e.target.value));
   $("conv-copiar").addEventListener("click", async () => { try { await navigator.clipboard.writeText(textoConvite()); } catch (_) { $("conv-link").select(); document.execCommand("copy"); } $("conv-copiar").textContent = "✅ " + t("copiado"); log("copiou_link"); setTimeout(() => ($("conv-copiar").textContent = t("copiar")), 1500); });
   $("conv-wa").addEventListener("click", () => compartilhar("wa")); $("conv-li").addEventListener("click", () => compartilhar("li")); $("conv-em").addEventListener("click", () => compartilhar("em"));
