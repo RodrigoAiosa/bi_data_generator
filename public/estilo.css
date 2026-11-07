@@ -103,3 +103,9 @@ input[type=file]{padding:.4rem}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .campo-linhas{margin-bottom:.9rem}
 input.invalido,select.invalido{border-color:#ff6b6b !important;box-shadow:0 0 0 1px #ff6b6b}
+
+.convite{background:var(--card,#1c1c1c);color:inherit;border:1px solid var(--borda,#333);border-radius:14px;padding:1.4rem;max-width:520px;width:calc(100% - 2rem)}
+.convite::backdrop{background:rgba(0,0,0,.7)}
+.convite h2{margin:.1rem 0 .4rem}.convite input{width:100%;margin:.6rem 0}
+.convite-acoes{display:flex;gap:.5rem;flex-wrap:wrap}.convite-acoes .btn{flex:1 1 110px;min-height:44px}
+.convite-fechar{width:100%;margin-top:.8rem;min-height:44px}

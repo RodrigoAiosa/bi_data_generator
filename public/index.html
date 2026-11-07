@@ -82,6 +82,7 @@
         <strong data-i18n="indique">🔗 Seu link de indicação</strong>
         <input id="link-ref" readonly>
         <button id="btn-copiar" class="btn pequeno" type="button" data-i18n="copiar">Copiar</button>
+        <small id="ind-resumo" class="muted" hidden></small>
       </div>
     </aside>
     <main class="principal">
@@ -141,5 +142,17 @@
 <script src="/vendor/fflate.js"></script>
 <script src="/app.js"></script>
 <script src="/ferramentas.js"></script>
+<dialog id="dlg-convite" class="convite" aria-labelledby="conv-t">
+  <h2 id="conv-t">🎉 Cadastro concluído!</h2>
+  <p id="conv-p"></p>
+  <input id="conv-link" readonly aria-label="Link de indicação">
+  <div class="convite-acoes">
+    <button id="conv-copiar" class="btn primario" type="button">Copiar</button>
+    <button id="conv-wa" class="btn" type="button">WhatsApp</button>
+    <button id="conv-li" class="btn" type="button">LinkedIn</button>
+    <button id="conv-em" class="btn" type="button">E-mail</button>
+  </div>
+  <button id="conv-ok" class="btn convite-fechar" type="button">Continuar</button>
+</dialog>
 </body>
 </html>

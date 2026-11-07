@@ -28,7 +28,7 @@ const TXT = {
     cfg: "⚙️ Configurações", busca: "Buscar setor", setor: "Setor", linhas: "Linhas na tabela fato",
     ini: "Data inicial", fim: "Data final", fiscal: "Início do ano fiscal",
     anomalia: "Injetar anomalias (causa raiz)", deriva: "Simular deriva temporal",
-    gerar: "Gerar base agora", gerando: "Gerando…", indique: "🔗 Seu link de indicação", copiar: "Copiar", copiado: "Copiado!",
+    gerar: "Gerar base agora", gerando: "Gerando…", indique: "🔗 Seu link de indicação", conv_t: "🎉 Cadastro concluído!", conv_p: "Convide colegas que estudam dados. Este é o seu link pessoal: quando alguém se cadastrar por ele, você vê quantas pessoas indicou.", conv_msg: "Pessoal, uso o BI Data Generator para treinar Power BI, DAX e SQL com bases realistas (200 setores, até 100 mil linhas). É gratuito: ", conv_wa: "WhatsApp", conv_li: "LinkedIn", conv_em: "E-mail", conv_ok: "Continuar", conv_res: (c, n) => `Seu link: ${c} clique(s) · ${n} cadastro(s) por indicação`, copiar: "Copiar", copiado: "Copiado!",
     hero_t: "Bases prontas para Power BI",
     hero_p: "Escolha um setor na barra lateral e clique em “Gerar base agora”. Você recebe um .zip com os CSVs das tabelas fato e dimensão, um projeto Power BI com painel de exemplo, medidas DAX, case de negócio e dicionário de dados.",
     resumo: "Resumo da base gerada", preview: "Preview das tabelas", case: "📖 Seu case de negócio",
@@ -61,7 +61,7 @@ const TXT = {
     cfg: "⚙️ Settings", busca: "Search sector", setor: "Sector", linhas: "Fact table rows",
     ini: "Start date", fim: "End date", fiscal: "Fiscal year start",
     anomalia: "Inject anomalies (root cause)", deriva: "Simulate temporal drift",
-    gerar: "Generate dataset now", gerando: "Generating…", indique: "🔗 Your referral link", copiar: "Copy", copiado: "Copied!",
+    gerar: "Generate dataset now", gerando: "Generating…", indique: "🔗 Your referral link", conv_t: "🎉 You're in!", conv_p: "Invite colleagues who study data. This is your personal link: when someone signs up through it, you can see how many people you referred.", conv_msg: "I use BI Data Generator to practice Power BI, DAX and SQL with realistic datasets (200 sectors, up to 100k rows). It's free: ", conv_wa: "WhatsApp", conv_li: "LinkedIn", conv_em: "E-mail", conv_ok: "Continue", conv_res: (c, n) => `Your link: ${c} click(s) · ${n} signup(s) by referral`, copiar: "Copy", copiado: "Copied!",
     hero_t: "Power BI-ready datasets",
     hero_p: "Pick a sector in the sidebar and click “Generate dataset now”. You get a .zip with the fact and dimension CSVs, a Power BI project with a sample dashboard, DAX measures, a business case and a data dictionary.",
     resumo: "Generated dataset summary", preview: "Table preview", case: "📖 Your business case",
@@ -136,11 +136,21 @@ const ssGet = (k) => { try { return sessionStorage.getItem(k); } catch (_) { ret
 const ssSet = (k, v) => { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (_) {} };
 
 /* A sessão começa na abertura do site (antes do cadastro) e segue após o login */
+const REF_TTL = 30 * 864e5;
+function guardarRef() {
+  const ref = (new URLSearchParams(location.search).get("ref") || "").trim().toLowerCase();
+  if (/^[a-z0-9]{6,32}$/.test(ref)) guardar("ref", JSON.stringify({ c: ref, t: Date.now() }));
+}
+function lerRef() {
+  try { const o = JSON.parse(ler("ref") || "null"); if (o && /^[a-z0-9]{6,32}$/.test(o.c) && Date.now() - o.t < REF_TTL) return o.c; } catch (_) {}
+  return null;
+}
 function iniciarSessao() {
   if (estado.sessao) return;
   const existente = ssGet("sessaoId");
   estado.sessao = existente || Math.random().toString(16).slice(2, 10);
   estado.inicio = Number(ssGet("sessaoInicio")) || Date.now();
+  guardarRef();
   if (!existente) {
     ssSet("sessaoId", estado.sessao); ssSet("sessaoInicio", String(estado.inicio));
     const [d, n] = dispositivo();
@@ -173,6 +183,8 @@ function iniciarBatimento() {
 function aplicarIdioma() {
   document.documentElement.lang = estado.lang === "en" ? "en" : "pt-BR";
   document.querySelectorAll("[data-i18n]").forEach((el) => { const v = TXT[estado.lang][el.dataset.i18n]; if (typeof v === "string") el.textContent = v; });
+  [["conv-t", "conv_t"], ["conv-p", "conv_p"], ["conv-wa", "conv_wa"], ["conv-li", "conv_li"], ["conv-em", "conv_em"], ["conv-ok", "conv_ok"]].forEach(([i, k]) => { const el = $(i); if (el) el.textContent = t(k); });
+  const cc = $("conv-copiar"); if (cc) cc.textContent = t("copiar");
   $("btn-lang").textContent = estado.lang === "pt" ? "EN" : "PT";
   $("gate-lang").textContent = estado.lang === "pt" ? "English" : "Português";
   const st_ = $("sql-tipo"), at = st_.value || "ddl";
@@ -232,30 +244,53 @@ async function cadastrar(f) {
   if (!celOk(cel)) return msgGate(t("e_cel"));
   let r;
   try {
-    r = await sb("registros", { nome_completo: d.nome.trim(), sexo: d.sexo, email: d.email.trim().toLowerCase(), celular: cel, estado: d.estado, cidade: d.cidade.trim() },
+    r = await sb("registros", { nome_completo: d.nome.trim(), sexo: d.sexo, email: d.email.trim().toLowerCase(), celular: cel, estado: d.estado, cidade: d.cidade.trim(), codigo_indicacao: lerRef() },
       { Prefer: "return=minimal" });
   } catch (_) { return msgGate(t("e_rede")); }
   if (r.status === 409) return msgGate(t("e_dup"));
   if (!r.ok) return msgGate(t("e_rede"));
   const id = await rpc("obter_id_registro", { p_email: d.email.trim().toLowerCase() });
-  concluirLogin(d.email.trim().toLowerCase(), id);
+  guardar("ref", null);
+  concluirLogin(d.email.trim().toLowerCase(), id, true);
 }
 
-function concluirLogin(email, id) {
+function concluirLogin(email, id, novo = false) {
   estado.email = email; estado.idRegistro = id;
   guardar("email", email); guardar("idRegistro", id == null ? null : String(id));
-  abrirApp();
+  abrirApp(novo);
 }
 
-async function abrirApp() {
+async function abrirApp(novo = false) {
   $("gate").hidden = true; $("app").hidden = false;
   aplicarIdioma();
   if (!estado.sessao) iniciarSessao();
   if (!estado.setores.length) await carregarSetores();
   if (estado.idRegistro) {
     const cod = await rpc("criar_link_compartilhamento", { p_id_registro: Number(estado.idRegistro) });
-    if (typeof cod === "string" && cod) { $("link-ref").value = `${location.origin}/?ref=${cod}`; $("indicacao").hidden = false; }
+    if (typeof cod === "string" && cod) { $("link-ref").value = `${location.origin}/?ref=${cod}`; $("indicacao").hidden = false; if (novo) abrirConvite(); resumoIndicacoes(); }
   }
+}
+
+function linkIndicacao() { return $("link-ref").value; }
+function textoConvite() { return t("conv_msg") + linkIndicacao(); }
+function abrirConvite() {
+  $("conv-link").value = linkIndicacao();
+  const d = $("dlg-convite");
+  if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", "");
+  log("viu_convite");
+}
+async function resumoIndicacoes() {
+  if (!estado.idRegistro) return;
+  const r = await rpc("resumo_indicacoes", { p_id_registro: Number(estado.idRegistro) });
+  if (r && typeof r === "object") { $("ind-resumo").textContent = t("conv_res", r.cliques, r.cadastros); $("ind-resumo").hidden = false; }
+}
+function compartilhar(canal) {
+  const url = linkIndicacao(), txt = textoConvite();
+  const u = canal === "wa" ? "https://wa.me/?text=" + encodeURIComponent(txt)
+    : canal === "li" ? "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(url)
+    : "mailto:?subject=" + encodeURIComponent("BI Data Generator") + "&body=" + encodeURIComponent(txt);
+  log("compartilhou_" + canal);
+  if (canal === "em") location.href = u; else window.open(u, "_blank", "noopener");
 }
 
 function sair() {
@@ -408,6 +443,9 @@ function iniciar() {
   document.querySelector('input[name="celular"]').addEventListener("input", (e) => { e.target.value = mascaraCel(e.target.value); valida(e.target, celOk, "e_cel"); });
   document.querySelectorAll('input[name="email"]').forEach((el) => { el.addEventListener("input", () => valida(el, emailOk, "e_email")); el.addEventListener("blur", () => { el.value = el.value.trim(); valida(el, emailOk, "e_email"); }); });
   document.querySelector('select[name="estado"]').addEventListener("change", (e) => carregarCidades(e.target.value));
+  $("conv-copiar").addEventListener("click", async () => { try { await navigator.clipboard.writeText(textoConvite()); } catch (_) { $("conv-link").select(); document.execCommand("copy"); } $("conv-copiar").textContent = "✅ " + t("copiado"); log("copiou_link"); setTimeout(() => ($("conv-copiar").textContent = t("copiar")), 1500); });
+  $("conv-wa").addEventListener("click", () => compartilhar("wa")); $("conv-li").addEventListener("click", () => compartilhar("li")); $("conv-em").addEventListener("click", () => compartilhar("em"));
+  $("conv-ok").addEventListener("click", () => $("dlg-convite").close());
   $("form-novo").addEventListener("submit", (e) => { e.preventDefault(); msgGate(""); cadastrar(e.target); });
   $("form-existente").addEventListener("submit", (e) => {
     e.preventDefault(); msgGate(""); const em = new FormData(e.target).get("email").trim();
