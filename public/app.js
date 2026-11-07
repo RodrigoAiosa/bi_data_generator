@@ -23,7 +23,7 @@ const TXT = {
     prox_t: "Próximos passos", prox_1: "Extraia o .zip em uma pasta.", prox_2: "Abra PowerBI/*.pbip no Power BI Desktop.", prox_3: "Teste as medidas DAX e tente resolver o case de negócio.",
     gate_sub: "Cadastre-se gratuitamente para gerar bases de dados para Power BI.",
     tab_novo: "Cadastrar", tab_existente: "Já sou cadastrado",
-    f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade",
+    f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade", c_escolha_uf: "Selecione o estado primeiro", c_carregando: "Carregando…", c_escolha: "Selecione a cidade", c_erro: "Não foi possível carregar as cidades",
     btn_cadastrar: "Cadastrar e entrar", btn_entrar: "Entrar", sair: "Sair",
     cfg: "⚙️ Configurações", busca: "Buscar setor", setor: "Setor", linhas: "Linhas na tabela fato",
     ini: "Data inicial", fim: "Data final", fiscal: "Início do ano fiscal",
@@ -56,7 +56,7 @@ const TXT = {
     prox_t: "Next steps", prox_1: "Unzip the file into a folder.", prox_2: "Open PowerBI/*.pbip in Power BI Desktop.", prox_3: "Try the DAX measures and solve the business case.",
     gate_sub: "Sign up for free to generate datasets for Power BI.",
     tab_novo: "Sign up", tab_existente: "I'm already registered",
-    f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City",
+    f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City", c_escolha_uf: "Select the state first", c_carregando: "Loading…", c_escolha: "Select the city", c_erro: "Could not load the cities",
     btn_cadastrar: "Sign up and enter", btn_entrar: "Enter", sair: "Sign out",
     cfg: "⚙️ Settings", busca: "Search sector", setor: "Sector", linhas: "Fact table rows",
     ini: "Start date", fim: "End date", fiscal: "Fiscal year start",
@@ -197,14 +197,19 @@ function mascaraCel(v) {
 }
 const msgGate = (txt, ok = false) => { const m = $("gate-msg"); m.textContent = txt || ""; m.className = "msg" + (ok ? " ok" : ""); };
 
+let _cidades = null;
 async function carregarCidades(uf) {
-  const dl = $("lista-cidades"); dl.innerHTML = "";
-  if (!uf) return;
+  const sel = $("sel-cidade");
+  const vazio = (txt) => `<option value="">${esc(txt)}</option>`;
+  if (!uf) { sel.innerHTML = vazio(t("c_escolha_uf")); sel.disabled = true; return; }
+  sel.disabled = true; sel.innerHTML = vazio(t("c_carregando"));
   try {
-    const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-    const j = await r.json();
-    dl.innerHTML = j.map((c) => `<option value="${esc(c.nome)}">`).join("");
-  } catch (_) { /* campo de texto livre continua funcionando */ }
+    if (!_cidades) _cidades = await (await fetch("/cidades.json")).json();
+    const lista = _cidades[uf] || [];
+    if (uf !== document.querySelector('select[name="estado"]').value) return; // trocou de estado enquanto carregava
+    sel.innerHTML = vazio(t("c_escolha")) + lista.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+    sel.disabled = false;
+  } catch (_) { sel.innerHTML = vazio(t("c_erro")); }
 }
 
 async function entrarComEmail(email) {
@@ -386,6 +391,7 @@ async function gerarSql() {
 function iniciar() {
   const l = ler("idioma"); if (l === "en" || l === "pt") estado.lang = l; else if (/^en/i.test(navigator.language)) estado.lang = "en";
   document.querySelector('select[name="estado"]').innerHTML = '<option value="">—</option>' + UFS.map((u) => `<option>${u}</option>`).join("");
+  carregarCidades("");
   const hoje = new Date(), ano = hoje.getFullYear();
   $("inicio").value = `${ano - 2}-01-01`; $("fim").value = `${ano}-12-31`;
 
