@@ -102,3 +102,4 @@ input[type=file]{padding:.4rem}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .campo-linhas{margin-bottom:.9rem}
+input.invalido,select.invalido{border-color:#ff6b6b !important;box-shadow:0 0 0 1px #ff6b6b}

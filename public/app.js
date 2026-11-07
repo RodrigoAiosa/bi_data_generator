@@ -38,7 +38,7 @@ const TXT = {
     baixar: (nome, mb) => `📥 Baixar ${nome} (${mb} MB)`,
     baixar_info: "O .zip inclui os CSVs, o projeto Power BI (PowerBI/*.pbip) que abre de qualquer pasta, o model.tmdl, o case de negócio, o gabarito (se houver), o dicionário de dados e o LEIA-ME.txt.",
     medidas: (n) => `🧮 Medidas DAX sugeridas (${n})`,
-    e_email: "Informe um e-mail válido.", e_cel: "Informe o celular com DDD (10 ou 11 dígitos).",
+    e_email: "Informe um e-mail válido.", e_cel: "Informe um celular válido com DDD, ex.: (11) 99999-9999.",
     e_dup: "Este e-mail já está cadastrado. Use “Já sou cadastrado”.",
     e_nao: "E-mail não encontrado. Use a aba “Cadastrar”.", e_rede: "Não foi possível conectar. Tente novamente.",
     e_gen: "Não foi possível gerar a base.", e_per: "A data inicial deve ser anterior à final.",
@@ -71,7 +71,7 @@ const TXT = {
     baixar: (nome, mb) => `📥 Download ${nome} (${mb} MB)`,
     baixar_info: "The .zip contains the CSVs, the Power BI project (PowerBI/*.pbip) that opens from any folder, model.tmdl, the business case, the answer key (if any), the data dictionary and README.",
     medidas: (n) => `🧮 Suggested DAX measures (${n})`,
-    e_email: "Enter a valid e-mail.", e_cel: "Enter the mobile number with area code (10 or 11 digits).",
+    e_email: "Enter a valid e-mail.", e_cel: "Enter a valid Brazilian mobile number with area code, e.g. (11) 99999-9999.",
     e_dup: "This e-mail is already registered. Use “I'm already registered”.",
     e_nao: "E-mail not found. Use the “Sign up” tab.", e_rede: "Could not connect. Please try again.",
     e_gen: "Could not generate the dataset.", e_per: "Start date must be before end date.",
@@ -186,7 +186,12 @@ function aplicarIdioma() {
 function trocarIdioma() { estado.lang = estado.lang === "pt" ? "en" : "pt"; guardar("idioma", estado.lang); aplicarIdioma(); log("trocou_idioma"); }
 
 /* ── Cadastro / login ──────────────────────────────────────────────────── */
-const emailOk = (e) => /^[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}$/.test((e || "").trim());
+// E-mail: parte local sem pontos no início/fim/duplicados; domínio com rótulos válidos e TLD só com letras
+const RE_EMAIL = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]{1,64}(?<!\.)@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
+// Celular BR: DDD válido + 9 + 8 dígitos (11 dígitos), sem sequências repetidas
+const RE_CEL = /^(?:1[1-9]|2[12478]|3[1-578]|4[1-9]|5[1345]|6[1-9]|7[1345779]|8[1-9]|9[1-9])9\d{8}$/;
+const emailOk = (e) => { const v = (e || "").trim(); return v.length <= 254 && RE_EMAIL.test(v); };
+const celOk = (c) => { const d = (c || "").replace(/\D+/g, ""); return RE_CEL.test(d) && !/^(\d)\1+$/.test(d.slice(2)); };
 const soDigitos = (s) => (s || "").replace(/\D+/g, "");
 function mascaraCel(v) {
   const d = soDigitos(v).slice(0, 11);
@@ -224,16 +229,16 @@ async function cadastrar(f) {
   const d = Object.fromEntries(new FormData(f));
   if (!emailOk(d.email)) return msgGate(t("e_email"));
   const cel = soDigitos(d.celular);
-  if (!/^\d{10,11}$/.test(cel)) return msgGate(t("e_cel"));
+  if (!celOk(cel)) return msgGate(t("e_cel"));
   let r;
   try {
-    r = await sb("registros", { nome_completo: d.nome.trim(), sexo: d.sexo, email: d.email.trim(), celular: cel, estado: d.estado, cidade: d.cidade.trim() },
+    r = await sb("registros", { nome_completo: d.nome.trim(), sexo: d.sexo, email: d.email.trim().toLowerCase(), celular: cel, estado: d.estado, cidade: d.cidade.trim() },
       { Prefer: "return=minimal" });
   } catch (_) { return msgGate(t("e_rede")); }
   if (r.status === 409) return msgGate(t("e_dup"));
   if (!r.ok) return msgGate(t("e_rede"));
-  const id = await rpc("obter_id_registro", { p_email: d.email.trim() });
-  concluirLogin(d.email.trim(), id);
+  const id = await rpc("obter_id_registro", { p_email: d.email.trim().toLowerCase() });
+  concluirLogin(d.email.trim().toLowerCase(), id);
 }
 
 function concluirLogin(email, id) {
@@ -399,7 +404,9 @@ function iniciar() {
     document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("ativo", x === b));
     $("form-novo").hidden = b.dataset.modo !== "novo"; $("form-existente").hidden = b.dataset.modo === "novo"; msgGate("");
   }));
-  document.querySelector('input[name="celular"]').addEventListener("input", (e) => { e.target.value = mascaraCel(e.target.value); });
+  const valida = (el, ok, msg) => { el.setCustomValidity(!el.value || ok(el.value) ? "" : t(msg)); el.classList.toggle("invalido", !!el.value && !ok(el.value)); };
+  document.querySelector('input[name="celular"]').addEventListener("input", (e) => { e.target.value = mascaraCel(e.target.value); valida(e.target, celOk, "e_cel"); });
+  document.querySelectorAll('input[name="email"]').forEach((el) => { el.addEventListener("input", () => valida(el, emailOk, "e_email")); el.addEventListener("blur", () => { el.value = el.value.trim(); valida(el, emailOk, "e_email"); }); });
   document.querySelector('select[name="estado"]').addEventListener("change", (e) => carregarCidades(e.target.value));
   $("form-novo").addEventListener("submit", (e) => { e.preventDefault(); msgGate(""); cadastrar(e.target); });
   $("form-existente").addEventListener("submit", (e) => {

@@ -20,8 +20,8 @@
       <label><span data-i18n="f_nome">Nome completo</span><input name="nome" required minlength="3" autocomplete="name"></label>
       <label><span data-i18n="f_sexo">Sexo</span>
         <select name="sexo" required><option value="">—</option><option>Feminino</option><option>Masculino</option><option>Outro</option><option>Prefiro não informar</option></select></label>
-      <label><span>E-mail</span><input name="email" type="email" required autocomplete="email"></label>
-      <label><span data-i18n="f_cel">Celular (com DDD)</span><input name="celular" inputmode="numeric" placeholder="(11) 99999-9999" required></label>
+      <label><span>E-mail</span><input name="email" type="email" required autocomplete="email" maxlength="254"></label>
+      <label><span data-i18n="f_cel">Celular (com DDD)</span><input name="celular" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" required maxlength="15" autocomplete="tel-national" pattern="\(\d{2}\) 9\d{4}-\d{4}"></label>
       <div class="linha2">
         <label><span data-i18n="f_uf">Estado</span><select name="estado" required></select></label>
         <label><span data-i18n="f_cidade">Cidade</span><select name="cidade" id="sel-cidade" required disabled></select></label>
@@ -29,7 +29,7 @@
       <button class="btn primario" type="submit" data-i18n="btn_cadastrar">Cadastrar e entrar</button>
     </form>
     <form id="form-existente" class="form" hidden>
-      <label><span>E-mail</span><input name="email" type="email" required autocomplete="email"></label>
+      <label><span>E-mail</span><input name="email" type="email" required autocomplete="email" maxlength="254"></label>
       <button class="btn primario" type="submit" data-i18n="btn_entrar">Entrar</button>
     </form>
     <p id="gate-msg" class="msg" role="alert"></p>
