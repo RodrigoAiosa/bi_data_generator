@@ -23,7 +23,7 @@ const TXT = {
     prox_t: "Próximos passos", prox_1: "Extraia o .zip em uma pasta.", prox_2: "Abra PowerBI/*.pbip no Power BI Desktop.", prox_3: "Teste as medidas DAX e tente resolver o case de negócio.",
     gate_sub: "Cadastre-se gratuitamente para gerar bases de dados para Power BI.",
     tab_novo: "Cadastrar", tab_existente: "Já sou cadastrado",
-    leg_obrig: "obrigatório", opc: "(opcional)", d_cel: "DDD + 9 dígitos", d_ok: "✓ Tudo certo", e_nome: "Informe nome e sobrenome.", e_sel: "Selecione uma opção.", e_cid: "Selecione o estado e depois a cidade.", confianca: "🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.", cadastrando: "Cadastrando…", f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade", c_escolha_uf: "Selecione o estado primeiro", c_carregando: "Carregando…", c_escolha: "Selecione a cidade", c_erro: "Não foi possível carregar as cidades",
+    chip1: "200 setores", chip2: "até 100 mil linhas", chip3: "100% grátis", g_dados: "Seus dados", g_perfil: "Seu perfil", d_ddd: "Sugerido pelo DDD — altere se precisar.", d_quis: "Você quis dizer", e_sel_sexo: "Selecione uma opção.", leg_obrig: "obrigatório", opc: "(opcional)", d_cel: "DDD + 9 dígitos", d_ok: "✓ Tudo certo", e_nome: "Informe nome e sobrenome.", e_sel: "Selecione uma opção.", e_cid: "Selecione o estado e depois a cidade.", confianca: "🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.", cadastrando: "Cadastrando…", f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade", c_escolha_uf: "Escolha o estado", c_carregando: "Carregando…", c_escolha: "Selecione a cidade", c_erro: "Não foi possível carregar as cidades",
     btn_cadastrar: "Cadastrar e entrar", btn_entrar: "Entrar", sair: "Sair",
     cfg: "⚙️ Configurações", busca: "Buscar setor", setor: "Setor", linhas: "Linhas na tabela fato",
     ini: "Data inicial", fim: "Data final", fiscal: "Início do ano fiscal",
@@ -56,7 +56,7 @@ const TXT = {
     prox_t: "Next steps", prox_1: "Unzip the file into a folder.", prox_2: "Open PowerBI/*.pbip in Power BI Desktop.", prox_3: "Try the DAX measures and solve the business case.",
     gate_sub: "Sign up for free to generate datasets for Power BI.",
     tab_novo: "Sign up", tab_existente: "I'm already registered",
-    leg_obrig: "required", opc: "(optional)", d_cel: "Area code + 9 digits", d_ok: "✓ Looks good", e_nome: "Enter first and last name.", e_sel: "Select an option.", e_cid: "Select the state, then the city.", confianca: "🔒 We use your data only to identify your access and improve the tool.", cadastrando: "Signing up…", f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City", c_escolha_uf: "Select the state first", c_carregando: "Loading…", c_escolha: "Select the city", c_erro: "Could not load the cities",
+    chip1: "200 sectors", chip2: "up to 100k rows", chip3: "100% free", g_dados: "Your details", g_perfil: "Your profile", d_ddd: "Suggested from your area code — change it if needed.", d_quis: "Did you mean", e_sel_sexo: "Select an option.", leg_obrig: "required", opc: "(optional)", d_cel: "Area code + 9 digits", d_ok: "✓ Looks good", e_nome: "Enter first and last name.", e_sel: "Select an option.", e_cid: "Select the state, then the city.", confianca: "🔒 We use your data only to identify your access and improve the tool.", cadastrando: "Signing up…", f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City", c_escolha_uf: "Choose the state", c_carregando: "Loading…", c_escolha: "Select the city", c_erro: "Could not load the cities",
     btn_cadastrar: "Sign up and enter", btn_entrar: "Enter", sair: "Sign out",
     cfg: "⚙️ Settings", busca: "Search sector", setor: "Sector", linhas: "Fact table rows",
     ini: "Start date", fim: "End date", fiscal: "Fiscal year start",
@@ -202,6 +202,24 @@ function trocarIdioma() { estado.lang = estado.lang === "pt" ? "en" : "pt"; guar
 const RE_EMAIL = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]{1,64}(?<!\.)@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,24}$/;
 // Celular BR: DDD válido + 9 + 8 dígitos (11 dígitos), sem sequências repetidas
 const RE_CEL = /^(?:1[1-9]|2[12478]|3[1-578]|4[1-9]|5[1345]|6[1-9]|7[1345779]|8[1-9]|9[1-9])9\d{8}$/;
+const DDD_UF = {}; [["SP", "11 12 13 14 15 16 17 18 19"], ["RJ", "21 22 24"], ["ES", "27 28"], ["MG", "31 32 33 34 35 37 38"], ["PR", "41 42 43 44 45 46"], ["SC", "47 48 49"], ["RS", "51 53 54 55"], ["DF", "61"], ["GO", "62 64"], ["TO", "63"], ["MT", "65 66"], ["MS", "67"], ["AC", "68"], ["RO", "69"], ["BA", "71 73 74 75 77"], ["SE", "79"], ["PE", "81 87"], ["AL", "82"], ["PB", "83"], ["RN", "84"], ["CE", "85 88"], ["PI", "86 89"], ["PA", "91 93 94"], ["AM", "92 97"], ["RR", "95"], ["AP", "96"], ["MA", "98 99"]].forEach(([uf, l]) => l.split(" ").forEach((d) => (DDD_UF[d] = uf)));
+const DOMINIOS = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com.br", "yahoo.com", "icloud.com", "uol.com.br", "bol.com.br", "terra.com.br", "live.com", "msn.com"];
+function dist(a, b) { const m = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]); for (let j = 1; j <= b.length; j++) m[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return m[a.length][b.length]; }
+function sugerirEmail(e) {
+  const [user, dom] = (e || "").trim().toLowerCase().split("@"); if (!user || !dom || DOMINIOS.includes(dom) || dom.length < 6) return null;
+  const alvo = DOMINIOS.map((d) => [d, dist(dom, d)]).filter(([, n]) => n > 0 && n <= 2).sort((x, y) => x[1] - y[1])[0];
+  return alvo ? user + "@" + alvo[0] : null;
+}
+function sugerirUF() {
+  const uf = DDD_UF[soDigitos($("form-novo").celular.value).slice(0, 2)], sel = $("form-novo").estado;
+  if (!uf || !celOk($("form-novo").celular.value) || (sel.value && sel.dataset.sug !== "1") || sel.value === uf) return;
+  sel.value = uf; sel.dataset.sug = "1"; carregarCidades(uf); validarCampo(CAMPOS.find((c) => c.el === sel));
+}
+function selecionarModo(modo, foco) {
+  document.querySelectorAll(".tab").forEach((x) => { const on = x.dataset.modo === modo; x.classList.toggle("ativo", on); x.setAttribute("aria-selected", on); x.tabIndex = on ? 0 : -1; if (on && foco) x.focus(); });
+  $("painel-novo").hidden = modo !== "novo"; $("painel-existente").hidden = modo === "novo"; msgGate("");
+}
 let CAMPOS = [];
 const nomeOk = (n) => { const v = (n || "").trim(); return v.length >= 5 && v.length <= 120 && /^\p{L}[\p{L}'’.\- ]*\s+\p{L}[\p{L}'’.\- ]*$/u.test(v); };
 function validarCampo(c, forcar = false) {
@@ -212,7 +230,12 @@ function validarCampo(c, forcar = false) {
   c.el.setCustomValidity(bom ? "" : t(c.msg));
   if (d) {
     d.className = "dica" + (bom ? " ok" : erro ? " erro" : "");
-    d.textContent = bom ? t("d_ok") : erro ? t(c.msg) : (c.base ? t(c.base) : "");
+    const sug = bom && c.el.name === "email" ? sugerirEmail(c.el.value) : null;
+    if (sug) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "link-dica"; b.textContent = sug;
+      b.addEventListener("click", () => { c.el.value = sug; c.el.focus(); validarCampo(c); });
+      d.className = "dica"; d.replaceChildren(t("d_quis") + " ", b, "?");
+    } else d.textContent = bom ? (c.el.dataset.sug === "1" ? t("d_ddd") : t("d_ok")) : erro ? t(c.msg) : (c.base ? t(c.base) : "");
   }
   return bom;
 }
@@ -228,14 +251,15 @@ function mascaraCel(v) {
 }
 const msgGate = (txt, ok = false) => { const m = $("gate-msg"); m.textContent = txt || ""; m.className = "msg" + (ok ? " ok" : ""); };
 
-let _cidades = null;
+let _cidades = null, _cidadesP = null;
+function cidadesCache() { return _cidadesP || (_cidadesP = fetch("/cidades.json").then((r) => r.json()).then((j) => (_cidades = j)).catch((e) => { _cidadesP = null; throw e; })); }
 async function carregarCidades(uf) {
   const sel = $("sel-cidade");
   const vazio = (txt) => `<option value="">${esc(txt)}</option>`;
   if (!uf) { sel.innerHTML = vazio(t("c_escolha_uf")); sel.disabled = true; return; }
   sel.disabled = true; sel.innerHTML = vazio(t("c_carregando"));
   try {
-    if (!_cidades) _cidades = await (await fetch("/cidades.json")).json();
+    if (!_cidades) await cidadesCache();
     const lista = _cidades[uf] || [];
     if (uf !== document.querySelector('select[name="estado"]').value) return; // trocou de estado enquanto carregava
     sel.classList.remove("invalido", "valido"); sel.innerHTML = vazio(t("c_escolha")) + lista.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
@@ -451,25 +475,27 @@ function iniciar() {
   const l = ler("idioma"); if (l === "en" || l === "pt") estado.lang = l; else if (/^en/i.test(navigator.language)) estado.lang = "en";
   document.querySelector('select[name="estado"]').innerHTML = '<option value="">—</option>' + UFS.map((u) => `<option>${u}</option>`).join("");
   carregarCidades("");
+  (window.requestIdleCallback || setTimeout)(() => cidadesCache().catch(() => {}));
   const hoje = new Date(), ano = hoje.getFullYear();
   $("inicio").value = `${ano - 2}-01-01`; $("fim").value = `${ano}-12-31`;
 
-  document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("ativo", x === b));
-    $("form-novo").hidden = b.dataset.modo !== "novo"; $("form-existente").hidden = b.dataset.modo === "novo"; msgGate("");
-  }));
+  const abas = [...document.querySelectorAll(".tab")];
+  abas.forEach((b, i) => {
+    b.addEventListener("click", () => selecionarModo(b.dataset.modo, false));
+    b.addEventListener("keydown", (e) => { const k = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: abas.length - 1 }[e.key]; if (k === undefined) return; e.preventDefault(); selecionarModo(abas[(k + abas.length) % abas.length].dataset.modo, true); });
+  });
   CAMPOS = [
     { el: document.querySelector('#form-novo input[name="nome"]'), ok: nomeOk, msg: "e_nome", dica: "d-nome", base: "" },
     { el: document.querySelector('#form-novo input[name="email"]'), ok: emailOk, msg: "e_email", dica: "d-email", base: "" },
     { el: document.querySelector('#form-novo input[name="celular"]'), ok: celOk, msg: "e_cel", dica: "d-cel", base: "d_cel" },
-    { el: document.querySelector('#form-novo select[name="sexo"]'), ok: (v) => !!v, msg: "e_sel" },
-    { el: document.querySelector('#form-novo select[name="estado"]'), ok: (v) => !!v, msg: "e_sel" },
-    { el: document.querySelector('#form-novo select[name="cidade"]'), ok: (v) => !!v, msg: "e_cid" },
+    { el: document.querySelector('#form-novo select[name="sexo"]'), ok: (v) => !!v, msg: "e_sel", dica: "d-sexo" },
+    { el: document.querySelector('#form-novo select[name="estado"]'), ok: (v) => !!v, msg: "e_sel", dica: "d-uf" },
+    { el: document.querySelector('#form-novo select[name="cidade"]'), ok: (v) => !!v, msg: "e_cid", dica: "d-cid" },
   ];
   CAMPOS.forEach((c) => {
-    if (c.el.tagName === "SELECT") { c.el.addEventListener("change", () => { c.el.dataset.tocou = "1"; validarCampo(c); }); return; }
+    if (c.el.tagName === "SELECT") { c.el.addEventListener("change", () => { delete c.el.dataset.sug; c.el.dataset.tocou = "1"; validarCampo(c); }); return; }
     c.el.addEventListener("blur", () => { if (c.el.name !== "celular") c.el.value = c.el.value.trim(); c.el.dataset.tocou = "1"; validarCampo(c); });
-    c.el.addEventListener("input", () => { if (c.el.name === "celular") c.el.value = mascaraCel(c.el.value); if (c.el.dataset.tocou) validarCampo(c); else c.el.setCustomValidity(""); });
+    c.el.addEventListener("input", () => { if (c.el.name === "celular") { c.el.value = mascaraCel(c.el.value); sugerirUF(); } if (c.el.dataset.tocou) validarCampo(c); else c.el.setCustomValidity(""); });
   });
   document.querySelectorAll('#form-existente input[name="email"]').forEach((el) => el.addEventListener("input", () => el.setCustomValidity("")));
   document.querySelector('select[name="estado"]').addEventListener("change", (e) => carregarCidades(e.target.value));

@@ -9,35 +9,50 @@
 </head>
 <body>
 <div id="gate" class="gate" hidden>
-  <div class="card gate-card">
-    <h1>📊 BI Data Generator <span class="pro">PRO</span></h1>
-    <p class="muted" data-i18n="gate_sub">Cadastre-se gratuitamente para gerar bases de dados para Power BI.</p>
-    <div class="tabs" role="tablist">
-      <button class="tab ativo" data-modo="novo" data-i18n="tab_novo">Cadastrar</button>
-      <button class="tab" data-modo="existente" data-i18n="tab_existente">Já sou cadastrado</button>
+  <section class="card gate-card" aria-labelledby="gate-titulo">
+    <header class="gate-topo">
+      <h1 id="gate-titulo">📊 BI Data Generator <span class="pro">PRO</span></h1>
+      <p class="muted" data-i18n="gate_sub">Cadastre-se gratuitamente para gerar bases de dados para Power BI.</p>
+      <ul class="chips"><li data-i18n="chip1">200 setores</li><li data-i18n="chip2">até 100 mil linhas</li><li data-i18n="chip3">100% grátis</li></ul>
+    </header>
+    <div class="tabs" role="tablist" aria-label="Acesso">
+      <button class="tab ativo" role="tab" id="tab-novo" aria-selected="true" aria-controls="painel-novo" data-modo="novo" data-i18n="tab_novo">Cadastrar</button>
+      <button class="tab" role="tab" id="tab-existente" aria-selected="false" aria-controls="painel-existente" tabindex="-1" data-modo="existente" data-i18n="tab_existente">Já sou cadastrado</button>
     </div>
+    <div id="painel-novo" role="tabpanel" aria-labelledby="tab-novo">
     <form id="form-novo" class="form" novalidate>
       <p class="leg-obrig muted"><i class="ast" aria-hidden="true">*</i> <span data-i18n="leg_obrig">obrigatório</span></p>
-      <label><span class="rot"><b data-i18n="f_nome">Nome completo</b><i class="ast" aria-hidden="true"> *</i></span><input name="nome" required minlength="3" maxlength="120" autocomplete="name" aria-describedby="d-nome"><small class="dica" id="d-nome" aria-live="polite"></small></label>
-      <label><span class="rot"><b>E-mail</b><i class="ast" aria-hidden="true"> *</i></span><input name="email" type="email" required autocomplete="email" maxlength="254" aria-describedby="d-email"><small class="dica" id="d-email" aria-live="polite"></small></label>
-      <label><span class="rot"><b data-i18n="f_cel">Celular (com DDD)</b><i class="ast" aria-hidden="true"> *</i></span><input name="celular" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" required maxlength="15" autocomplete="tel-national" aria-describedby="d-cel"><small class="dica" id="d-cel" aria-live="polite" data-i18n="d_cel">DDD + 9 dígitos</small></label>
-      <label><span class="rot"><b data-i18n="f_sexo">Sexo</b><i class="ast" aria-hidden="true"> *</i></span>
-        <select name="sexo" required aria-describedby="d-sexo"><option value="">—</option><option>Feminino</option><option>Masculino</option><option>Outro</option><option>Prefiro não informar</option></select></label>
-      <div class="linha2">
-        <label><span class="rot"><b data-i18n="f_uf">Estado</b><i class="ast" aria-hidden="true"> *</i></span><select name="estado" required aria-describedby="d-uf"></select></label>
-        <label><span class="rot"><b data-i18n="f_cidade">Cidade</b><i class="ast" aria-hidden="true"> *</i></span><select name="cidade" id="sel-cidade" required disabled></select></label>
-      </div>
-      <button class="btn primario" id="btn-cadastrar" type="submit" data-i18n="btn_cadastrar">Cadastrar e entrar</button>
+      <fieldset class="grupo">
+        <legend data-i18n="g_dados">Seus dados</legend>
+        <label><span class="rot"><b data-i18n="f_nome">Nome completo</b><i class="ast" aria-hidden="true"> *</i></span><input name="nome" required minlength="3" maxlength="120" autocomplete="name" autocapitalize="words" aria-describedby="d-nome"><small class="dica" id="d-nome" aria-live="polite"></small></label>
+        <label><span class="rot"><b>E-mail</b><i class="ast" aria-hidden="true"> *</i></span><input name="email" type="email" inputmode="email" autocapitalize="none" spellcheck="false" required autocomplete="email" maxlength="254" aria-describedby="d-email"><small class="dica" id="d-email" aria-live="polite"></small></label>
+        <label><span class="rot"><b data-i18n="f_cel">Celular (com DDD)</b><i class="ast" aria-hidden="true"> *</i></span><input name="celular" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" required maxlength="15" autocomplete="tel-national" aria-describedby="d-cel"><small class="dica" id="d-cel" aria-live="polite" data-i18n="d_cel">DDD + 9 dígitos</small></label>
+      </fieldset>
+      <fieldset class="grupo">
+        <legend data-i18n="g_perfil">Seu perfil</legend>
+        <label><span class="rot"><b data-i18n="f_sexo">Sexo</b><i class="ast" aria-hidden="true"> *</i></span>
+          <select name="sexo" required autocomplete="sex" aria-describedby="d-sexo"><option value="">—</option><option>Feminino</option><option>Masculino</option><option>Outro</option><option>Prefiro não informar</option></select><small class="dica" id="d-sexo" aria-live="polite"></small></label>
+        <div class="linha2">
+          <label><span class="rot"><b data-i18n="f_uf">Estado</b><i class="ast" aria-hidden="true"> *</i></span><select name="estado" required aria-describedby="d-uf"></select><small class="dica" id="d-uf" aria-live="polite"></small></label>
+          <label><span class="rot"><b data-i18n="f_cidade">Cidade</b><i class="ast" aria-hidden="true"> *</i></span><select name="cidade" id="sel-cidade" required disabled aria-describedby="d-cid"></select><small class="dica" id="d-cid" aria-live="polite"></small></label>
+        </div>
+      </fieldset>
+      <button class="btn primario grande" id="btn-cadastrar" type="submit" data-i18n="btn_cadastrar">Cadastrar e entrar</button>
       <p class="confianca" data-i18n="confianca">🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.</p>
     </form>
-    <form id="form-existente" class="form" hidden>
-      <label><span>E-mail</span><input name="email" type="email" required autocomplete="email" maxlength="254"></label>
-      <button class="btn primario" type="submit" data-i18n="btn_entrar">Entrar</button>
+    </div>
+    <div id="painel-existente" role="tabpanel" aria-labelledby="tab-existente" hidden>
+    <form id="form-existente" class="form">
+      <label><span class="rot"><b>E-mail</b></span><input name="email" type="email" inputmode="email" autocapitalize="none" spellcheck="false" required autocomplete="email" maxlength="254"></label>
+      <button class="btn primario grande" type="submit" data-i18n="btn_entrar">Entrar</button>
     </form>
+    </div>
     <p id="gate-msg" class="msg" role="alert"></p>
-    <a class="gate-pptx-link" id="gate-pptx" href="/BI_Data_Generator_Apresentacao.pptx" download data-i18n="pptx">📊 Apresentação (.pptx)</a>
-    <button id="gate-lang" class="link" type="button">English</button>
-  </div>
+    <footer class="gate-rodape">
+      <a id="gate-pptx" href="/BI_Data_Generator_Apresentacao.pptx" download data-i18n="pptx">📊 Apresentação (.pptx)</a>
+      <button id="gate-lang" class="link" type="button">English</button>
+    </footer>
+  </section>
 </div>
 
 <div id="topo-prog" aria-hidden="true"></div>

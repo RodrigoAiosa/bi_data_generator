@@ -1,4 +1,8 @@
-:root{--bg:#121212;--card:#1e1e1e;--borda:#333;--txt:#f2f2f2;--mut:#a8a8a8;--ac:#F2C811;--ac-txt:#121212;--erro:#ff6b6b;--ok:#3ecf8e}
+:root{--bg:#121212;--card:#1e1e1e;--borda:#333;--txt:#f2f2f2;--mut:#a8a8a8;--ac:#F2C811;--ac-txt:#121212;--erro:#ff6b6b;--ok:#3ecf8e;
+  /* Design system: espaçamento (escala de 4 px), raios, sombra, alvo mínimo de toque, foco */
+  --sp-1:.25rem;--sp-2:.5rem;--sp-3:.75rem;--sp-4:1rem;--sp-5:1.5rem;--sp-6:2rem;
+  --raio-s:6px;--raio-m:8px;--raio-g:14px;--sombra-card:0 10px 30px rgba(0,0,0,.35);
+  --alvo:48px;--foco:2px solid var(--ac);--txt-s:.85rem;--txt-m:1rem;--transicao:.15s ease}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 h1{font-size:1.25rem;margin:0}h2{font-size:1.05rem;margin:0 0 .75rem}h3{margin:1.5rem 0 .5rem}
@@ -83,7 +87,6 @@ input[type=file]{padding:.4rem}
 .hero-stats{display:flex;gap:1.4rem;flex-wrap:wrap;margin:.2rem 0 .8rem}.hero-stats b{color:var(--ac);font-size:1.3rem}
 .lateral .btn{width:100%}.lateral pre{max-height:240px;overflow:auto;font-size:.72rem;white-space:pre-wrap}
 #sql-out{margin-top:.6rem}
-#gate-pptx{display:block;text-align:center;margin-top:1rem}
 
 /* Usabilidade: Fitts / Hick / Miller / Doherty / Estética */
 #btn-gerar.fixo{position:sticky;bottom:.6rem;min-height:52px;font-size:1.05rem;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.55);z-index:3}
@@ -117,6 +120,41 @@ input.invalido,select.invalido{border-color:#ff6b6b !important;box-shadow:0 0 0 
 input.valido{border-color:var(--ok)}
 .btn[disabled]{opacity:.7;cursor:progress}
 .confianca{margin:.7rem 0 0;font-size:.78rem;color:var(--mut);text-align:center}
-.gate-pptx-link{display:block;text-align:center;margin-top:1rem;padding:.6rem;color:var(--mut);font-size:.85rem;text-decoration:underline}
-.gate-pptx-link:hover{color:var(--txt)}
-@media(max-width:480px){.linha2{grid-template-columns:1fr}}
+
+/* ===== Formulário de acesso (gate) — componentes do design system ===== */
+.gate-card{max-width:480px;padding:var(--sp-5);border-radius:var(--raio-g);box-shadow:var(--sombra-card)}
+@media(max-width:480px){.gate{align-items:flex-start;padding:var(--sp-3)}.gate-card{padding:var(--sp-4)}}
+.gate-topo h1{font-size:1.4rem;line-height:1.25}.gate-topo p{margin:var(--sp-2) 0 var(--sp-3)}
+.chips{display:flex;flex-wrap:wrap;gap:var(--sp-2);list-style:none;margin:0 0 var(--sp-4);padding:0}
+.chips li{font-size:var(--txt-s);padding:.15rem .6rem;border:1px solid var(--borda);border-radius:999px;color:var(--txt);background:#171717}
+.chips li:first-child{border-color:var(--ac);color:var(--ac)}
+.gate .tabs{margin:var(--sp-4) 0 var(--sp-3)}
+.gate .tab{min-height:var(--alvo);font-size:var(--txt-m);transition:color var(--transicao),border-color var(--transicao)}
+.gate .tab:hover{color:var(--txt)}.gate .tab:focus-visible{outline:var(--foco);outline-offset:-2px;border-radius:var(--raio-s)}
+.gate .form{display:grid;gap:var(--sp-4)}
+.gate .grupo{border:0;margin:0;padding:0;min-width:0;display:grid;gap:var(--sp-3)}
+.gate legend{display:flex;align-items:center;gap:var(--sp-3);width:100%;padding:0;margin:0 0 var(--sp-3);font-size:var(--txt-s);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
+.gate legend::after{content:"";flex:1;height:1px;background:var(--borda)}
+.gate label{margin:0;gap:var(--sp-1);font-size:var(--txt-s)}
+.gate .linha2{gap:var(--sp-3);align-items:start}
+@media(max-width:420px){.gate .linha2{grid-template-columns:1fr}}
+.gate input,.gate select{min-height:var(--alvo);font-size:16px;padding:.6rem .75rem;border-radius:var(--raio-m);transition:border-color var(--transicao),box-shadow var(--transicao)}
+.gate input:hover,.gate select:hover{border-color:#555}
+.gate input:focus,.gate select:focus{outline:var(--foco);outline-offset:1px;border-color:var(--ac)}
+.gate select:disabled{opacity:.6;cursor:not-allowed}
+.gate input.invalido,.gate select.invalido{border-color:var(--erro);box-shadow:0 0 0 1px var(--erro)}
+.gate input.valido,.gate select.valido{border-color:var(--ok)}
+.gate .dica{font-size:var(--txt-s)}.gate .dica:empty{display:none}
+.gate .link-dica{background:none;border:0;padding:0 .15rem;min-height:0;font:inherit;color:var(--ac);text-decoration:underline;cursor:pointer}
+.gate .btn.grande{min-height:var(--alvo);font-size:var(--txt-m);border-radius:var(--raio-m);transition:filter var(--transicao),transform var(--transicao)}
+.gate .btn.primario:hover:not(:disabled){filter:brightness(1.08)}.gate .btn.primario:active:not(:disabled){transform:translateY(1px)}
+.gate .confianca{margin:calc(var(--sp-2) * -1) 0 0;font-size:var(--txt-s)}
+.gate .msg{margin:var(--sp-3) 0 0}
+.gate-rodape{display:flex;justify-content:space-between;align-items:center;gap:var(--sp-3);margin-top:var(--sp-4);padding-top:var(--sp-3);border-top:1px solid var(--borda)}
+.gate-rodape a,.gate-rodape .link{display:inline-flex;align-items:center;min-height:44px;padding:0 var(--sp-2);margin:0;color:var(--mut);font-size:var(--txt-s)}
+.gate-rodape a:hover,.gate-rodape .link:hover{color:var(--txt)}
+.gate-rodape a:focus-visible,.gate-rodape .link:focus-visible{outline:var(--foco);border-radius:var(--raio-s)}
+@media(prefers-reduced-motion:reduce){.gate *{transition:none!important}}
+.gate .tab{min-width:0;overflow-wrap:anywhere}
+.gate-rodape{flex-wrap:wrap}
+.gate .grupo+.grupo{margin-top:var(--sp-2)}
