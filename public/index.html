@@ -8,11 +8,27 @@
 <link rel="stylesheet" href="/estilo.css">
 </head>
 <body>
-<div id="gate" class="gate" hidden>
-  <section class="card gate-card" aria-labelledby="gate-titulo">
+<div id="gate" class="gate split" hidden>
+  <section class="gate-hero" aria-label="BI Data Generator">
+    <div class="marca">📊 BI Data Generator <span class="pro">PRO</span></div>
+    <h1><span data-i18n="hero_1">Bases de dados realistas para</span> <em data-i18n="hero_2">praticar Power BI</em> <span data-i18n="hero_3">em segundos</span></h1>
+    <p class="muted" data-i18n="split_p">Escolha um setor, gere o modelo estrela com medidas DAX e baixe pronto para abrir no Power BI Desktop.</p>
+    <ul class="beneficios">
+      <li><b aria-hidden="true">🏭</b><span data-i18n="ben_1">200 setores de negócio</span></li>
+      <li><b aria-hidden="true">⭐</b><span data-i18n="ben_2">Modelo estrela + medidas DAX + .pbip</span></li>
+      <li><b aria-hidden="true">🗄️</b><span data-i18n="ben_3">SQL para SQL Server, PostgreSQL e MySQL</span></li>
+    </ul>
+    <figure class="previa" aria-label="Exemplo de dados gerados">
+      <figcaption data-i18n="previa_t">Exemplo · FatoVendas</figcaption>
+      <table><thead><tr><th data-i18n="previa_c1">data</th><th data-i18n="previa_c2">produto</th><th data-i18n="previa_c3">valor</th></tr></thead>
+        <tbody><tr><td>2025-03-02</td><td>Notebook</td><td>R$ 4.120</td></tr><tr><td>2025-03-02</td><td>Monitor</td><td>R$ 1.390</td></tr></tbody></table>
+    </figure>
+  </section>
+  <section class="gate-form" aria-labelledby="gate-titulo">
+   <div class="card gate-card">
     <header class="gate-topo">
-      <h1 id="gate-titulo">📊 BI Data Generator <span class="pro">PRO</span></h1>
-      <p class="muted" data-i18n="gate_sub">Cadastre-se gratuitamente para gerar bases de dados para Power BI.</p>
+      <h2 id="gate-titulo" data-i18n="card_t">Criar acesso gratuito</h2>
+      <p class="muted" data-i18n="card_p">Leva menos de 1 minuto</p>
     </header>
     <div class="tabs" role="tablist" aria-label="Acesso">
       <button class="tab ativo" role="tab" id="tab-novo" aria-selected="true" aria-controls="painel-novo" data-modo="novo" data-i18n="tab_novo">Cadastrar</button>
@@ -51,6 +67,7 @@
       <a id="gate-pptx" href="/BI_Data_Generator_Apresentacao.pptx" download data-i18n="pptx">📊 Apresentação (.pptx)</a>
       <button id="gate-lang" class="link" type="button">English</button>
     </footer>
+   </div>
   </section>
 </div>
 

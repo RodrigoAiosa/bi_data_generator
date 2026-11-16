@@ -123,7 +123,7 @@ input.valido{border-color:var(--ok)}
 
 /* ===== Formulário de acesso (gate) — componentes do design system ===== */
 .gate-card{max-width:480px;padding:var(--sp-5);border-radius:var(--raio-g);box-shadow:var(--sombra-card)}
-@media(max-width:480px){.gate{align-items:flex-start;padding:var(--sp-3)}.gate-card{padding:var(--sp-4)}}
+@media(max-width:480px){.gate-card{padding:var(--sp-4)}}
 .gate-topo h1{font-size:1.4rem;line-height:1.25}.gate-topo p{margin:var(--sp-2) 0 0}
 .gate .tabs{margin:var(--sp-4) 0 var(--sp-3)}
 .gate .tab{min-height:var(--alvo);font-size:var(--txt-m);transition:color var(--transicao),border-color var(--transicao)}
@@ -155,3 +155,31 @@ input.valido{border-color:var(--ok)}
 .gate .tab{min-width:0;overflow-wrap:anywhere}
 .gate-rodape{flex-wrap:wrap}
 .gate .grupo+.grupo{margin-top:var(--sp-2)}
+
+/* ===== Layout dividido (A): proposta de valor à esquerda, formulário à direita ===== */
+.gate.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:stretch;padding:0;min-height:100vh}
+.gate.split[hidden]{display:none}
+.gate-hero{display:flex;flex-direction:column;justify-content:center;gap:var(--sp-5);padding:clamp(2rem,5vw,4rem);border-right:1px solid var(--borda);background:radial-gradient(900px 500px at 10% 0%,#2a2410 0,var(--bg) 60%)}
+.gate-hero>*{max-width:460px}
+.gate-hero .marca{font-size:1.4rem;font-weight:700}
+.gate-hero h1{margin:0;font-size:clamp(1.7rem,3.2vw,2.3rem);line-height:1.15}.gate-hero h1 em{font-style:normal;color:var(--ac)}
+.gate-hero p{margin:0;font-size:1.05rem}
+.beneficios{display:grid;gap:var(--sp-3);margin:0;padding:0;list-style:none}
+.beneficios li{display:flex;gap:var(--sp-3);align-items:center}
+.beneficios b{flex:none;width:36px;height:36px;display:grid;place-items:center;border-radius:var(--raio-m);background:#2a2410}
+.previa{margin:0;padding:var(--sp-3) var(--sp-4);border:1px solid var(--borda);border-radius:var(--raio-m);background:#171717;font-size:.8rem;color:var(--mut)}
+.previa figcaption{margin-bottom:var(--sp-1)}
+.previa table{width:100%;border-collapse:collapse}.previa th,.previa td{padding:4px 6px;text-align:left;border-bottom:1px solid #2a2a2a}.previa th{color:var(--txt);font-weight:600}.previa tr:last-child td{border-bottom:0}
+.gate-form{display:flex;align-items:center;justify-content:center;padding:var(--sp-5) var(--sp-4)}
+.gate-form .gate-card{width:100%;max-width:460px}
+.gate-topo h2{margin:0;font-size:1.25rem}.gate-topo p{margin:var(--sp-1) 0 0}
+@media(max-width:900px){
+  .gate.split{grid-template-columns:minmax(0,1fr)}
+  .gate-hero{padding:var(--sp-5) var(--sp-4) var(--sp-4);gap:var(--sp-3);border-right:0;border-bottom:1px solid var(--borda)}
+  .gate-hero>*{max-width:none}.gate-hero .previa{display:none}.gate-hero p{font-size:.95rem}
+  .gate-form{padding:var(--sp-4)}
+}
+@media(max-width:600px){.beneficios{display:none}.gate-hero h1{font-size:1.5rem}}
+@media(min-width:901px){.gate-hero{position:sticky;top:0;align-self:start;height:100vh;overflow:auto}}
+@media(max-width:420px){.gate .tab{padding-inline:var(--sp-1);font-size:.92rem}}
+.gate-hero,.gate-form{min-width:0}.gate-hero h1,.gate-hero .marca{overflow-wrap:anywhere}

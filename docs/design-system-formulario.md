@@ -22,3 +22,8 @@ Tokens em `public/estilo.css` (`:root`) e componentes sob `.gate`.
 - Validação ao sair do campo; erros mostrados em texto (não só cor); envio inválido foca o primeiro erro.
 - O sistema absorve esforço: máscara de celular, e-mail em minúsculas e sem espaços, sugestão de correção de domínio, Estado sugerido pelo DDD (editável), lista de cidades pré-carregada.
 - Respeita `prefers-reduced-motion`.
+
+## Layout da tela inicial (dividido)
+- **Desktop (>900 px):** duas colunas. Esquerda (`.gate-hero`, fixa ao rolar): marca, título, frase de apoio, 3 benefícios e uma tabela de exemplo. Direita (`.gate-form`): cartão do formulário.
+- **Tablet e celular (<=900 px):** coluna única. O hero encurta (a tabela de exemplo some; abaixo de 600 px somem também os benefícios) para o formulário aparecer logo.
+- Textos do hero em `public/app.js` (chaves `hero_*`, `split_p`, `ben_*`, `previa_*`, `card_*`), em português e inglês.
