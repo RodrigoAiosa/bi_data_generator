@@ -207,3 +207,37 @@ input.valido{border-color:var(--ok)}
 .passos{min-width:0}.liga{min-width:0}.passo span{min-width:0;overflow-wrap:anywhere}
 @media(max-width:420px){.passos{gap:var(--sp-2)}.passo{gap:var(--sp-1)}}
 .gate #form-novo{gap:var(--sp-3)}.gate #form-novo .barra2,.gate #form-novo .passos,.gate #form-novo .leg-obrig{margin:0}
+
+/* ===== Tela inicial sem barras de rolagem (desktop): ocupa exatamente a janela ===== */
+@media(min-width:901px){
+  .gate.split{height:100vh;height:100dvh;min-height:540px;overflow:hidden}
+  .gate-hero{position:static;height:100%;overflow:hidden}
+  .gate-form{height:100%;overflow:hidden;padding:var(--sp-3) var(--sp-4)}
+  .gate-form .gate-card{padding:var(--sp-4) var(--sp-5)}
+  .gate-topo p{display:none}
+  .gate .tabs{margin:var(--sp-3) 0 var(--sp-2)}
+  .gate .tab{min-height:44px}
+  .gate #form-novo{gap:var(--sp-2)}
+  .gate .form label{gap:var(--sp-1)}
+  .gate input,.gate select{min-height:44px;padding:.45rem .75rem}
+  .gate .btn.grande,.gate .btn.voltar{min-height:44px}
+  .gate .dica{min-height:0;margin:0}
+  .gate .confianca{margin:0}
+  .gate-rodape{margin-top:var(--sp-2);padding-top:var(--sp-1)}
+}
+@media(min-width:901px) and (max-height:820px){.gate-hero .previa{display:none}}
+@media(min-width:901px) and (max-height:640px){.beneficios{display:none}.gate-hero{gap:var(--sp-3)}}
+html:has(.gate.split:not([hidden])){scrollbar-width:none}
+html:has(.gate.split:not([hidden]))::-webkit-scrollbar{display:none}
+@media(min-width:901px) and (max-height:720px){
+  .gate-form .gate-card{padding:var(--sp-3) var(--sp-5)}
+  .gate .leg-obrig{display:none}
+  .gate-topo h2{font-size:1.1rem}
+  .gate #btn-continuar:not([hidden])~.confianca{display:none}
+  .gate .tabs{margin:var(--sp-2) 0}
+  .gate .tab{min-height:40px}
+  .gate #form-novo{gap:6px}
+  .gate input,.gate select{min-height:40px}
+  .gate .btn.grande,.gate .btn.voltar{min-height:42px}
+  .gate .rot{font-size:.85rem}
+}
