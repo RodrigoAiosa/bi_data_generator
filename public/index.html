@@ -36,15 +36,22 @@
     </div>
     <div id="painel-novo" role="tabpanel" aria-labelledby="tab-novo">
     <form id="form-novo" class="form" novalidate>
+      <ol class="passos" aria-label="Progresso do cadastro">
+        <li class="passo on" id="ps-1" aria-current="step"><b aria-hidden="true">1</b><span data-i18n="g_dados">Seus dados</span></li>
+        <li class="liga" aria-hidden="true"></li>
+        <li class="passo" id="ps-2"><b aria-hidden="true">2</b><span data-i18n="g_perfil">Seu perfil</span></li>
+      </ol>
+      <div class="barra2" aria-hidden="true"><i id="barra-passo"></i></div>
+      <p id="passo-sr" class="sr-only" aria-live="polite"></p>
       <p class="leg-obrig muted"><i class="ast" aria-hidden="true">*</i> <span data-i18n="leg_obrig">obrigatório</span></p>
-      <fieldset class="grupo">
-        <legend data-i18n="g_dados">Seus dados</legend>
+      <fieldset class="grupo" id="grupo-1" data-passo="1">
+        <legend class="sr-only" data-i18n="g_dados">Seus dados</legend>
         <label><span class="rot"><b data-i18n="f_nome">Nome completo</b><i class="ast" aria-hidden="true"> *</i></span><input name="nome" required minlength="3" maxlength="120" autocomplete="name" autocapitalize="words" aria-describedby="d-nome"><small class="dica" id="d-nome" aria-live="polite"></small></label>
         <label><span class="rot"><b>E-mail</b><i class="ast" aria-hidden="true"> *</i></span><input name="email" type="email" inputmode="email" autocapitalize="none" spellcheck="false" required autocomplete="email" maxlength="254" aria-describedby="d-email"><small class="dica" id="d-email" aria-live="polite"></small></label>
         <label><span class="rot"><b data-i18n="f_cel">Celular (com DDD)</b><i class="ast" aria-hidden="true"> *</i></span><input name="celular" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" required maxlength="15" autocomplete="tel-national" aria-describedby="d-cel"><small class="dica" id="d-cel" aria-live="polite" data-i18n="d_cel">DDD + 9 dígitos</small></label>
       </fieldset>
-      <fieldset class="grupo">
-        <legend data-i18n="g_perfil">Seu perfil</legend>
+      <fieldset class="grupo" id="grupo-2" data-passo="2" hidden>
+        <legend class="sr-only" data-i18n="g_perfil">Seu perfil</legend>
         <label><span class="rot"><b data-i18n="f_sexo">Sexo</b><i class="ast" aria-hidden="true"> *</i></span>
           <select name="sexo" required autocomplete="sex" aria-describedby="d-sexo"><option value="">—</option><option>Feminino</option><option>Masculino</option><option>Outro</option><option>Prefiro não informar</option></select><small class="dica" id="d-sexo" aria-live="polite"></small></label>
         <div class="linha2">
@@ -52,8 +59,12 @@
           <label><span class="rot"><b data-i18n="f_cidade">Cidade</b><i class="ast" aria-hidden="true"> *</i></span><select name="cidade" id="sel-cidade" required disabled aria-describedby="d-cid"></select><small class="dica" id="d-cid" aria-live="polite"></small></label>
         </div>
       </fieldset>
-      <button class="btn primario grande" id="btn-cadastrar" type="submit" data-i18n="btn_cadastrar">Cadastrar e entrar</button>
-      <p class="confianca" data-i18n="confianca">🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.</p>
+      <button class="btn primario grande" id="btn-continuar" type="button" data-i18n="btn_continuar">Continuar →</button>
+      <div class="acoes2" id="acoes-2" hidden>
+        <button class="btn voltar" id="btn-voltar" type="button" data-i18n="btn_voltar">← Voltar</button>
+        <button class="btn primario grande" id="btn-cadastrar" type="submit" data-i18n="btn_cadastrar">Cadastrar e entrar</button>
+      </div>
+      <p class="confianca" id="confianca" data-i18n="confianca">🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.</p>
     </form>
     </div>
     <div id="painel-existente" role="tabpanel" aria-labelledby="tab-existente" hidden>

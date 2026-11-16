@@ -24,7 +24,7 @@ const TXT = {
     gate_sub: "Cadastre-se gratuitamente para gerar bases de dados para Power BI.",
     tab_novo: "Cadastrar", tab_existente: "Já sou cadastrado",
     g_dados: "Seus dados", g_perfil: "Seu perfil", d_ddd: "Sugerido pelo DDD — altere se precisar.", d_quis: "Você quis dizer", e_sel_sexo: "Selecione uma opção.", hero_1: "Bases de dados realistas para", hero_2: "praticar Power BI", hero_3: "em segundos", split_p: "Escolha um setor, gere o modelo estrela com medidas DAX e baixe pronto para abrir no Power BI Desktop.", ben_1: "200 setores de negócio", ben_2: "Modelo estrela + medidas DAX + .pbip", ben_3: "SQL para SQL Server, PostgreSQL e MySQL", previa_t: "Exemplo · FatoVendas", previa_c1: "data", previa_c2: "produto", previa_c3: "valor", card_t: "Criar acesso gratuito", card_p: "Leva menos de 1 minuto", leg_obrig: "obrigatório", opc: "(opcional)", d_cel: "DDD + 9 dígitos", d_ok: "✓ Tudo certo", e_nome: "Informe nome e sobrenome.", e_sel: "Selecione uma opção.", e_cid: "Selecione o estado e depois a cidade.", confianca: "🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.", cadastrando: "Cadastrando…", f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade", c_escolha_uf: "Escolha o estado", c_carregando: "Carregando…", c_escolha: "Selecione a cidade", c_erro: "Não foi possível carregar as cidades",
-    btn_cadastrar: "Cadastrar e entrar", btn_entrar: "Entrar", sair: "Sair",
+    btn_cadastrar: "Cadastrar e entrar", btn_continuar: "Continuar →", btn_voltar: "← Voltar", passo_de: (n) => `Etapa ${n} de 2`, btn_entrar: "Entrar", sair: "Sair",
     cfg: "⚙️ Configurações", busca: "Buscar setor", setor: "Setor", linhas: "Linhas na tabela fato",
     ini: "Data inicial", fim: "Data final", fiscal: "Início do ano fiscal",
     anomalia: "Injetar anomalias (causa raiz)", deriva: "Simular deriva temporal",
@@ -57,7 +57,7 @@ const TXT = {
     gate_sub: "Sign up for free to generate datasets for Power BI.",
     tab_novo: "Sign up", tab_existente: "I'm already registered",
     g_dados: "Your details", g_perfil: "Your profile", d_ddd: "Suggested from your area code — change it if needed.", d_quis: "Did you mean", e_sel_sexo: "Select an option.", hero_1: "Realistic datasets to", hero_2: "practice Power BI", hero_3: "in seconds", split_p: "Pick a sector, generate the star schema with DAX measures and download it ready to open in Power BI Desktop.", ben_1: "200 business sectors", ben_2: "Star schema + DAX measures + .pbip", ben_3: "SQL for SQL Server, PostgreSQL and MySQL", previa_t: "Example · FactSales", previa_c1: "date", previa_c2: "product", previa_c3: "amount", card_t: "Create your free access", card_p: "Takes less than 1 minute", leg_obrig: "required", opc: "(optional)", d_cel: "Area code + 9 digits", d_ok: "✓ Looks good", e_nome: "Enter first and last name.", e_sel: "Select an option.", e_cid: "Select the state, then the city.", confianca: "🔒 We use your data only to identify your access and improve the tool.", cadastrando: "Signing up…", f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City", c_escolha_uf: "Choose the state", c_carregando: "Loading…", c_escolha: "Select the city", c_erro: "Could not load the cities",
-    btn_cadastrar: "Sign up and enter", btn_entrar: "Enter", sair: "Sign out",
+    btn_cadastrar: "Sign up and enter", btn_continuar: "Continue →", btn_voltar: "← Back", passo_de: (n) => `Step ${n} of 2`, btn_entrar: "Enter", sair: "Sign out",
     cfg: "⚙️ Settings", busca: "Search sector", setor: "Sector", linhas: "Fact table rows",
     ini: "Start date", fim: "End date", fiscal: "Fiscal year start",
     anomalia: "Inject anomalies (root cause)", deriva: "Simulate temporal drift",
@@ -275,11 +275,35 @@ async function entrarComEmail(email) {
   concluirLogin(email, id);
 }
 
+let PASSO = 1;
+function irPasso(n, foco = true) {
+  PASSO = n;
+  $("grupo-1").hidden = n !== 1; $("grupo-2").hidden = n !== 2;
+  $("btn-continuar").hidden = n !== 1; $("acoes-2").hidden = n !== 2;
+  const p1 = $("ps-1"), p2 = $("ps-2");
+  p1.className = "passo " + (n === 1 ? "on" : "feito"); p2.className = "passo " + (n === 2 ? "on" : "");
+  p1.querySelector("b").textContent = n === 1 ? "1" : "✓";
+  p1.removeAttribute("aria-current"); p2.removeAttribute("aria-current");
+  (n === 1 ? p1 : p2).setAttribute("aria-current", "step");
+  document.querySelector(".liga").className = "liga" + (n === 2 ? " feito" : "");
+  $("barra-passo").style.width = n === 1 ? "50%" : "100%";
+  $("passo-sr").textContent = t("passo_de", n);
+  if (foco) { const el = n === 1 ? CAMPOS[0].el : CAMPOS[3].el; el.focus(); }
+}
+function avancar() {
+  msgGate("");
+  const ps = CAMPOS.slice(0, 3);
+  ps.forEach((c) => { c.el.dataset.tocou = "1"; });
+  const ruins = ps.filter((c) => !validarCampo(c, true));
+  if (ruins.length) { ruins[0].el.focus(); return msgGate(t(ruins[0].msg)); }
+  irPasso(2);
+}
+
 async function cadastrar(f) {
   const d = Object.fromEntries(new FormData(f));
   CAMPOS.forEach((c) => { c.el.dataset.tocou = "1"; });
   const ruins = CAMPOS.filter((c) => !validarCampo(c, true));
-  if (ruins.length) { ruins[0].el.focus(); return msgGate(t(ruins[0].msg)); }
+  if (ruins.length) { if (PASSO === 2 && CAMPOS.indexOf(ruins[0]) < 3) irPasso(1, false); ruins[0].el.focus(); return msgGate(t(ruins[0].msg)); }
   const cel = soDigitos(d.celular), mail = d.email.trim().toLowerCase();
   const btn = $("btn-cadastrar"), txt = btn.textContent;
   btn.disabled = true; btn.textContent = t("cadastrando"); btn.setAttribute("aria-busy", "true");
@@ -502,7 +526,10 @@ function iniciar() {
   $("conv-copiar").addEventListener("click", async () => { try { await navigator.clipboard.writeText(textoConvite()); } catch (_) { $("conv-link").select(); document.execCommand("copy"); } $("conv-copiar").textContent = "✅ " + t("copiado"); log("copiou_link"); setTimeout(() => ($("conv-copiar").textContent = t("copiar")), 1500); });
   $("conv-wa").addEventListener("click", () => compartilhar("wa")); $("conv-li").addEventListener("click", () => compartilhar("li")); $("conv-em").addEventListener("click", () => compartilhar("em"));
   $("conv-ok").addEventListener("click", () => $("dlg-convite").close());
-  $("form-novo").addEventListener("submit", (e) => { e.preventDefault(); msgGate(""); cadastrar(e.target); });
+  $("btn-continuar").addEventListener("click", avancar);
+  $("btn-voltar").addEventListener("click", () => irPasso(1));
+  $("form-novo").addEventListener("submit", (e) => { e.preventDefault(); if (PASSO === 1) return avancar(); msgGate(""); cadastrar(e.target); });
+  irPasso(1, false);
   $("form-existente").addEventListener("submit", (e) => {
     e.preventDefault(); msgGate(""); const em = new FormData(e.target).get("email").trim();
     emailOk(em) ? entrarComEmail(em) : msgGate(t("e_email"));

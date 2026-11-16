@@ -183,3 +183,27 @@ input.valido{border-color:var(--ok)}
 @media(min-width:901px){.gate-hero{position:sticky;top:0;align-self:start;height:100vh;overflow:auto}}
 @media(max-width:420px){.gate .tab{padding-inline:var(--sp-1);font-size:.92rem}}
 .gate-hero,.gate-form{min-width:0}.gate-hero h1,.gate-hero .marca{overflow-wrap:anywhere}
+
+/* ===== Formulário em 2 etapas ===== */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.gate .grupo[hidden],.gate .acoes2[hidden],.gate #btn-continuar[hidden]{display:none}
+.passos{list-style:none;display:flex;align-items:center;gap:var(--sp-3);margin:0 0 var(--sp-2);padding:0}
+.passo{display:flex;gap:var(--sp-2);align-items:center;font-size:var(--txt-s);color:var(--mut);min-width:0}
+.passo b{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;background:#2a2a2a;color:var(--mut)}
+.passo.on{color:var(--txt)}.passo.on b{background:var(--ac);color:#000}
+.passo.feito{color:var(--txt)}.passo.feito b{background:var(--ok);color:#000}
+.liga{flex:1;min-width:12px;height:2px;background:var(--borda)}.liga.feito{background:var(--ok)}
+.barra2{height:4px;border-radius:99px;background:#2a2a2a;overflow:hidden;margin-bottom:var(--sp-3)}
+.barra2 i{display:block;height:100%;width:50%;background:var(--ac);transition:width var(--transicao)}
+.acoes2{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--sp-3)}
+.acoes2 .btn.grande{width:auto}
+.gate .btn.voltar{background:transparent;border:1px solid var(--borda);color:var(--txt);padding:0 var(--sp-4);min-height:var(--alvo);border-radius:var(--raio-m);cursor:pointer}
+.gate .btn.voltar:hover{border-color:var(--mut)}
+.gate .btn.voltar:focus-visible{outline:var(--foco)}
+@media(max-width:420px){.passo span{font-size:.85rem}}
+.gate .grupo{position:relative}
+.gate legend.sr-only{width:1px;margin:-1px;display:block}
+.gate legend.sr-only::after{display:none}
+.passos{min-width:0}.liga{min-width:0}.passo span{min-width:0;overflow-wrap:anywhere}
+@media(max-width:420px){.passos{gap:var(--sp-2)}.passo{gap:var(--sp-1)}}
+.gate #form-novo{gap:var(--sp-3)}.gate #form-novo .barra2,.gate #form-novo .passos,.gate #form-novo .leg-obrig{margin:0}
