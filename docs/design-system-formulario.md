@@ -16,7 +16,7 @@ Tokens em `public/estilo.css` (`:root`) e componentes sob `.gate`.
 - **Grupo** (`fieldset.grupo > legend`): agrupa campos relacionados (Seus dados / Seu perfil).
 - **Botão** (`.btn.primario.grande`): 48 px, estados hover/active/disabled ("Cadastrando…").
 - **Abas** (`role=tablist`): setas ← → Home End, `aria-selected`, painéis `role=tabpanel`.
-- **Chips**, **dica com ação** (`.link-dica`, ex.: "Você quis dizer …?"), **rodapé** (`.gate-rodape`).
+- **Dica com ação** (`.link-dica`, ex.: "Você quis dizer …?"), **rodapé** (`.gate-rodape`).
 
 ## Regras de comportamento
 - Validação ao sair do campo; erros mostrados em texto (não só cor); envio inválido foca o primeiro erro.

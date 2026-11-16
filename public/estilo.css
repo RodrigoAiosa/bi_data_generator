@@ -124,10 +124,7 @@ input.valido{border-color:var(--ok)}
 /* ===== Formulário de acesso (gate) — componentes do design system ===== */
 .gate-card{max-width:480px;padding:var(--sp-5);border-radius:var(--raio-g);box-shadow:var(--sombra-card)}
 @media(max-width:480px){.gate{align-items:flex-start;padding:var(--sp-3)}.gate-card{padding:var(--sp-4)}}
-.gate-topo h1{font-size:1.4rem;line-height:1.25}.gate-topo p{margin:var(--sp-2) 0 var(--sp-3)}
-.chips{display:flex;flex-wrap:wrap;gap:var(--sp-2);list-style:none;margin:0 0 var(--sp-4);padding:0}
-.chips li{font-size:var(--txt-s);padding:.15rem .6rem;border:1px solid var(--borda);border-radius:999px;color:var(--txt);background:#171717}
-.chips li:first-child{border-color:var(--ac);color:var(--ac)}
+.gate-topo h1{font-size:1.4rem;line-height:1.25}.gate-topo p{margin:var(--sp-2) 0 0}
 .gate .tabs{margin:var(--sp-4) 0 var(--sp-3)}
 .gate .tab{min-height:var(--alvo);font-size:var(--txt-m);transition:color var(--transicao),border-color var(--transicao)}
 .gate .tab:hover{color:var(--txt)}.gate .tab:focus-visible{outline:var(--foco);outline-offset:-2px;border-radius:var(--raio-s)}
