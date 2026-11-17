@@ -23,7 +23,7 @@ const TXT = {
     prox_t: "Próximos passos", prox_1: "Extraia o .zip em uma pasta.", prox_2: "Abra PowerBI/*.pbip no Power BI Desktop.", prox_3: "Teste as medidas DAX e tente resolver o case de negócio.",
     gate_sub: "Cadastre-se gratuitamente para gerar bases de dados para Power BI.",
     tab_novo: "Cadastrar", tab_existente: "Já sou cadastrado",
-    g_dados: "Seus dados", g_perfil: "Seu perfil", d_ddd: "Sugerido pelo DDD — altere se precisar.", d_quis: "Você quis dizer", e_sel_sexo: "Selecione uma opção.", hero_1: "Bases de dados realistas para", hero_2: "praticar Power BI", hero_3: "em segundos", split_p: "Escolha um setor, gere o modelo estrela com medidas DAX e baixe pronto para abrir no Power BI Desktop.", ben_1: "200 setores de negócio", ben_2: "Modelo estrela + medidas DAX + .pbip", ben_3: "SQL para SQL Server, PostgreSQL e MySQL", previa_t: "Exemplo · FatoVendas", previa_c1: "data", previa_c2: "produto", previa_c3: "valor", card_t: "Criar acesso gratuito", card_p: "Leva menos de 1 minuto", leg_obrig: "obrigatório", opc: "(opcional)", d_cel: "DDD + 9 dígitos", d_ok: "✓ Tudo certo", e_nome: "Informe nome e sobrenome.", e_sel: "Selecione uma opção.", e_cid: "Selecione o estado e depois a cidade.", confianca: "🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.", cadastrando: "Cadastrando…", f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade", c_escolha_uf: "Escolha o estado", c_carregando: "Carregando…", c_escolha: "Selecione a cidade", c_erro: "Não foi possível carregar as cidades",
+    g_dados: "Seus dados", g_perfil: "Seu perfil", d_ddd: "Sugerido pelo DDD — altere se precisar.", d_quis: "Você quis dizer", e_sel_sexo: "Selecione uma opção.", hero_1: "Bases de dados realistas para", hero_2: "praticar Power BI", hero_3: "em segundos", split_p: "Escolha um setor, gere o modelo estrela com medidas DAX e baixe pronto para abrir no Power BI Desktop.", ben_1: "200 setores de negócio", ben_2: "Modelo estrela + medidas DAX + .pbip", ben_3: "SQL para SQL Server, PostgreSQL e MySQL", previa_t: "Modelo estrela gerado em segundos", prova_fb: "Gratuito · sem cartão de crédito", prova_n: (n) => `${n}+ pessoas já treinam com a ferramenta · grátis`, previa_c1: "data", previa_c2: "produto", previa_c3: "valor", card_t: "Criar acesso gratuito", card_p: "Leva menos de 1 minuto", leg_obrig: "obrigatório", opc: "(opcional)", d_cel: "DDD + 9 dígitos", d_ok: "✓ Tudo certo", e_nome: "Informe nome e sobrenome.", e_sel: "Selecione uma opção.", e_cid: "Selecione o estado e depois a cidade.", confianca: "🔒 Usamos seus dados só para identificar seu acesso e melhorar a ferramenta.", cadastrando: "Cadastrando…", f_nome: "Nome completo", f_sexo: "Sexo", f_cel: "Celular (com DDD)", f_uf: "Estado", f_cidade: "Cidade", c_escolha_uf: "Escolha o estado", c_carregando: "Carregando…", c_escolha: "Selecione a cidade", c_erro: "Não foi possível carregar as cidades",
     btn_cadastrar: "Cadastrar e entrar", btn_continuar: "Continuar →", btn_voltar: "← Voltar", passo_de: (n) => `Etapa ${n} de 2`, btn_entrar: "Entrar", sair: "Sair",
     cfg: "⚙️ Configurações", busca: "Buscar setor", setor: "Setor", linhas: "Linhas na tabela fato",
     ini: "Data inicial", fim: "Data final", fiscal: "Início do ano fiscal",
@@ -56,7 +56,7 @@ const TXT = {
     prox_t: "Next steps", prox_1: "Unzip the file into a folder.", prox_2: "Open PowerBI/*.pbip in Power BI Desktop.", prox_3: "Try the DAX measures and solve the business case.",
     gate_sub: "Sign up for free to generate datasets for Power BI.",
     tab_novo: "Sign up", tab_existente: "I'm already registered",
-    g_dados: "Your details", g_perfil: "Your profile", d_ddd: "Suggested from your area code — change it if needed.", d_quis: "Did you mean", e_sel_sexo: "Select an option.", hero_1: "Realistic datasets to", hero_2: "practice Power BI", hero_3: "in seconds", split_p: "Pick a sector, generate the star schema with DAX measures and download it ready to open in Power BI Desktop.", ben_1: "200 business sectors", ben_2: "Star schema + DAX measures + .pbip", ben_3: "SQL for SQL Server, PostgreSQL and MySQL", previa_t: "Example · FactSales", previa_c1: "date", previa_c2: "product", previa_c3: "amount", card_t: "Create your free access", card_p: "Takes less than 1 minute", leg_obrig: "required", opc: "(optional)", d_cel: "Area code + 9 digits", d_ok: "✓ Looks good", e_nome: "Enter first and last name.", e_sel: "Select an option.", e_cid: "Select the state, then the city.", confianca: "🔒 We use your data only to identify your access and improve the tool.", cadastrando: "Signing up…", f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City", c_escolha_uf: "Choose the state", c_carregando: "Loading…", c_escolha: "Select the city", c_erro: "Could not load the cities",
+    g_dados: "Your details", g_perfil: "Your profile", d_ddd: "Suggested from your area code — change it if needed.", d_quis: "Did you mean", e_sel_sexo: "Select an option.", hero_1: "Realistic datasets to", hero_2: "practice Power BI", hero_3: "in seconds", split_p: "Pick a sector, generate the star schema with DAX measures and download it ready to open in Power BI Desktop.", ben_1: "200 business sectors", ben_2: "Star schema + DAX measures + .pbip", ben_3: "SQL for SQL Server, PostgreSQL and MySQL", previa_t: "Star schema generated in seconds", prova_fb: "Free · no credit card", prova_n: (n) => `${n}+ people already train with it · free`, previa_c1: "date", previa_c2: "product", previa_c3: "amount", card_t: "Create your free access", card_p: "Takes less than 1 minute", leg_obrig: "required", opc: "(optional)", d_cel: "Area code + 9 digits", d_ok: "✓ Looks good", e_nome: "Enter first and last name.", e_sel: "Select an option.", e_cid: "Select the state, then the city.", confianca: "🔒 We use your data only to identify your access and improve the tool.", cadastrando: "Signing up…", f_nome: "Full name", f_sexo: "Gender", f_cel: "Mobile (with area code)", f_uf: "State", f_cidade: "City", c_escolha_uf: "Choose the state", c_carregando: "Loading…", c_escolha: "Select the city", c_erro: "Could not load the cities",
     btn_cadastrar: "Sign up and enter", btn_continuar: "Continue →", btn_voltar: "← Back", passo_de: (n) => `Step ${n} of 2`, btn_entrar: "Enter", sair: "Sign out",
     cfg: "⚙️ Settings", busca: "Search sector", setor: "Sector", linhas: "Fact table rows",
     ini: "Start date", fim: "End date", fiscal: "Fiscal year start",
@@ -180,9 +180,19 @@ function iniciarBatimento() {
 }
 
 /* ── i18n ──────────────────────────────────────────────────────────────── */
+let PROVA_N = 0;
+function atualizarProva() {
+  const el = $("prova-t"); if (!el) return;
+  el.textContent = PROVA_N >= 50 ? t("prova_n", Math.floor(PROVA_N / 10) * 10) : t("prova_fb");
+}
+async function carregarProva() {
+  const n = await rpc("total_cadastros", {});
+  if (typeof n === "number" && n >= 50) { PROVA_N = n; atualizarProva(); }
+}
 function aplicarIdioma() {
   document.documentElement.lang = estado.lang === "en" ? "en" : "pt-BR";
   document.querySelectorAll("[data-i18n]").forEach((el) => { const v = TXT[estado.lang][el.dataset.i18n]; if (typeof v === "string") el.textContent = v; });
+  atualizarProva();
   [["conv-t", "conv_t"], ["conv-p", "conv_p"], ["conv-wa", "conv_wa"], ["conv-li", "conv_li"], ["conv-em", "conv_em"], ["conv-ok", "conv_ok"]].forEach(([i, k]) => { const el = $(i); if (el) el.textContent = t(k); });
   const cc = $("conv-copiar"); if (cc) cc.textContent = t("copiar");
   $("btn-lang").textContent = estado.lang === "pt" ? "EN" : "PT";
@@ -566,6 +576,6 @@ function iniciar() {
 
   const email = ler("email");
   if (email) { estado.email = email; const id = ler("idRegistro"); estado.idRegistro = id ? Number(id) : null; abrirApp(); }
-  else { $("gate").hidden = false; aplicarIdioma(); iniciarSessao(); }
+  else { $("gate").hidden = false; aplicarIdioma(); iniciarSessao(); carregarProva(); }
 }
 document.addEventListener("DOMContentLoaded", iniciar);
