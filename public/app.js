@@ -331,6 +331,8 @@ async function cadastrar(f) {
 function concluirLogin(email, id, novo = false) {
   estado.email = email; estado.idRegistro = id;
   guardar("email", email); guardar("idRegistro", id == null ? null : String(id));
+  if (!estado.sessao) iniciarSessao();
+  log(novo ? "cadastro_concluido" : "entrou_cadastrado"); /* grava o id_registro na sessão já no momento da entrada */
   abrirApp(novo);
 }
 
