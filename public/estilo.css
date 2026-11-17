@@ -273,3 +273,11 @@ html:has(.gate.split:not([hidden]))::-webkit-scrollbar{display:none}
 .prova i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--ok)}
 @media(min-width:901px){.gate-topo .prova+p,.gate-topo p.muted{display:none}}
 @media(min-width:901px) and (max-height:700px){.gate-hero .previa{display:none}}
+
+/* ===== Microinteração entre etapas (150 ms) e foco visível ===== */
+@keyframes entra-frente{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@keyframes entra-tras{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+#form-novo[data-dir=frente] .grupo:not([hidden]),#form-novo[data-dir=frente] .acoes2:not([hidden]){animation:entra-frente .15s ease-out}
+#form-novo[data-dir=tras] .grupo:not([hidden]),#form-novo[data-dir=tras] #btn-continuar:not([hidden]){animation:entra-tras .15s ease-out}
+.gate .btn:focus-visible,.gate .tab:focus-visible,.gate a:focus-visible,.gate .link:focus-visible,.gate .link-dica:focus-visible{outline:var(--foco);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.gate *{animation:none!important;transition:none!important}}

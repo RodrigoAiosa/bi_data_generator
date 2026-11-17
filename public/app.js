@@ -287,6 +287,7 @@ async function entrarComEmail(email) {
 
 let PASSO = 1;
 function irPasso(n, foco = true) {
+  $("form-novo").dataset.dir = n >= PASSO ? "frente" : "tras";
   PASSO = n;
   $("grupo-1").hidden = n !== 1; $("grupo-2").hidden = n !== 2;
   $("btn-continuar").hidden = n !== 1; $("acoes-2").hidden = n !== 2;
