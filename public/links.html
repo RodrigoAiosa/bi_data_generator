@@ -20,6 +20,7 @@ button,.btn{background:#2a2a2a;color:var(--txt);border:1px solid var(--borda);bo
 .item h3{margin:.1rem 0;font-size:1rem}.item small{color:var(--mut)}code{color:var(--ac);word-break:break-all}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 [hidden]{display:none!important}
+.camp{margin-top:1.1rem;padding-top:1rem;border-top:1px solid #2a2a2a}.camp .linha input,.camp .linha select{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -39,6 +40,15 @@ button,.btn{background:#2a2a2a;color:var(--txt);border:1px solid var(--borda);bo
     <label for="msg">Modelos de mensagem — separe um do outro com uma linha contendo <code>---</code>. Use <code>{link}</code> (obrigatório) e <code>{grupo}</code> (nome do grupo). Os modelos são distribuídos em rodízio: cada grupo recebe um texto diferente.</label>
     <textarea id="msg" style="min-height:260px"></textarea>
     <div class="linha"><button id="gerar" class="primario" type="button">Gerar links</button><button id="csv" type="button" hidden>⬇️ Baixar lista (CSV)</button><button id="limpar" type="button">🧹 Limpar tudo</button></div>
+    <div class="camp">
+      <label for="nome-camp">Campanha</label>
+      <div class="linha"><input id="nome-camp" autocomplete="off" placeholder="Nome da campanha (ex.: Grupos LinkedIn nov/26)" maxlength="80"><button id="salvar" class="primario" type="button">💾 Salvar Campanha</button></div>
+      <p id="camp-msg" class="mut" role="status" aria-live="polite"></p>
+      <div id="camp-lista" hidden>
+        <label for="camps">Campanhas salvas</label>
+        <div class="linha"><select id="camps"></select><button id="carregar" type="button">📂 Carregar</button><button id="excluir" type="button">🗑️ Excluir</button></div>
+      </div>
+    </div>
   </section>
 
   <section id="saida"></section>
@@ -105,6 +115,38 @@ $("csv").addEventListener("click", () => {
   const csv = "\ufeffgrupo;campanha;link;mensagem\r\n" + lista.map((x) => [x.nome, x.camp, x.url, x.texto].map((v) => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\r\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "links_por_grupo.csv"; a.click();
 });
+/* ===== Campanhas salvas (neste navegador) ===== */
+const lerCamps = () => { try { return JSON.parse(ler("camps") || "{}"); } catch (_) { return {}; } };
+const gravarCamps = (o) => guardar("camps", JSON.stringify(o));
+const msgCamp = (t) => { $("camp-msg").textContent = t; };
+function listarCamps(sel) {
+  const c = lerCamps(), nomes = Object.keys(c).sort((a, b) => (c[b].salvo || 0) - (c[a].salvo || 0));
+  $("camp-lista").hidden = !nomes.length;
+  $("camps").innerHTML = nomes.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  if (sel && nomes.includes(sel)) $("camps").value = sel;
+}
+$("salvar").addEventListener("click", () => {
+  const nome = $("nome-camp").value.trim();
+  if (!nome) { msgCamp("Dê um nome à campanha para salvar."); $("nome-camp").focus(); return; }
+  const c = lerCamps(), existia = nome in c;
+  c[nome] = { plat: $("plat").value, prefixo: $("prefixo").value, base: $("base").value, grupos: $("grupos").value, msg: $("msg").value, salvo: Date.now() };
+  gravarCamps(c); listarCamps(nome);
+  msgCamp(existia ? `Campanha “${nome}” atualizada.` : `Campanha “${nome}” salva.`);
+});
+$("carregar").addEventListener("click", () => {
+  const nome = $("camps").value, k = lerCamps()[nome]; if (!k) return;
+  $("plat").value = k.plat; $("prefixo").value = k.prefixo; $("base").value = k.base; $("grupos").value = k.grupos; $("msg").value = k.msg; $("nome-camp").value = nome;
+  msgCamp(`Campanha “${nome}” carregada.`); gerar();
+});
+let confExcl = 0;
+$("excluir").addEventListener("click", (e) => {
+  const b = e.currentTarget, nome = $("camps").value; if (!nome) return;
+  if (!confExcl) { b.textContent = "⚠️ Confirmar?"; confExcl = setTimeout(() => { confExcl = 0; b.textContent = "🗑️ Excluir"; }, 3500); return; }
+  clearTimeout(confExcl); confExcl = 0; b.textContent = "🗑️ Excluir";
+  const c = lerCamps(); delete c[nome]; gravarCamps(c); listarCamps(); msgCamp(`Campanha “${nome}” excluída.`);
+});
+listarCamps();
+
 let confLimpar = 0;
 $("limpar").addEventListener("click", (e) => {
   const b = e.currentTarget;
@@ -112,7 +154,7 @@ $("limpar").addEventListener("click", (e) => {
   clearTimeout(confLimpar); confLimpar = 0; b.textContent = "🧹 Limpar tudo";
   $("plat").value = "whatsapp"; ["base", "grupos", "prefixo", "msg"].forEach((k) => { $(k).value = ""; });
   ["base", "grupos", "prefixo", "msgs"].forEach((k) => { try { localStorage.removeItem("lk_" + k); } catch (_) {} });
-  lista = []; $("saida").innerHTML = ""; $("csv").hidden = true; $("grupos").focus();
+  lista = []; $("saida").innerHTML = ""; $("csv").hidden = true; $("nome-camp").value = ""; msgCamp(""); $("grupos").focus();
 });
 if ($("grupos").value) gerar();
 </script>
